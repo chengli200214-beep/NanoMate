@@ -348,7 +348,10 @@ class ResearchOrchestrator:
                 return {"evidence": []}
             context["snapshots"] = selected
             drafts = await reasoner.extract(context)
-            return {"evidence": [e.model_dump() for e in drafts]}
+            return {
+                "evidence": [e.model_dump() for e in drafts],
+                "verified_snapshots": [s["id"] for s in selected],
+            }
         if step["stage"] == "compare":
             assert reasoner is not None
             comparison = await reasoner.compare(context)

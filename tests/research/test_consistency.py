@@ -17,6 +17,7 @@ from nanomuse.research.contracts import (
     Comparison,
     ConflictDraft,
     DecisionDraft,
+    EvidenceDraft,
     FetchedSource,
     ImpactJudgment,
     ProjectSpec,
@@ -114,6 +115,43 @@ async def test_unchanged_fetch_preserves_snapshot_and_refreshes_source(tmp_path:
     with pytest.raises(ValueError, match="immutable"):
         with store.transaction():
             store._put("source_snapshot", {**snapshots[0], "content": "overwritten"})
+    store.close()
+
+
+async def test_reverification_replaces_old_wording_without_reextracting_forever(
+    tmp_path: Path,
+) -> None:
+    class RephrasingFixture(FixtureReasoner):
+        reviewed = False
+
+        async def extract(self, context: dict[str, Any]) -> list[EvidenceDraft]:
+            drafts = await super().extract(context)
+            return [
+                draft.model_copy(update={"fact": "Reviewed observation: " + draft.fact})
+                if self.reviewed
+                else draft
+                for draft in drafts
+            ]
+
+    store = ResearchStore(tmp_path, FakeClock())
+    project = store.create_project(project_spec())
+    reasoner = RephrasingFixture()
+    worker = ResearchOrchestrator(store, reasoner=reasoner)
+    store.enqueue(project["id"])
+    await finish(worker)
+    old = store.list("evidence", project["id"])[0]
+    reasoner.reviewed = True
+    store.reverify(old["id"])
+    await finish(worker)
+    assert store.get("evidence", old["id"])["status"] == "superseded"
+    assert any(
+        e["status"] == "active" and e["fact"].startswith("Reviewed observation:")
+        for e in store.list("evidence", project["id"])
+    )
+    extraction_calls = sum(call["stage"] == "extract" for call in reasoner.calls)
+    store.enqueue(project["id"])
+    await finish(worker)
+    assert sum(call["stage"] == "extract" for call in reasoner.calls) == extraction_calls
     store.close()
 
 

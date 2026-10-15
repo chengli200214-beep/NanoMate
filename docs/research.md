@@ -65,6 +65,7 @@ project for real-model research. An existing fixture project cannot switch mode.
 5. Revise conditions or correct evidence. The old report becomes stale and a new run
    is queued. Old workers cannot publish over the new inputs. Reverify schedules a
    fresh source check and evidence extraction.
+   Replaced wording is retained as superseded history after successful reverification.
 6. Enable tracking in Changes with a timezone and interval or local daily time.
    Checks happen while the service runs. Missed checks merge into one catch-up run
    at restart. Unchanged sources do not trigger model requests or a new report.

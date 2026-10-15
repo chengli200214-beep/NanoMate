@@ -527,6 +527,11 @@ class ResearchStore:
                     if previous and json.loads(previous[0])["status"] == "superseded":
                         continue
                     self._put("evidence", evidence)
+                verified = set(output.get("verified_snapshots", []))
+                for old in self.list("evidence", project_id):
+                    if old["snapshot_id"] in verified and old["status"] == "stale":
+                        old["status"] = "superseded"
+                        self._put("evidence", old)
             elif step["stage"] == "compare":
                 from nanomuse.research.context import validate_comparison
                 from nanomuse.research.contracts import Comparison

@@ -14,6 +14,7 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 - Research reasoning validated snapshot quotes and candidate references, kept unknown hard requirements explicit, and rendered versioned evidence in six-section reports. Offline fixture reports identified scripted replay.
 - Research model throttling carried numeric Retry-After waits into the durable scheduler.
 - Research reports displayed requirement text in comparison dimensions.
+- Reverification retained replaced facts as superseded history and reused the new evidence on later runs.
 
 ### Web
 
