@@ -127,7 +127,8 @@ class ProposeComparison(_ResearchTool):
     name: str = "propose_comparison"
     description: str = (
         "Validate project-scoped comparison references and hard requirements. Returns a draft; "
-        "does not publish a report or send notifications."
+        "conflicts must bind both evidence sources and keep affected verdicts unknown. "
+        "Does not publish a report or send notifications."
     )
     parameters: dict[str, Any] = ProposeComparisonArgs.model_json_schema()
 

@@ -20,12 +20,30 @@ These checks establish reference integrity; whether a quote semantically support
 claim still requires evaluation and human review. Documentation claims and source
 observations are never labelled as runtime tests.
 
+Comparisons can return structured `conflicts`. Each conflict requires at least two
+different current evidence IDs for the same project and candidate, an affected
+dimension, and a reason. The reasoner verifies both quotes against their registered
+snapshots and derives the displayed version scope from those bindings. A model's
+free-text version claim does not replace the source version. Existing open conflicts
+remain in subsequent comparisons until superseded in the store. A related `meets` or
+`fails` verdict is rejected, with the usual bounded repair allowance. Weak preferences
+are conservatively marked unknown. Reports keep both sides in the evidence section
+and display the reason and bound versions under uncertainties. Identifying a semantic
+contradiction remains a model judgment, not proof that either source is correct.
+
 Each stage allows two repairs for malformed JSON or invalid references, and has a
 separate model-call ceiling that also includes tool turns. The `calls` list records
 stage, model, request attempt, reported input and output tokens, elapsed milliseconds,
 and outcome. Missing provider token usage stays `None`; costs are not estimated.
 Provider errors, format errors, reference errors, and call-budget exhaustion have
 separate error codes. No failed provider request is retried by the reasoner itself.
+
+`set_call_budget(remaining)` sets a shared allowance across extraction, comparison,
+and every impact call in a run. Every actual provider request consumes one allowance
+before it starts, including failed requests, tool turns, and repairs. Exhausting the
+shared allowance raises `ResearchCallLimitError` without making or logging an invented
+request. The stage-specific ceiling still applies. The orchestrator must reset the
+remaining allowance from persisted call records when resuming a step or a run.
 
 Context selection retains the complete project specification. It records omitted
 records in `context_gaps` when the character budget is exhausted. Registered snapshots
@@ -39,6 +57,8 @@ preferences; unverified hard requirements stay unknown. Content changes are mark
 uncertain until checked. Reports display the offline label. To evaluate annotated
 positive and negative verdicts, provide a fixed `MockLLM` script to `ResearchReasoner`.
 Fixture output is not a live model evaluation.
+The fixture reasoner does not read evaluation answer labels or fabricate conflict
+discovery. It can faithfully replay already registered open conflicts as unknown.
 
 ## 中文
 
@@ -54,9 +74,20 @@ Fixture output is not a live model evaluation.
 缺少直接当前证据的硬条件保持未知，遗漏的硬条件会逐候选补为未知。引用校验不能证明语义
 支持关系，仍需评测和人工审查。文档声明和源码观察都不能写成运行验证。
 
+比较结果可以声明结构化冲突，至少绑定两个不同的当前证据 ID、同一项目与候选、受影响维度
+及原因。原文逐条核对快照，展示的版本范围从真实绑定派生，不采用模型自报的版本作为事实。
+已登记且未被替代的冲突会保留到后续比较。相关结论声称满足或不满足时会被拒绝，并允许
+有限次数修复；偏好结论保守降为未知。报告在证据部分保留双方来源，在不确定项展示原因和
+版本范围。是否构成语义矛盾仍是模型判断，不能证明任一方正确。
+
 每个阶段最多修复两次格式或引用错误，工具轮次也受模型调用上限约束。调用记录保存阶段、
 模型、次数、提供方报告的 token 和耗时；提供方未返回 token 时保留空值，不估算费用。
 上下文预算保留完整条件，省略的资料会列出缺口，完整快照仍可通过受限工具读取。
+
+`set_call_budget(remaining)` 设置贯穿提取、比较和多次影响判断的共享调用余额。请求发起前
+扣除一次额度，失败、工具轮次和修复均计数。余额不足时抛出 `ResearchCallLimitError`，不会
+发送请求或生成虚假调用记录。每阶段原有上限继续生效，编排器恢复时依据已持久化调用重设
+余额。离线脚本不读取评测答案，也不人为制造冲突识别成功，只忠实保留已登记冲突的未知状态。
 
 报告固定包含当前推荐、硬条件检查、候选对照、推荐依据、不确定项和下一步，并列出来源、
 快照及版本。离线 `FixtureReasoner` 只允许 fixture 模式，通过上游 `MockLLM` 重放当前快照。

@@ -9,7 +9,13 @@ from collections.abc import Iterable
 from typing import Any
 from urllib.parse import quote, urlsplit
 
-from nanomuse.research.context import ResearchValidationError, evidence_is_current, record
+from nanomuse.research.context import (
+    ResearchValidationError,
+    evidence_is_current,
+    record,
+    require_unknown_for_conflicts,
+    validate_conflicts,
+)
 from nanomuse.research.contracts import Comparison, DecisionDraft, ProjectSpec
 
 _VERDICTS = {
@@ -23,6 +29,7 @@ _VERIFICATIONS = {
     "source": "Source observation / 源码观察",
     "inference": "Inference / 推断",
     "unknown": "Unknown / 无法确认",
+    "user_correction": "User correction, awaiting verification / 用户纠正，待独立核验",
 }
 
 
@@ -59,6 +66,16 @@ def render_report(
     project = ProjectSpec.model_validate(record(spec))
     result = Comparison.model_validate(record(comparison))
     rows = {str(item["id"]): item for item in evidence}
+    conflicts = validate_conflicts(
+        result.conflicts,
+        {
+            "spec": project.model_dump(),
+            "evidence": list(rows.values()),
+        },
+        check_snapshots=False,
+    )
+    decisions = require_unknown_for_conflicts(result.decisions, conflicts)
+    result = result.model_copy(update={"conflicts": conflicts, "decisions": decisions})
     for decision in result.decisions:
         for ref in decision.evidence_refs:
             item = rows.get(ref)
@@ -130,7 +147,10 @@ def render_report(
     if not result.decisions:
         lines.append("| | | No current evidence / 暂无当前证据 | Unknown / 无法确认 | |")
     lines.extend(["", "## 4. Recommendation evidence / 推荐依据", ""])
-    used = sorted({ref for item in result.decisions for ref in item.evidence_refs})
+    used = sorted(
+        {ref for decision in result.decisions for ref in decision.evidence_refs}
+        | {ref for conflict in result.conflicts for ref in conflict.evidence_refs}
+    )
     if not used:
         lines.append("No cited evidence. / 暂无引用证据。")
     for ref in used:
@@ -161,6 +181,17 @@ def render_report(
             ]
         )
     lines.extend(["", "## 5. Uncertainties / 不确定项", ""])
+    for conflict in result.conflicts:
+        lines.extend(
+            [
+                f"- **Unresolved evidence conflict / 未解决的证据冲突**: "
+                f"{_text(conflict.candidate)}, {_text(conflict.dimension)}.",
+                "  - Reason / 原因: " + _text(conflict.reason),
+                "  - Evidence / 双方证据: " + _text(", ".join(conflict.evidence_refs)),
+                "  - Bound version scope / 绑定版本范围: " + _text(conflict.version_scope),
+                "  - Keep the verdict unknown until verified. / 核验完成前，相关结论保持无法确认。",
+            ]
+        )
     unknowns = list(result.unknowns)
     for candidate in project.candidates:
         for constraint in hard:

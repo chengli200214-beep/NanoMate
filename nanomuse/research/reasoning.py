@@ -87,6 +87,10 @@ unknown. A hard requirement may be marked meets or fails only with direct suppor
 Cover each hard requirement for each candidate. Do not invent weights, results, or references.
 If information does not fit, read the registered snapshot or explicitly report the gap.
 Do not infer quality from stars alone. Keep recommendation and uncertainty consistent.
+Identify explicit contradictions between current sources for the same candidate and dimension.
+Return conflicts with both evidence IDs, a specific reason, and the applicable version scope.
+Preserve registered open conflicts. Related decisions must be unknown while a conflict remains.
+Differences across platforms or versions are not necessarily contradictions. Explain their scope.
 """
 
 _STAGE_INSTRUCTIONS = {
@@ -97,6 +101,7 @@ _STAGE_INSTRUCTIONS = {
     ),
     "compare": (
         "Compare current evidence. Return a Comparison with decisions, unknowns, and next_steps. "
+        "Include conflicts for incompatible current evidence and keep both source references. "
         "Bind decisions to valid constraint_refs and evidence_refs. Do not recommend a candidate "
         "as meeting all hard requirements if any hard requirement is unknown or fails."
     ),
@@ -136,6 +141,17 @@ class ResearchReasoner:
         self.max_repairs = max_repairs
         self.context_budget_chars = context_budget_chars
         self.calls: list[dict[str, Any]] = []
+        self._remaining_calls: int | None = None
+
+    def set_call_budget(self, remaining: int) -> None:
+        """Set the persistent run's remaining allowance across every following stage."""
+        if isinstance(remaining, bool) or not isinstance(remaining, int) or remaining < 0:
+            raise ValueError("The remaining model call budget must be a nonnegative integer")
+        self._remaining_calls = remaining
+
+    def _check_call_budget(self) -> None:
+        if self._remaining_calls is not None and self._remaining_calls <= 0:
+            raise ResearchCallLimitError("The shared research run model call budget is exhausted")
 
     async def extract(self, context: dict[str, Any]) -> list[EvidenceDraft]:
         normalized = normalize_context(context)
@@ -255,6 +271,9 @@ class ResearchReasoner:
     async def _ask(
         self, stage: str, messages: list[Message], tools: list[dict[str, Any]], attempt: int
     ) -> LLMResponse:
+        self._check_call_budget()
+        if self._remaining_calls is not None:
+            self._remaining_calls -= 1
         started = time.perf_counter()
         entry: dict[str, Any] = {
             "stage": stage,
@@ -301,6 +320,7 @@ class FixtureReasoner(ResearchReasoner):
 
     async def extract(self, context: dict[str, Any]) -> list[EvidenceDraft]:
         context = self._fixture_context(context)
+        self._check_call_budget()
         drafts = []
         for snapshot in context["snapshots"]:
             content = str(snapshot.get("content", ""))
@@ -330,6 +350,7 @@ class FixtureReasoner(ResearchReasoner):
 
     async def compare(self, context: dict[str, Any]) -> Comparison:
         context = self._fixture_context(context)
+        self._check_call_budget()
         decisions: list[DecisionDraft] = []
         for candidate in context["spec"]["candidates"]:
             relevant = [
@@ -362,6 +383,7 @@ class FixtureReasoner(ResearchReasoner):
 
     async def impact(self, context: dict[str, Any]) -> ImpactJudgment:
         context = self._fixture_context(context)
+        self._check_call_budget()
         changed_candidates = {
             str(item.get("after", {}).get("candidate", ""))
             for item in context["changes"]
