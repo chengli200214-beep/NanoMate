@@ -3,11 +3,12 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNod
 import { inputCls, secondaryBtn } from "../components/Form";
 import { LoadError } from "../components/LoadError";
 import { Markdown } from "../components/Markdown";
+import { ResearchConflicts } from "../components/ResearchConflicts";
 import { TabHeader } from "../components/TabHeader";
 import { intlLocale, useT } from "../i18n";
 import {
   isActiveRun, repositoryUrl, researchApi, runControls,
-  type ResearchChanges, type ResearchConstraint, type ResearchDiagnostics, type ResearchDiff,
+  type ResearchChanges, type ResearchConflict, type ResearchConstraint, type ResearchDiagnostics, type ResearchDiff,
   type ResearchEvidence, type ResearchProject, type ResearchProjectDetail, type ResearchReport,
   type ResearchRun, type ResearchSpec, type ResearchTracking,
 } from "../research-api";
@@ -134,7 +135,7 @@ function SpecForm({ initial, onSave, onCancel, busy }: { initial?: ResearchSpec;
   </fieldset>{error && <p role="alert" className="text-sm text-rose-600">{error}</p>}<div className="flex gap-2"><button type="submit" disabled={busy} className={primary}>{busy && <Loader2 size={14} className="animate-spin" />}{t(initial ? "Save revision" : "Create project")}</button><button type="button" disabled={busy} onClick={onCancel} className={secondaryBtn}>{t("Cancel")}</button></div></form>;
 }
 
-interface ProjectSnapshot { detail: ResearchProjectDetail; evidence: ResearchEvidence[]; reports: ResearchReport[]; changes: ResearchChanges }
+interface ProjectSnapshot { detail: ResearchProjectDetail; evidence: ResearchEvidence[]; conflicts: ResearchConflict[]; reports: ResearchReport[]; changes: ResearchChanges }
 function ProjectWorkspace({ id, onChanged }: { id: string; onChanged: () => void }) {
   const t = useT();
   const { toast } = useStore();
@@ -154,9 +155,9 @@ function ProjectWorkspace({ id, onChanged }: { id: string; onChanged: () => void
     const seq = ++requestId.current;
     setRefreshing(true);
     try {
-      const [detail, evidence, reports, changes] = await Promise.all([researchApi.project(id), researchApi.evidence(id), researchApi.reports(id), researchApi.changes(id)]);
+      const [detail, evidence, conflicts, reports, changes] = await Promise.all([researchApi.project(id), researchApi.evidence(id), researchApi.conflicts(id), researchApi.reports(id), researchApi.changes(id)]);
       if (!alive.current || seq !== requestId.current) return;
-      setData({ detail, evidence, reports, changes }); setError("");
+      setData({ detail, evidence, conflicts, reports, changes }); setError("");
     } catch (e) { if (alive.current && seq === requestId.current) setError((e as Error).message); }
     finally { if (alive.current && seq === requestId.current) setRefreshing(false); }
   }, [id]);
@@ -191,7 +192,7 @@ function ProjectWorkspace({ id, onChanged }: { id: string; onChanged: () => void
     delete startKeys.current[kind];
   }, "Run scheduled.");
   if (!data) return error ? <LoadError message={error} onRetry={() => void refresh()} /> : <Loading />;
-  const { detail, evidence, reports, changes } = data;
+  const { detail, evidence, conflicts, reports, changes } = data;
   const busy = !!pending;
   const exportReport = (report: ResearchReport) => perform("export", async () => {
     const markdown = await researchApi.exportMarkdown(report.id);
@@ -213,7 +214,7 @@ function ProjectWorkspace({ id, onChanged }: { id: string; onChanged: () => void
     <nav aria-label={t("Research views")} className="flex gap-1 rounded-2xl bg-surface-2 p-1" role="tablist">{(Object.keys(viewLabels) as View[]).map((tab) => <button type="button" role="tab" id={`research-tab-${tab}`} aria-controls={`research-panel-${tab}`} aria-selected={view === tab} key={tab} onClick={() => setView(tab)} className={cx("min-w-0 flex-1 rounded-xl px-2 py-2.5 text-[13px] font-medium", view === tab ? "bg-ink text-ink-fg" : "text-muted hover:text-fg")}>{t(viewLabels[tab])}{tab === "evidence" && evidence.length > 0 && <span className="ml-1 text-[10px] opacity-60">{evidence.length}</span>}</button>)}</nav>
     <div role="tabpanel" id={`research-panel-${view}`} aria-labelledby={`research-tab-${view}`} className="space-y-4">
       {view === "overview" && <><ReportPanel reports={reports} current={detail.current_report} busy={busy} onExport={exportReport} /><Panel title={t("Decision conditions")}>{detail.spec.constraints.length === 0 ? <Empty>{t("No conditions recorded.")}</Empty> : <ul className="space-y-2">{detail.spec.constraints.map((c) => <li key={c.id} className="flex gap-2 text-[13px]"><span className="shrink-0 text-muted">{t(c.hard ? "Required" : "Preferred")}</span><span>{c.text}</span></li>)}</ul>}</Panel><SourcesPanel detail={detail} busy={busy} perform={perform} /></>}
-      {view === "evidence" && <EvidencePanel evidence={evidence} busy={busy} perform={perform} />}
+      {view === "evidence" && <EvidencePanel evidence={evidence} conflicts={conflicts} busy={busy} perform={perform} />}
       {view === "runs" && <RunsPanel runs={detail.runs} busy={busy} perform={perform} />}
       {view === "changes" && <><TrackingPanel key={detail.id} project={detail} busy={busy} perform={perform} /><ChangesPanel changes={changes} busy={busy} perform={perform} /></>}
     </div>
@@ -265,14 +266,14 @@ function SourcesPanel({ detail, busy, perform }: { detail: ResearchProjectDetail
   </Panel>;
 }
 
-function EvidencePanel({ evidence, busy, perform }: { evidence: ResearchEvidence[]; busy: boolean; perform: Perform }) {
+function EvidencePanel({ evidence, conflicts, busy, perform }: { evidence: ResearchEvidence[]; conflicts: ResearchConflict[]; busy: boolean; perform: Perform }) {
   const t = useT();
   const [candidate, setCandidate] = useState("");
   const [status, setStatus] = useState("");
   const [dimension, setDimension] = useState("");
   const [correcting, setCorrecting] = useState<ResearchEvidence | null>(null);
   const filtered = evidence.filter((e) => (!candidate || e.candidate === candidate) && (!status || e.status === status) && (!dimension || e.dimension === dimension));
-  return <Panel title={t("Evidence ledger")}><p className="mb-4 text-[13px] leading-relaxed text-muted">{t("Each fact keeps its quote, source version and verification level. Corrections retain their history.")}</p><div className="mb-4 grid gap-2 sm:grid-cols-3">{[["Candidate filter", candidate, setCandidate, [...new Set(evidence.map((e) => e.candidate))]], ["Dimension filter", dimension, setDimension, [...new Set(evidence.map((e) => e.dimension))]], ["Status filter", status, setStatus, [...new Set(evidence.map((e) => e.status))]]].map(([label, value, set, options]) => <select key={label as string} aria-label={t(label as string)} className={cx(inputCls, "text-[12px]")} value={value as string} onChange={(e) => (set as (v: string) => void)(e.target.value)}><option value="">{t(label as string)}</option>{(options as string[]).map((v) => <option key={v} value={v}>{v}</option>)}</select>)}</div>
+  return <Panel title={t("Evidence ledger")}><ResearchConflicts conflicts={conflicts} evidence={evidence} /><p className="mb-4 text-[13px] leading-relaxed text-muted">{t("Each fact keeps its quote, source version and verification level. Corrections retain their history.")}</p><div className="mb-4 grid gap-2 sm:grid-cols-3">{[["Candidate filter", candidate, setCandidate, [...new Set(evidence.map((e) => e.candidate))]], ["Dimension filter", dimension, setDimension, [...new Set(evidence.map((e) => e.dimension))]], ["Status filter", status, setStatus, [...new Set(evidence.map((e) => e.status))]]].map(([label, value, set, options]) => <select key={label as string} aria-label={t(label as string)} className={cx(inputCls, "text-[12px]")} value={value as string} onChange={(e) => (set as (v: string) => void)(e.target.value)}><option value="">{t(label as string)}</option>{(options as string[]).map((v) => <option key={v} value={v}>{v}</option>)}</select>)}</div>
     {filtered.length === 0 ? <Empty>{t("No evidence matches. Start research or adjust the filters.")}</Empty> : <div className="space-y-3">{filtered.map((e) => <article key={e.id} className="rounded-2xl border border-border p-4"><div className="mb-2 flex flex-wrap items-center gap-2"><span className="text-[12px] font-semibold">{e.dimension}</span><Status value={e.status} /><span className="text-[11px] text-muted">{t(({ documentation: "Documented", source: "Checked in source", inference: "Inference", unknown: "Unverified", user_correction: "User correction" } as Record<string, string>)[e.verification] ?? e.verification)}</span></div><p className="whitespace-pre-wrap text-[14px] leading-relaxed">{e.fact}</p>{e.quote && <blockquote className="my-3 border-l-2 border-border pl-3 text-[12px] leading-relaxed text-muted">{e.quote}</blockquote>}<div className="space-y-1">{e.source_url && <SourceLink url={e.source_url} />}<p className="break-all text-[11px] text-muted">{e.candidate} {e.version && `· ${e.version}`} {e.locator && `· ${e.locator}`}</p><Stamp value={e.fetched_at} /></div><div className="mt-3 flex gap-2"><button type="button" className={small} disabled={busy} onClick={() => setCorrecting(e)}>{t("Correct evidence")}</button><button type="button" className={small} disabled={busy} onClick={() => void perform(`verify-${e.id}`, () => researchApi.reverify(e.id), "Verification scheduled.")}>{t("Reverify")}</button></div>{correcting?.id === e.id && <CorrectionForm key={e.id} evidence={correcting} busy={busy} perform={perform} onClose={() => setCorrecting(null)} />}</article>)}</div>}
   </Panel>;
 }

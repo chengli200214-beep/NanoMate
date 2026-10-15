@@ -32,6 +32,7 @@ beforeEach(() => {
   vi.spyOn(researchApi, "projects").mockResolvedValue([]);
   vi.spyOn(researchApi, "project").mockResolvedValue(project);
   vi.spyOn(researchApi, "evidence").mockResolvedValue([]);
+  vi.spyOn(researchApi, "conflicts").mockResolvedValue([]);
   vi.spyOn(researchApi, "reports").mockResolvedValue([]);
   vi.spyOn(researchApi, "changes").mockResolvedValue({ events: [], notifications: [], mute_rules: [] });
   store.toast.mockReset();
@@ -152,5 +153,23 @@ describe("research workbench", () => {
     expect(field("Model call limit per check").findByType("input").props.max).toBe(200);
     await act(async () => { mute!.props.onClick(); });
     expect(researchApi.changeAction).toHaveBeenCalledWith("event-related", "mute");
+  });
+
+  it("loads conflicts independently and displays them on the evidence page", async () => {
+    vi.mocked(researchApi.projects).mockResolvedValue([project]);
+    vi.mocked(researchApi.conflicts).mockResolvedValue([{
+      id: "conflict-1", project_id: project.id, candidate: project.spec.candidates[0], dimension: "platform",
+      evidence_refs: ["evidence-1", "evidence-2"], reason: "Saved sources disagree about platform support.",
+      version_scope: "README v1 and source v2", status: "open", created_at: project.created_at,
+      spec_id: project.spec_id, run_id: "run-1",
+    }]);
+    await mount();
+    expect(researchApi.conflicts).toHaveBeenCalledWith(project.id);
+    await act(async () => { screen.root.findByProps({ id: "research-tab-evidence" }).props.onClick(); });
+    const rendered = JSON.stringify(screen.toJSON());
+    expect(rendered).toContain("Saved sources disagree about platform support.");
+    expect(rendered).toContain("README v1 and source v2");
+    expect(rendered).toContain("evidence-1");
+    expect(rendered).toContain("evidence-2");
   });
 });

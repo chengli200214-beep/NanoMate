@@ -24,6 +24,20 @@ describe("research requests", () => {
     expect(JSON.parse(init.body as string)).toEqual({ kind: "research", request_key: "stable-request" });
   });
 
+  it("reads conflict and evidence arrays from separate project-scoped endpoints", async () => {
+    const conflict = { id: "conflict-1", evidence_refs: ["evidence-1", "evidence-2"], status: "open" };
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify([conflict]), { status: 200 }))
+      .mockResolvedValueOnce(new Response("[]", { status: 200 }));
+    vi.stubGlobal("fetch", fetcher);
+    expect(await researchApi.conflicts("project/a")).toEqual([conflict]);
+    expect(await researchApi.evidence("project/a")).toEqual([]);
+    expect(fetcher.mock.calls.map((call) => call[0])).toEqual([
+      "/api/research/projects/project%2Fa/conflicts",
+      "/api/research/projects/project%2Fa/evidence",
+    ]);
+  });
+
   it("exports raw Markdown without exposing the token in a URL", async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response("# Report\n\nEvidence.", { status: 200 }));
     vi.stubGlobal("fetch", fetcher);

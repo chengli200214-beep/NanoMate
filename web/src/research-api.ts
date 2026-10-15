@@ -51,6 +51,11 @@ export interface ResearchEvidence {
   snapshot_id: string; locator: string; verification: string; status: string; source_url: string;
   version: string; fetched_at: string;
 }
+export interface ResearchConflict {
+  id: string; project_id: string; candidate: string; dimension: string; evidence_refs: string[];
+  reason: string; version_scope: string; status: "open" | "superseded"; created_at: string;
+  spec_id: string; run_id: string;
+}
 export interface ResearchChange {
   id: string; source_id?: string; created_at?: string; status?: string; action?: string;
   summary?: string; change_summary?: string; impact_level?: string; recommended_action?: string;
@@ -84,6 +89,7 @@ export const researchApi = {
   run: (id: string) => request<ResearchRun>(`${root}/runs/${idPath(id)}`),
   control: (id: string, action: ResearchControl) => request<ResearchRun>(`${root}/runs/${idPath(id)}/control`, post({ action })),
   evidence: (id: string) => request<ResearchEvidence[]>(`${projectPath(id)}/evidence`),
+  conflicts: (id: string) => request<ResearchConflict[]>(`${projectPath(id)}/conflicts`),
   correct: (id: string, fact: string, quote: string, reason: string) => request<ResearchEvidence>(`${root}/evidence/${idPath(id)}/correction`, post({ fact, quote, reason })),
   reverify: (id: string) => request<ResearchRun>(`${root}/evidence/${idPath(id)}/reverify`, post({})),
   reports: (id: string) => request<ResearchReport[]>(`${projectPath(id)}/reports`),
