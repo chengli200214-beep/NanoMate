@@ -13,6 +13,7 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 - Research projects saved source snapshots, evidence, conflicts and report versions. Leased steps resumed after interruption, fenced old inputs, stopped at model call budgets and merged missed checks. Public source reads used the existing Sentinel audit and refused private network destinations.
 - Research reasoning validated snapshot quotes and candidate references, kept unknown hard requirements explicit, and rendered versioned evidence in six-section reports. Offline fixture reports identified scripted replay.
 - Research model throttling carried numeric Retry-After waits into the durable scheduler.
+- Research reports displayed requirement text in comparison dimensions.
 
 ### Web
 

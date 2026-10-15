@@ -76,6 +76,8 @@ def render_report(
     )
     decisions = require_unknown_for_conflicts(result.decisions, conflicts)
     result = result.model_copy(update={"conflicts": conflicts, "decisions": decisions})
+    dimensions = {item.id: item.text for item in project.constraints}
+    dimensions["overview"] = "Overview / 概览"
     for decision in result.decisions:
         for ref in decision.evidence_refs:
             item = rows.get(ref)
@@ -140,7 +142,7 @@ def render_report(
     )
     for decision in result.decisions:
         lines.append(
-            f"| {_text(decision.candidate)} | {_text(decision.dimension)} | "
+            f"| {_text(decision.candidate)} | {_text(dimensions.get(decision.dimension, decision.dimension))} | "
             f"{_text(decision.conclusion)} | {_VERDICTS[decision.verdict]} | "
             f"{_text(', '.join(decision.evidence_refs))} |"
         )
@@ -185,7 +187,7 @@ def render_report(
         lines.extend(
             [
                 f"- **Unresolved evidence conflict / 未解决的证据冲突**: "
-                f"{_text(conflict.candidate)}, {_text(conflict.dimension)}.",
+                f"{_text(conflict.candidate)}, {_text(dimensions.get(conflict.dimension, conflict.dimension))}.",
                 "  - Reason / 原因: " + _text(conflict.reason),
                 "  - Evidence / 双方证据: " + _text(", ".join(conflict.evidence_refs)),
                 "  - Bound version scope / 绑定版本范围: " + _text(conflict.version_scope),

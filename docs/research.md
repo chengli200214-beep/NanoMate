@@ -54,6 +54,7 @@ project for real-model research. An existing fixture project cannot switch mode.
 
 1. Create a project with two or three GitHub repository URLs, a goal and explicit
    hard requirements or preferences. Choose live research or labelled offline replay.
+   Reports use requirement text for comparison labels rather than internal condition IDs.
 2. Register extra README, repository file, releases, metadata, public documentation or
    pasted text. Every source belongs to a candidate. Imported text is treated as data.
 3. Start research. Overview shows the six-section report; Evidence retains quotes,
