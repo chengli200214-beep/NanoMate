@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { act, create, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setLocaleSetting } from "../i18n";
-import { researchApi, type ResearchProjectDetail, type ResearchRun } from "../research-api";
+import { researchApi, type ResearchProjectDetail, type ResearchReport, type ResearchRun } from "../research-api";
 import { ResearchScreen } from "./ResearchScreen";
 
 const store = vi.hoisted(() => ({ toast: vi.fn() }));
@@ -20,6 +20,9 @@ function button(label: string): ReactTestInstance {
   const found = screen.root.findAllByType("button").find((node) => text(node).trim() === label);
   expect(found, `button: ${label}`).toBeDefined();
   return found!;
+}
+function field(label: string): ReactTestInstance {
+  return screen.root.findAllByType("label").find((node) => text(node).startsWith(label))!;
 }
 async function mount() { await act(async () => { screen = create(createElement(ResearchScreen)); }); }
 
@@ -95,5 +98,59 @@ describe("research workbench", () => {
     await act(async () => { button("Start research").props.onClick(); });
     const calls = vi.mocked(researchApi.start).mock.calls;
     expect(calls[0][2]).toBe(calls[1][2]);
+  });
+
+  it("binds a new source to a registered candidate by default", async () => {
+    vi.mocked(researchApi.projects).mockResolvedValue([project]);
+    vi.spyOn(researchApi, "addSource").mockResolvedValue({ id: "source-1", kind: "document", candidate: project.spec.candidates[0], title: "Official documentation", url: "https://github.com/example/one", content: "" });
+    await mount();
+    await act(async () => { button("Add source").props.onClick(); });
+    const candidate = field("Related repository").findByType("select");
+    expect(candidate.props.value).toBe(project.spec.candidates[0]);
+    expect(candidate.findAllByType("option").map((node) => node.props.value)).toEqual(project.spec.candidates);
+    await act(async () => {
+      field("Source title").findByType("input").props.onChange({ target: { value: "Official documentation" } });
+      field("Official document URL").findByType("input").props.onChange({ target: { value: "https://github.com/example/one" } });
+    });
+    await act(async () => { screen.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
+    expect(researchApi.addSource).toHaveBeenCalledWith(project.id, expect.objectContaining({ candidate: project.spec.candidates[0] }));
+  });
+
+  it("keeps dynamic staleness when the current report is selected explicitly", async () => {
+    const current: ResearchReport = { id: "report-current", project_id: project.id, spec_id: "spec-1", markdown: "Current report", created_at: project.created_at, stale: false };
+    const previous: ResearchReport = { ...current, id: "report-previous", markdown: "Previous report" };
+    vi.mocked(researchApi.projects).mockResolvedValue([project]);
+    vi.mocked(researchApi.project).mockResolvedValue({ ...project, current_report: { ...current, stale: true } });
+    vi.mocked(researchApi.reports).mockResolvedValue([current, previous]);
+    await mount();
+    const picker = screen.root.findAllByType("select").find((node) => node.props["aria-label"] === "Report version")!;
+    await act(async () => { picker.props.onChange({ target: { value: previous.id } }); });
+    expect(JSON.stringify(screen.toJSON())).not.toContain("Conditions or evidence changed. Run research to update this report.");
+    await act(async () => { picker.props.onChange({ target: { value: current.id } }); });
+    expect(JSON.stringify(screen.toJSON())).toContain("Conditions or evidence changed. Run research to update this report.");
+  });
+
+  it("matches mute rules by both source and impact level", async () => {
+    vi.mocked(researchApi.projects).mockResolvedValue([project]);
+    vi.mocked(researchApi.changes).mockResolvedValue({
+      events: [
+        { id: "event-related", source_id: "source-1", impact_level: "related", change_summary: "Related update" },
+        { id: "event-recommendation", source_id: "source-1", impact_level: "recommendation", change_summary: "Recommendation update" },
+      ],
+      notifications: [],
+      mute_rules: [{ id: "mute-source-1-recommendation", source_id: "source-1", impact_level: "recommendation", enabled: true }],
+    });
+    vi.spyOn(researchApi, "changeAction").mockResolvedValue({ id: "event-related" });
+    await mount();
+    await act(async () => { screen.root.findByProps({ id: "research-tab-changes" }).props.onClick(); });
+    const articles = screen.root.findAllByType("article");
+    const related = articles.find((node) => text(node).includes("Related update"))!;
+    const recommendation = articles.find((node) => text(node).includes("Recommendation update"))!;
+    const mute = related.findAllByType("button").find((node) => text(node).trim() === "Mute this source");
+    expect(mute).toBeDefined();
+    expect(recommendation.findAllByType("button").some((node) => text(node).trim() === "Unmute this source")).toBe(true);
+    expect(field("Model call limit per check").findByType("input").props.max).toBe(200);
+    await act(async () => { mute!.props.onClick(); });
+    expect(researchApi.changeAction).toHaveBeenCalledWith("event-related", "mute");
   });
 });

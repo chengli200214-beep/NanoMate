@@ -59,7 +59,7 @@ export interface ResearchChange {
 export interface ResearchNotification {
   id: string; content: string; feedback?: string; created_at: string;
 }
-export interface ResearchMuteRule { id: string; source_id?: string; enabled?: boolean; [key: string]: unknown }
+export interface ResearchMuteRule { id: string; source_id?: string; impact_level?: string; enabled?: boolean; [key: string]: unknown }
 export interface ResearchChanges {
   events: ResearchChange[]; notifications: ResearchNotification[]; mute_rules: ResearchMuteRule[];
 }

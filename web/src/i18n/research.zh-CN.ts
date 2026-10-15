@@ -103,6 +103,7 @@ const researchZhCN: Record<string, string> = {
   "Checked in source": "源码已核验",
   Inference: "推断",
   Unverified: "待核验",
+  "User correction": "用户纠正",
   "Correct evidence": "纠正证据",
   "Verification scheduled.": "核验任务已排队。",
   Reverify: "重新核验",
