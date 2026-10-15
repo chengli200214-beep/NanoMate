@@ -418,7 +418,7 @@ async def test_fixture_is_explicitly_offline_and_uses_current_snapshot_only() ->
     ctx["spec"]["mode"] = "fixture"
     fixture = FixtureReasoner()
     first = await fixture.extract(ctx)
-    assert first[0].quote == "Supports Windows."
+    assert first[0].quote == "Supports Windows.\nRequires a public relay."
     ctx["snapshots"][0]["content"] = "# Alpha\nSupports Linux only."
     second = await fixture.extract(ctx)
     assert second[0].quote == "Supports Linux only."

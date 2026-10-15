@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 from collections.abc import Callable
 from pathlib import Path
@@ -308,6 +309,65 @@ class ResearchReasoner:
             self.calls.append(entry)
 
 
+def _fixture_excerpt(content: str, max_chars: int = 1000) -> str | None:
+    """First readable contiguous paragraph, kept as an exact source substring.
+
+    This is a formatting filter, independent of project goals and evaluation labels.
+    It does not infer a feature or replace the model's evidence extraction.
+    """
+    lines = content.splitlines(keepends=True)
+    paragraph: list[str] = []
+    fence: str | None = None
+    in_comment = False
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        following = lines[index + 1].strip() if index + 1 < len(lines) else ""
+        marker = re.match(r"^(`{3,}|~{3,})", stripped)
+        blocked = False
+        if in_comment:
+            in_comment = "-->" not in stripped
+            blocked = True
+        elif stripped.startswith("<!--"):
+            in_comment = "-->" not in stripped[4:]
+            blocked = True
+        elif marker:
+            if fence is None:
+                fence = marker[0][0]
+            elif marker[0][0] == fence:
+                fence = None
+            blocked = True
+        elif fence is not None:
+            blocked = True
+        elif (
+            not stripped
+            or re.match(r"^#{1,6}(?:\s|$)", stripped)
+            or re.fullmatch(r"[\s|:\-_*~=]+", stripped)
+            or re.fullmatch(r"[=-]{2,}", following)
+            or stripped.startswith(("|", "![", "[![", "<"))
+            or stripped.endswith("|")
+            or re.match(r"^\[[^\]]+\]:\s*\S+", stripped)
+            or not any(char.isalpha() for char in stripped)
+        ):
+            blocked = True
+        if blocked:
+            if paragraph:
+                break
+            continue
+        paragraph.append(line)
+    if not paragraph:
+        return None
+    quote = "".join(paragraph).strip()
+    if len(quote) <= max_chars:
+        return quote
+    prefix = quote[:max_chars]
+    # Prefer a complete sentence or line when the first paragraph exceeds the limit.
+    boundaries = list(re.finditer(r"[.!?。！？](?=\s|$)", prefix))
+    if boundaries:
+        return prefix[: boundaries[-1].end()].rstrip()
+    last_line = prefix.rfind("\n")
+    return (prefix[:last_line] if last_line > 0 else prefix).rstrip()
+
+
 class FixtureReasoner(ResearchReasoner):
     """Deterministic, offline scripted replay. Never presented as live verification.
 
@@ -326,15 +386,9 @@ class FixtureReasoner(ResearchReasoner):
             content = str(snapshot.get("content", ""))
             if not content.strip():
                 continue
-            quote = next(
-                (
-                    line.strip()
-                    for line in content.splitlines()
-                    if line.strip() and not line.strip().startswith("#")
-                ),
-                content.strip(),
-            )
-            quote = quote[: min(len(quote), 1000)]
+            quote = _fixture_excerpt(content)
+            if quote is None:
+                continue
             drafts.append(
                 EvidenceDraft(
                     snapshot_id=str(snapshot["id"]),

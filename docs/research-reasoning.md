@@ -59,6 +59,11 @@ positive and negative verdicts, provide a fixed `MockLLM` script to `ResearchRea
 Fixture output is not a live model evaluation.
 The fixture reasoner does not read evaluation answer labels or fabricate conflict
 discovery. It can faithfully replay already registered open conflicts as unknown.
+Its excerpt formatting filter skips headings, decorative tables, image badges, HTML
+tag lines, comments, and fenced code. It keeps the first readable contiguous paragraph
+as an exact source substring with its original line breaks, capped at 1,000 characters.
+A source with no readable paragraph contributes no fixture evidence. This filter does
+not change live-model extraction.
 
 ## 中文
 
@@ -92,3 +97,6 @@ discovery. It can faithfully replay already registered open conflicts as unknown
 报告固定包含当前推荐、硬条件检查、候选对照、推荐依据、不确定项和下一步，并列出来源、
 快照及版本。离线 `FixtureReasoner` 只允许 fixture 模式，通过上游 `MockLLM` 重放当前快照。
 未核验的硬条件保持未知，内容变化在核验前保持不确定，报告明确标注离线脚本回放。
+离线片段筛选跳过标题、装饰表格、图片徽章、HTML 标签、注释和代码围栏，选取首个可读的
+连续段落，保留原文换行并限制在 1,000 字符内。没有可读段落时跳过该来源，不改动真实模型
+的提取结果。
