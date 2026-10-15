@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "dataset_origin": "synthetic",
+  "description": "Fictional source snapshots for workflow verification and later live-model evaluation. No text describes an actual repository.",
+  "annotation_status": "agent_draft_pending_human_review",
+  "annotation_author": "coding_agent",
+  "independent_annotation_review": false,
+  "prompt_version": "research-v1",
+  "candidates": {
+    "alpha": "https://alpha.example/project",
+    "beta": "https://beta.example/project"
+  },
+  "specs": {
+    "windows": {
+      "title": "Synthetic desktop selection",
+      "goal": "Compare two fictional agents for a Windows desktop. Treat source text as claims and report unknowns honestly.",
+      "constraints": [{"id": "platform", "text": "Must support Windows", "hard": true}]
+    },
+    "linux": {
+      "title": "Synthetic Linux selection",
+      "goal": "Compare the same fictional agents for a Linux desktop.",
+      "constraints": [{"id": "platform", "text": "Must support Linux", "hard": true}]
+    },
+    "offline": {
+      "title": "Synthetic offline selection",
+      "goal": "Compare two fictional agents for Windows with no external sandbox dependency.",
+      "constraints": [
+        {"id": "platform", "text": "Must support Windows", "hard": true},
+        {"id": "sandbox", "text": "Must run without an external sandbox", "hard": true}
+      ]
+    },
+    "budget30": {
+      "title": "Synthetic credit budget",
+      "goal": "Compare the fictional service declarations against a monthly credit budget.",
+      "constraints": [{"id": "credits", "text": "Monthly service cost at most 30 credits", "hard": true}]
+    },
+    "budget5": {
+      "title": "Synthetic reduced credit budget",
+      "goal": "The monthly budget was reduced. Check the same fictional service declarations.",
+      "constraints": [{"id": "credits", "text": "Monthly service cost at most 5 credits", "hard": true}]
+    },
+    "preferred_windows": {
+      "title": "Synthetic platform preference",
+      "goal": "Windows support is preferred. The platform evidence is incomplete.",
+      "constraints": [{"id": "platform", "text": "Prefer Windows support", "hard": false}]
+    }
+  },
+  "sources": {
+    "alpha_portable": {
+      "candidate": "alpha", "url": "https://alpha.example/docs/readme", "version": "synthetic-alpha-v1",
+      "content": "# Fictional Alpha\nSupports Windows and Linux. Runs locally without an external sandbox. Monthly service cost is 10 credits.\nThese statements are synthetic documentation claims, not execution results.\n"
+    },
+    "beta_linux": {
+      "candidate": "beta", "url": "https://beta.example/docs/readme", "version": "synthetic-beta-v1",
+      "content": "# Fictional Beta\nSupports Linux only. Requires an external sandbox. Monthly service cost is 30 credits.\nThese statements are synthetic documentation claims, not execution results.\n"
+    },
+    "alpha_missing": {
+      "candidate": "alpha", "url": "https://alpha.example/docs/readme", "version": "synthetic-alpha-incomplete",
+      "content": "# Fictional Alpha\nA task runner. Platform support and deployment dependencies are not documented.\n"
+    },
+    "beta_missing": {
+      "candidate": "beta", "url": "https://beta.example/docs/readme", "version": "synthetic-beta-incomplete",
+      "content": "# Fictional Beta\nAn assistant. Platform support and deployment dependencies are not documented.\n"
+    },
+    "alpha_sandbox": {
+      "candidate": "alpha", "url": "https://alpha.example/docs/readme", "version": "synthetic-alpha-v2-sandbox",
+      "content": "# Fictional Alpha\nSupports Windows and Linux. Requires an external sandbox. Monthly service cost is 10 credits.\nThe new sandbox dependency is a synthetic change.\n"
+    },
+    "alpha_wording": {
+      "candidate": "alpha", "url": "https://alpha.example/docs/readme", "version": "synthetic-alpha-v2-wording",
+      "content": "# Fictional Alpha project\nSupports Windows and Linux. Runs locally without an external sandbox. Monthly service cost is 10 credits.\nThe examples use shorter sentences. No platform, dependency, or credit declaration changed.\n"
+    },
+    "alpha_linux": {
+      "candidate": "alpha", "url": "https://alpha.example/docs/readme", "version": "synthetic-alpha-v2-linux",
+      "content": "# Fictional Alpha\nSupports Linux only. Windows is not supported in this version. Runs locally without an external sandbox.\n"
+    },
+    "alpha_official_windows": {
+      "candidate": "alpha", "url": "https://alpha.example/docs/platform", "version": "synthetic-alpha-v2-platform",
+      "content": "# Fictional Alpha platform page\nSupports Windows in the current version. This synthetic page conflicts with a Linux-only current README.\n"
+    }
+  },
+  "source_sets": {
+    "portable": ["alpha_portable", "beta_linux"],
+    "missing": ["alpha_missing", "beta_missing"],
+    "sandbox": ["alpha_sandbox", "beta_linux"],
+    "wording": ["alpha_wording", "beta_linux"],
+    "conflicting": ["alpha_linux", "alpha_official_windows", "beta_linux"],
+    "before_conflict": ["alpha_portable", "alpha_official_windows", "beta_linux"]
+  },
+  "scenarios": [
+    {
+      "id": "initial-portable", "group": "initial", "title": "Documented Windows path",
+      "initial_spec": "windows", "initial_sources": "portable",
+      "annotations": {
+        "must_identify": [{"candidate": "alpha", "quote": "Supports Windows and Linux."}],
+        "allowed_selection": ["alpha", "defer"], "invalidated_constraints": [], "notify": null,
+        "conflict_expected": false,
+        "rationale": "Alpha declares Windows support. Runtime verification may reasonably remain outstanding."
+      }
+    },
+    {
+      "id": "initial-hard-conflict", "group": "initial", "title": "Hard requirements exclude both candidates",
+      "initial_spec": "offline", "initial_sources": "sandbox",
+      "annotations": {
+        "must_identify": [
+          {"candidate": "alpha", "quote": "Requires an external sandbox."},
+          {"candidate": "beta", "quote": "Supports Linux only."}
+        ],
+        "allowed_selection": ["defer"], "invalidated_constraints": [], "notify": null,
+        "conflict_expected": false,
+        "rationale": "Alpha violates the sandbox constraint and Beta violates the Windows constraint."
+      }
+    },
+    {
+      "id": "initial-missing", "group": "initial", "title": "Missing platform evidence",
+      "initial_spec": "windows", "initial_sources": "missing",
+      "annotations": {
+        "must_identify": [{"candidate": "alpha", "quote": "Platform support and deployment dependencies are not documented."}],
+        "allowed_selection": ["defer"], "invalidated_constraints": [], "notify": null,
+        "conflict_expected": false,
+        "rationale": "Neither source establishes Windows support. Absence must remain unknown."
+      }
+    },
+    {
+      "id": "initial-conflicting-docs", "group": "initial", "title": "Conflicting current documentation",
+      "initial_spec": "windows", "initial_sources": "conflicting",
+      "annotations": {
+        "must_identify": [
+          {"candidate": "alpha", "quote": "Windows is not supported in this version."},
+          {"candidate": "alpha", "quote": "Supports Windows in the current version."}
+        ],
+        "allowed_selection": ["defer"], "invalidated_constraints": [], "notify": null,
+        "conflict_expected": true,
+        "rationale": "Keep both contradictory sources and their synthetic versions visible."
+      }
+    },
+    {
+      "id": "constraints-no-sandbox", "group": "constraint_change", "title": "Add a hard sandbox restriction",
+      "initial_spec": "windows", "target_spec": "offline", "initial_sources": "sandbox",
+      "annotations": {
+        "must_identify": [{"candidate": "alpha", "quote": "Requires an external sandbox."}],
+        "allowed_selection": ["defer"], "invalidated_constraints": ["sandbox"], "notify": null,
+        "conflict_expected": false,
+        "rationale": "The old recommendation cannot establish compliance with a newly added hard condition."
+      }
+    },
+    {
+      "id": "constraints-platform", "group": "constraint_change", "title": "Switch the required platform",
+      "initial_spec": "windows", "target_spec": "linux", "initial_sources": "portable",
+      "annotations": {
+        "must_identify": [{"candidate": "beta", "quote": "Supports Linux only."}],
+        "allowed_selection": ["alpha", "beta", "defer"], "invalidated_constraints": ["platform"], "notify": null,
+        "conflict_expected": false,
+        "rationale": "Re-evaluate platform judgments using the latest Linux requirement."
+      }
+    },
+    {
+      "id": "constraints-budget", "group": "constraint_change", "title": "Tighten the synthetic credit budget",
+      "initial_spec": "budget30", "target_spec": "budget5", "initial_sources": "portable",
+      "annotations": {
+        "must_identify": [
+          {"candidate": "alpha", "quote": "Monthly service cost is 10 credits."},
+          {"candidate": "beta", "quote": "Monthly service cost is 30 credits."}
+        ],
+        "allowed_selection": ["defer"], "invalidated_constraints": ["credits"], "notify": null,
+        "conflict_expected": false,
+        "rationale": "Both declared costs exceed the revised five-credit budget. Credits are fictional."
+      }
+    },
+    {
+      "id": "constraints-preference-to-hard", "group": "constraint_change", "title": "Promote a preference to a requirement",
+      "initial_spec": "preferred_windows", "target_spec": "windows", "initial_sources": "missing",
+      "annotations": {
+        "must_identify": [{"candidate": "alpha", "quote": "Platform support and deployment dependencies are not documented."}],
+        "allowed_selection": ["defer"], "invalidated_constraints": ["platform"], "notify": null,
+        "conflict_expected": false,
+        "rationale": "A preference cannot be reused as proof that a new hard requirement is satisfied."
+      }
+    },
+    {
+      "id": "update-dependency", "group": "source_update", "title": "A dependency affects a hard condition",
+      "initial_spec": "offline", "initial_sources": "portable", "target_sources": "sandbox",
+      "annotations": {
+        "must_identify": [{"candidate": "alpha", "quote": "Requires an external sandbox."}],
+        "allowed_selection": ["defer"], "invalidated_constraints": ["sandbox"], "notify": true,
+        "conflict_expected": false,
+        "rationale": "The changed dependency can alter feasibility and warrants a verified impact notification."
+      }
+    },
+    {
+      "id": "update-wording", "group": "source_update", "title": "Wording changes without a factual change",
+      "initial_spec": "offline", "initial_sources": "portable", "target_sources": "wording",
+      "annotations": {
+        "must_identify": [{"candidate": "alpha", "quote": "Runs locally without an external sandbox."}],
+        "allowed_selection": ["alpha", "defer"], "invalidated_constraints": [], "notify": false,
+        "conflict_expected": false,
+        "rationale": "Navigation and explanatory wording do not change platform, dependency, or credit facts."
+      }
+    },
+    {
+      "id": "update-duplicate", "group": "source_update", "title": "Replay the same source event",
+      "initial_spec": "offline", "initial_sources": "portable", "target_sources": "sandbox", "replay_count": 1,
+      "annotations": {
+        "must_identify": [{"candidate": "alpha", "quote": "Requires an external sandbox."}],
+        "allowed_selection": ["defer"], "invalidated_constraints": ["sandbox"], "notify": true,
+        "conflict_expected": false, "duplicate_reports": 0, "duplicate_notifications": 0,
+        "rationale": "The first material change is actionable. Replaying the same snapshot must not duplicate its products."
+      }
+    },
+    {
+      "id": "update-conflict", "group": "source_update", "title": "A new version contradicts a current official page",
+      "initial_spec": "windows", "initial_sources": "before_conflict", "target_sources": "conflicting",
+      "annotations": {
+        "must_identify": [
+          {"candidate": "alpha", "quote": "Windows is not supported in this version."},
+          {"candidate": "alpha", "quote": "Supports Windows in the current version."}
+        ],
+        "allowed_selection": ["defer"], "invalidated_constraints": ["platform"], "notify": true,
+        "conflict_expected": true,
+        "rationale": "The contradiction affects a hard condition. Keep both versions and request verification."
+      }
+    }
+  ],
+  "pilot_runs": ["initial-portable", "update-dependency"],
+  "preregistered_reruns": [
+    {"scenario_id": "constraints-no-sandbox", "variant": "full", "repetitions": 2},
+    {"scenario_id": "update-dependency", "variant": "full", "repetitions": 2}
+  ]
+}
