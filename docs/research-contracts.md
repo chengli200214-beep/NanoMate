@@ -22,6 +22,7 @@ Lists return JSON arrays. Objects and action results return JSON objects. Errors
 - GET `/runs/{id}`: run with `steps`.
 - POST `/runs/{id}/control`: `{action: pause|resume|cancel|retry}`.
 - GET `/projects/{id}/evidence`: array of evidence, optional candidate/dimension/status.
+- GET `/projects/{id}/conflicts`: conflict array, with both evidence IDs and bound versions.
 - POST `/evidence/{id}/correction`: `{fact, quote?, reason}`.
 - POST `/evidence/{id}/reverify`: schedules a scoped research run.
 - GET `/projects/{id}/reports`: report array with markdown.
@@ -41,3 +42,10 @@ spec_id, status, created_at, error, steps. Notification: id, content, feedback, 
 
 Fixture mode is explicitly labelled. It uses public-source snapshots and scripted model
 responses, and is never reported as a live model verification.
+
+SQLite schema version 2 adds run input versions. Opening an existing v1 research
+database adds the field with default 1. New input changes increment the project version
+and fence previous runs. Step commits check owner, attempt, lease, input hash, input
+version and current specification. Snapshots, specifications and reports are immutable.
+Model requests reserve a stable call ID before network I/O; completed usage updates
+the same record. A reclaimed running request becomes unknown and still consumes budget.

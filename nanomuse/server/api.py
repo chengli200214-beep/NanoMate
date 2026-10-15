@@ -479,17 +479,20 @@ def create_app(settings: Settings, service: MuseService | None = None) -> FastAP
         # broken proxy takes its time.
         starting = asyncio.create_task(svc.start(), name="services-start")
         await asyncio.wait({starting}, timeout=settings.server.start_grace)
+        app.state.research.start()
         on_ready = getattr(app.state, "on_ready", None)
         if callable(on_ready):
             on_ready()
         try:
             yield
         finally:
+            await app.state.research.stop()
             if not starting.done():
                 starting.cancel()
             with contextlib.suppress(asyncio.CancelledError, Exception):
                 await starting
             await svc.stop()
+            app.state.research.store.close()
 
     app = FastAPI(
         title="nanoMuse",
@@ -535,6 +538,10 @@ def create_app(settings: Settings, service: MuseService | None = None) -> FastAP
 
     dep = [Depends(auth)]
     dep_or_signed = [Depends(auth_or_signed)]
+
+    from nanomuse.research.api import install_research
+
+    install_research(app, svc, dep)
 
     def _thread_or_404(thread_id: str):  # noqa: ANN202
         thread = svc.threads.get(thread_id)

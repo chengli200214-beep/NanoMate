@@ -147,7 +147,8 @@ def freeze_inputs(
         Path(__file__).resolve(),
         HERE.parents[1] / "scripts/evaluate_research.py",
     ]
-    files += sorted(runtime_dir.glob("*.py")) + sorted(runtime_dir.glob("*.sql"))
+    files += sorted(runtime_dir.rglob("*.py")) + sorted(runtime_dir.rglob("*.sql"))
+    files += sorted(runtime_dir.rglob("*.json"))
     records = []
     for index, path in enumerate(files):
         destination = output / "frozen-inputs" / f"{index:02d}-{path.name}"
@@ -216,6 +217,14 @@ class EvaluationReasoner:
         self.variant = variant
         self.interventions: list[dict[str, Any]] = []
         self.calls: list[dict[str, Any]] = delegate.calls
+
+    def set_call_budget(self, remaining: int) -> None:
+        if hasattr(self.delegate, "set_call_budget"):
+            self.delegate.set_call_budget(remaining)
+
+    def set_call_observer(self, callback: Any) -> None:
+        if hasattr(self.delegate, "set_call_observer"):
+            self.delegate.set_call_observer(callback)
 
     async def extract(self, context: dict[str, Any]) -> Any:
         return await self.delegate.extract(context)
@@ -387,12 +396,11 @@ async def execute_one(
     mode: str,
     settings: Any = None,
 ) -> dict[str, Any]:
-    from nanomuse.research.orchestrator import ResearchOrchestrator
-    from nanomuse.research.store import ResearchStore
-
     from nanomuse.llm.factory import create_llm
     from nanomuse.research.clock import FakeClock
+    from nanomuse.research.orchestrator import ResearchOrchestrator
     from nanomuse.research.reasoning import FixtureReasoner, ResearchReasoner
+    from nanomuse.research.store import ResearchStore
 
     scenario = next(row for row in manifest["scenarios"] if row["id"] == item["scenario_id"])
     directory = output / "executions" / item["execution_id"]

@@ -10,10 +10,12 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Runtime
 
+- Research projects saved source snapshots, evidence, conflicts and report versions. Leased steps resumed after interruption, fenced old inputs, stopped at model call budgets and merged missed checks. Public source reads used the existing Sentinel audit and refused private network destinations.
 - Research reasoning validated snapshot quotes and candidate references, kept unknown hard requirements explicit, and rendered versioned evidence in six-section reports. Offline fixture reports identified scripted replay.
 
 ### Web
 
+- The research workspace added project conditions, source imports, evidence corrections, conflict details, run controls, change tracking and authenticated Markdown exports in English and Chinese.
 - **Each Feed section showed its own load error and retry.** Posts, activity, Next up and calendar requests kept their last successful content when a refresh failed; retrying one section no longer refetched the others.
 
 ### Desktop

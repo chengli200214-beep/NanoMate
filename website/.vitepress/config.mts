@@ -84,6 +84,7 @@ const getStarted: DefaultTheme.SidebarItem[] = [
 ]
 
 const useIt: DefaultTheme.SidebarItem[] = [
+  { text: 'Continuous technical research', link: '/research' },
   { text: 'Every device', link: '/every-device' },
   { text: 'The screen as a hand', link: '/gui' },
   { text: 'Computer use, on the desktop', link: '/desktop-muse#computer-use' },
@@ -142,6 +143,7 @@ const zhGetStarted: DefaultTheme.SidebarItem[] = [
 ]
 
 const zhUseIt: DefaultTheme.SidebarItem[] = [
+  { text: '持续技术选型助手', link: '/zh/research' },
   { text: '每一台设备', link: '/zh/every-device' },
   { text: '「手」：把屏幕当手用', link: '/zh/gui' },
   { text: '桌面版的电脑操作', link: '/zh/desktop-muse#computer-use' },

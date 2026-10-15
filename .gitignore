@@ -76,3 +76,6 @@ uv.lock
 
 # nanoMuse Cloud relay runtime data
 cloud/data/
+
+# Research workbench: isolated local settings, access token, databases and reports.
+.local/

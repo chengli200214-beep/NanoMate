@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Protocol, runtime_checkable
 
 from pydantic import BaseModel, ConfigDict, Field
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 CONTRACT_VERSION = "research-v1"
 STAGES = ("collect", "extract", "compare", "publish")
 RUN_TERMINAL = {"succeeded", "failed", "cancelled"}
@@ -49,6 +49,7 @@ class FetchedSource(StrictModel):
     not_modified: bool = False
 
 
+@runtime_checkable
 class SourceFetcher(Protocol):
     async def fetch(
         self, source: dict[str, Any], previous: dict[str, Any] | None = None
@@ -62,7 +63,9 @@ class EvidenceDraft(StrictModel):
     fact: str
     quote: str = Field(min_length=1, max_length=2000)
     locator: str = ""
-    verification: Literal["documentation", "source", "inference", "unknown"] = "documentation"
+    verification: Literal["documentation", "source", "inference", "unknown", "user_correction"] = (
+        "documentation"
+    )
 
 
 class DecisionDraft(StrictModel):
@@ -74,10 +77,19 @@ class DecisionDraft(StrictModel):
     evidence_refs: list[str] = Field(default_factory=list)
 
 
+class ConflictDraft(StrictModel):
+    candidate: str
+    dimension: str
+    evidence_refs: list[str] = Field(min_length=2, max_length=20)
+    reason: str = Field(min_length=1, max_length=2000)
+    version_scope: str = Field(default="", max_length=1000)
+
+
 class Comparison(StrictModel):
     summary: str
     recommendation: str
     decisions: list[DecisionDraft]
+    conflicts: list[ConflictDraft] = Field(default_factory=list)
     unknowns: list[str] = Field(default_factory=list)
     next_steps: list[str] = Field(default_factory=list)
 

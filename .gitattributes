@@ -2,6 +2,9 @@
 # a CRLF checkout breaks them, so they keep LF whatever core.autocrlf says. Nothing else is
 # normalised: android/ is an upstream subtree and carries a few vendored files as they came.
 *.sh text eol=lf
+web/src/ideas/*.json text eol=lf
+web/index.html text eol=lf
+nanomuse/server/static/index.html text eol=lf
 gradlew text eol=lf
 
 # The desktop (harness/) is built and tested on Windows runners, whose checkout turns LF into
