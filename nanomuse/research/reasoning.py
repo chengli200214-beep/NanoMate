@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import time
+import uuid
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any, TypeVar
@@ -143,6 +144,7 @@ class ResearchReasoner:
         self.context_budget_chars = context_budget_chars
         self.calls: list[dict[str, Any]] = []
         self._remaining_calls: int | None = None
+        self._call_observer: Callable[[dict[str, Any]], None] | None = None
 
     def set_call_budget(self, remaining: int) -> None:
         """Set the persistent run's remaining allowance across every following stage."""
@@ -153,6 +155,10 @@ class ResearchReasoner:
     def _check_call_budget(self) -> None:
         if self._remaining_calls is not None and self._remaining_calls <= 0:
             raise ResearchCallLimitError("The shared research run model call budget is exhausted")
+
+    def set_call_observer(self, callback: Callable[[dict[str, Any]], None] | None) -> None:
+        """Observe a durable reservation before asking, then update that same call ID."""
+        self._call_observer = callback
 
     async def extract(self, context: dict[str, Any]) -> list[EvidenceDraft]:
         normalized = normalize_context(context)
@@ -277,6 +283,7 @@ class ResearchReasoner:
             self._remaining_calls -= 1
         started = time.perf_counter()
         entry: dict[str, Any] = {
+            "id": "call_" + uuid.uuid4().hex,
             "stage": stage,
             "model": self.llm.name,
             "attempt": attempt,
@@ -284,9 +291,14 @@ class ResearchReasoner:
             "output_tokens": None,
             "total_tokens": None,
             "duration_ms": 0,
-            "status": "failed",
-            "error_type": "model_error",
+            "status": "running",
+            "error_type": None,
         }
+        observer = self._call_observer
+        # A storage failure here must prevent the provider request. A callback that
+        # committed before raising may leave a conservative running reservation.
+        if observer:
+            observer(entry.copy())
         try:
             response = await self.llm.ask(messages, tools=tools)
             entry["model"] = response.model or self.llm.name
@@ -302,11 +314,16 @@ class ResearchReasoner:
                 f"Provider request failed ({type(exc).__name__})",
                 status_code if isinstance(status_code, int) else None,
             )
+            entry["status"] = "failed"
             entry["error_type"] = error.code
             raise error from exc
         finally:
+            if entry["status"] == "running":
+                entry["status"], entry["error_type"] = "unknown", "interrupted"
             entry["duration_ms"] = round((time.perf_counter() - started) * 1000, 3)
             self.calls.append(entry)
+            if observer:
+                observer(entry.copy())
 
 
 def _fixture_excerpt(content: str, max_chars: int = 1000) -> str | None:

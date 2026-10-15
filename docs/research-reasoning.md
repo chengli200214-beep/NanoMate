@@ -45,6 +45,15 @@ shared allowance raises `ResearchCallLimitError` without making or logging an in
 request. The stage-specific ceiling still applies. The orchestrator must reset the
 remaining allowance from persisted call records when resuming a step or a run.
 
+`set_call_observer(callback)` lets the orchestrator persist a `running` reservation with
+a unique `call_` UUID before the provider is asked. The final callback uses the same ID
+and reports success, failure, or an unknown interrupted outcome. The in-memory list
+still contains one entry per actual request. A reservation write failure blocks the
+request; a reservation that committed before an error can conservatively remain counted.
+Final storage failures propagate while retaining the actual request in `calls`. An
+interrupted process can leave a `running` reservation, which must count against the
+persisted run budget rather than being treated as an unused allowance.
+
 Context selection retains the complete project specification. It records omitted
 records in `context_gaps` when the character budget is exhausted. Registered snapshots
 remain readable through `read_source`. This budget describes characters, not billable
@@ -93,6 +102,11 @@ not change live-model extraction.
 扣除一次额度，失败、工具轮次和修复均计数。余额不足时抛出 `ResearchCallLimitError`，不会
 发送请求或生成虚假调用记录。每阶段原有上限继续生效，编排器恢复时依据已持久化调用重设
 余额。离线脚本不读取评测答案，也不人为制造冲突识别成功，只忠实保留已登记冲突的未知状态。
+
+`set_call_observer(callback)` 在模型请求前用唯一 `call_` UUID 预留 running 记录，完成后
+用同一 ID 更新成功、失败或中断后未知的状态。内存调用列表仍按实际请求逐次记录。预留写入
+失败时不发请求；若已写入后才报错，允许保守计入该预留。最终状态写入失败会向上传播，实际
+调用仍保留在 `calls`。进程崩溃留下的 running 记录必须计入持久预算，不能当成未使用额度。
 
 报告固定包含当前推荐、硬条件检查、候选对照、推荐依据、不确定项和下一步，并列出来源、
 快照及版本。离线 `FixtureReasoner` 只允许 fixture 模式，通过上游 `MockLLM` 重放当前快照。

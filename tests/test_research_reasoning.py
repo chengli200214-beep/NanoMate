@@ -154,7 +154,10 @@ async def test_extract_checks_quote_and_records_reported_usage() -> None:
     reasoner = ResearchReasoner(llm)
     extracted = await reasoner.extract(context())
     assert extracted[0].quote == "Supports Windows."
-    assert reasoner.calls[0] | {"duration_ms": 0} == {
+    assert reasoner.calls[0]["id"].startswith("call_")
+    assert {key: value for key, value in reasoner.calls[0].items() if key != "id"} | {
+        "duration_ms": 0
+    } == {
         "stage": "extract",
         "model": "script-model",
         "attempt": 1,
