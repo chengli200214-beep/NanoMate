@@ -15,6 +15,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 from nanomuse.config import load_settings  # noqa: E402
 from nanomuse.logger import setup_logging  # noqa: E402
 from nanomuse.research.contracts import Constraint, ProjectSpec  # noqa: E402
+from nanomuse.research.sources.dns import DNS_MODES  # noqa: E402
 from nanomuse.server import create_app  # noqa: E402
 from nanomuse.server.service import MuseService  # noqa: E402
 
@@ -24,6 +25,7 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8787)
     parser.add_argument("--data-dir", type=Path, default=Path(".local/research-dev"))
     parser.add_argument("--config", type=Path)
+    parser.add_argument("--source-dns", choices=DNS_MODES, default=None)
     parser.add_argument(
         "--seed-fixture", action="store_true", help="Create one labelled offline replay project."
     )
@@ -33,6 +35,8 @@ def main() -> None:
 
     data_dir = args.data_dir.expanduser().resolve()
     os.environ["NANOMUSE_DATA_DIR"] = str(data_dir)
+    if args.source_dns is not None:
+        os.environ["NANOMUSE_RESEARCH_DNS"] = args.source_dns
     settings = load_settings(args.config)
     settings.data_dir = data_dir
     settings.agent.workspace = data_dir / "workspace"

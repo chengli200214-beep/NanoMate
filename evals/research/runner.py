@@ -396,8 +396,8 @@ async def execute_one(
     mode: str,
     settings: Any = None,
 ) -> dict[str, Any]:
-    from nanomuse.llm.factory import create_llm
     from nanomuse.research.clock import FakeClock
+    from nanomuse.research.model import create_research_llm
     from nanomuse.research.orchestrator import ResearchOrchestrator
     from nanomuse.research.reasoning import FixtureReasoner, ResearchReasoner
     from nanomuse.research.store import ResearchStore
@@ -455,7 +455,7 @@ async def execute_one(
     target_calls_start = 0
     try:
         if mode == "live":
-            llm = create_llm(settings.llm.model_copy(), data_dir=settings.data_dir)
+            llm = create_research_llm(settings)
             reasoner = EvaluationReasoner(ResearchReasoner(llm), item["variant"])
             engine.reasoner = reasoner
         needs_setup = scenario["group"] != "initial" and item["variant"] != "baseline"
@@ -607,11 +607,10 @@ async def run_suite(args: argparse.Namespace) -> dict[str, Any]:
     freeze = freeze_inputs(args.manifest, args.output, matrix)
     settings = None
     if args.mode == "live":
-        from nanomuse.config import load_settings
-        from nanomuse.llm.factory import llm_ready
+        from nanomuse.research.model import load_research_settings, research_model_ready
 
-        settings = load_settings(args.config)
-        if not llm_ready(settings.llm, data_dir=settings.data_dir):
+        settings = load_research_settings(args.config, args.data_dir)
+        if not research_model_ready(settings):
             summary = summarize([], args.mode, len(matrix))
             summary["configuration_error"] = (
                 "No configured model is ready. No model calls were made."
@@ -654,6 +653,7 @@ def parser() -> argparse.ArgumentParser:
     suffix = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
     result.add_argument("--output", type=Path, default=HERE / "runs" / suffix)
     result.add_argument("--config", type=Path, default=None)
+    result.add_argument("--data-dir", type=Path, default=None)
     result.add_argument("--scenario", action="append", default=[])
     result.add_argument("--first-round-only", action="store_true")
     result.add_argument(

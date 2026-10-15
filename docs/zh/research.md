@@ -25,6 +25,15 @@ npm --prefix web run build
 `.local/research-dev/`，该目录已加入 Git 忽略规则。用 Ctrl+C 停止，使用同一命令和数据目录
 重启后继续工作。可用 `--port`、`--data-dir` 建立另一个独立实例。同一数据目录只启动一个服务。
 
+系统 DNS 返回代理虚拟地址时，可显式选择公共加密 DNS：
+
+```powershell
+.venv/Scripts/python.exe scripts/research_dev.py --seed-fixture --source-dns cloudflare
+```
+
+该选项只作用于已登记研究来源的读取，会把来源域名发送给 Cloudflare，保留公网地址检查，
+不修改 Windows 网络设置。详见[来源读取](research-sources.md)。
+
 这个专用启动器直接进入调研工作台，跳过聊天初始化，不要求登录 nanoMuse Cloud，并在当前
 进程禁用邮件、日历、联系人、GUI、浏览器、skills、MCP 和 Hub。真实项目仍须配置模型。
 上游 `nanomuse serve` 的初始化流程保持原有行为。
@@ -97,6 +106,27 @@ DeepSeek 真实研究、真实来源网络访问、夜间停机与次日定时�
 [研究推理](research-reasoning.md)、[来源读取](research-sources.md)，实验口径见
 [评测说明](research-evaluation.md)。
 已完成的检查和待办验收见 [开发与验证记录](research-status.md)。
+
+以下命令分别留存验收结果，输出目录不能覆盖。模型命令使用工作台原有配置和加密保险库：
+
+```powershell
+.venv/Scripts/python.exe scripts/research_network_smoke.py --source-dns cloudflare --output .local/verification/network-check
+.venv/Scripts/python.exe scripts/research_model_smoke.py --data-dir .local/research-dev --output .local/verification/model-check
+.venv/Scripts/python.exe scripts/evaluate_research.py --mode live --pilot --data-dir .local/research-dev
+.venv/Scripts/python.exe scripts/research_wall_clock_probe.py watch --output .local/verification/wall-clock
+.venv/Scripts/python.exe scripts/research_wall_clock_probe.py watch --overnight --daily-time 09:00 --timezone Asia/Shanghai --output .local/verification/overnight
+```
+
+联网命令通过 Sentinel 读取两个仓库、元信息、发布记录、固定文件和公开文档，再验证未变化
+时的读取。可用 `--kind file` 在新目录复查失败类型，避免重复全部请求。模型命令要求模型
+实际选择并成功调用研究工具，普通聊天回复不能通过。缺少凭据时记录 `needs_configuration`
+和零次请求。两者都不代表研究结论质量已经达标。
+
+真实时间检查建立两个独立的固定资料项目，先停止工作进程，等待 130 个真实秒数后用另一个
+进程恢复，核对漏跑合并和无变化时零新增调用、报告及提醒。加 `--overnight` 时等待次日所选
+时区的指定时刻，并要求至少经过六小时。电脑和计时程序需要持续运行，期间修改运行时代码
+会拒绝验收。验收数据库与工作台项目分开，等待程序本身不运行研究 worker。只有跨夜摘要
+实际完成后，才能标记跨夜验收通过。标注审定和真人试用仍需要真实的审查者与使用者。
 
 ## 实现参与方式
 

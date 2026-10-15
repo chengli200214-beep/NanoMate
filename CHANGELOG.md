@@ -10,6 +10,9 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Runtime
 
+- Research source reads added an explicit public DNS over HTTPS option for networks with synthetic DNS answers, while retaining private-address checks and IP pinning. Release snapshots bounded their page to five records and declared incomplete history.
+- Research file sources pinned to a full commit used conditional raw reads without spending GitHub API quota or forwarding API credentials.
+- Research evaluation used the selected local workbench's settings and resolved vault credentials only in the model client. Real network and wall-clock recovery probes retained separate local acceptance records.
 - Research projects saved source snapshots, evidence, conflicts and report versions. Leased steps resumed after interruption, fenced old inputs, stopped at model call budgets and merged missed checks. Public source reads used the existing Sentinel audit and refused private network destinations.
 - Research reasoning validated snapshot quotes and candidate references, kept unknown hard requirements explicit, and rendered versioned evidence in six-section reports. Offline fixture reports identified scripted replay.
 - Research model throttling carried numeric Retry-After waits into the durable scheduler.

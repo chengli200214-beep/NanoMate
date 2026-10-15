@@ -14,7 +14,7 @@
 | `readme` | 公开 GitHub 仓库 URL | 固定到完整 commit 的 README |
 | `file` | 明确指定的 GitHub `blob` 或 `raw` 文件 URL | 固定到完整 commit 的 UTF-8 文件 |
 | `metadata` | 公开 GitHub 仓库 URL | 筛选后的元信息 JSON 与正文哈希 |
-| `releases` | 公开 GitHub 仓库 URL | 最多 20 条公开版本记录与正文哈希 |
+| `releases` | 公开 GitHub 仓库 URL | 单页最多 5 条公开版本记录、覆盖范围与正文哈希 |
 | `document` | 用户明确添加的文档 URL | 清洗后的 Markdown、纯文本或 JSON 与正文哈希 |
 | `manual` | 粘贴的 Markdown 或纯文本，可附原始 URL | 原始文本与正文哈希 |
 
@@ -24,7 +24,12 @@
 读取 GitHub 文件时先解析 ref，再把解析出的 commit 传给文件接口。返回的
 出处 URL 包含完整 commit。保存的 ETag 属于 ref 解析接口，后续收到 `304`
 时直接复用已存文件。元信息、Releases 和文档使用各自接口的 ETag。
+明确指定完整 commit 的文件直接读取对应 raw 文件，并保存 ETag，节省 GitHub API
+配额；网络边界保持相同，也不会向 raw 主机发送可选的 GitHub API 令牌。
 收到 `304` 时必须已有成功快照。读取失败会返回错误，旧正文不会被改成刚刚核验。
+
+Releases JSON 包含 `scope.history_complete=false`，明确该页不代表完整版本历史。
+每条说明保留全文。单页仍超过限制时会拒绝来源，不会静默截短说明。
 
 HTML 清洗移除导航、页眉、页脚、脚本、表单、侧栏、隐藏元素和注释，
 保留正文中的版本、依赖和接口说明。文档和手动文本的版本是保存正文的
@@ -42,6 +47,15 @@ GitHub 星数等字段只是维护信号，不能作为质量结论。
 每次请求与每一跳重定向都会重新检查。实际连接固定到已检查的 IP，并保留原始
 Host 和 TLS 服务器名称，避免再次解析 DNS 时切换目的地址。关闭环境代理，
 拒绝 HTTPS 降级到 HTTP，跨来源重定向移除认证和条件请求头。
+
+默认使用系统 DNS。本地解析返回代理虚拟地址时，可显式设置
+`NANOMUSE_RESEARCH_DNS=cloudflare`，或启动时加 `--source-dns cloudflare`。
+它通过固定的 `https://1.1.1.1/dns-query` 查询 IPv4 和 IPv6，保留 TLS 验证，限制
+响应大小，不跟随重定向，不使用环境代理。该选项会把已登记来源的域名发送给
+Cloudflare，不会向解析器发送正文或凭据。解析结果仍须通过相同的公网检查，
+实际连接仍固定到已检查的 IP。失败时不自动切换解析服务。接口依据见 Cloudflare
+[JSON API](https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/make-api-requests/dns-json/)
+与[公共地址](https://developers.cloudflare.com/1.1.1.1/ip-addresses/)。
 
 可选构造参数 `github_token` 只发送给 HTTPS GitHub API，不进入返回正文和错误消息。
 省略时读取 `NANOMUSE_RESEARCH_GITHUB_TOKEN`，显式传入空字符串时不使用令牌。

@@ -223,7 +223,9 @@ async def test_model_initialization_failure_is_retained_before_any_call(
     monkeypatch.setattr(factory, "create_llm", fail)
     manifest = load_manifest(DEFAULT_MANIFEST)
     item = build_matrix(manifest, scenario_ids={"initial-portable"}, include_reruns=False)[0]
-    result = await execute_one(manifest, item, tmp_path, "live", Settings())
+    settings = Settings()
+    settings.llm.api_key = "synthetic-test-value"
+    result = await execute_one(manifest, item, tmp_path, "live", settings)
     assert result["status"] == "failed" and result["target_run"] is None
     assert result["target_duration_ms"] is None
     assert result["usage"]["model_calls"] == 0

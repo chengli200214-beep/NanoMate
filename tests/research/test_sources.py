@@ -322,7 +322,7 @@ async def test_github_metadata_and_releases_are_read_only_json(kind: str) -> Non
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.method == "GET"
         if kind == "releases":
-            assert request.url.params["per_page"] == "20"
+            assert request.url.params["per_page"] == "5"
         return httpx.Response(200, json=payload, headers={"etag": '"data"'})
 
     result = await fetcher(handler).fetch({"kind": kind, "url": REPO})
@@ -332,6 +332,44 @@ async def test_github_metadata_and_releases_are_read_only_json(kind: str) -> Non
     assert "assets" not in result.content
     if kind == "metadata":
         assert "url" not in data["license"]
+    else:
+        assert data["scope"]["history_complete"] is False
+        assert data["releases"][0]["body"] == "Dependency changed."
+
+
+async def test_long_release_notes_retain_whole_bodies_with_explicit_history_scope() -> None:
+    notes = "Release detail.\n" * 2100
+    payload = [{"id": index, "body": notes} for index in range(5)]
+    result = await fetcher(lambda r: httpx.Response(200, json=payload)).fetch(
+        {"kind": "releases", "url": REPO}
+    )
+    data = json.loads(result.content)
+    assert len(data["releases"]) == 5
+    assert all(item["body"] == notes for item in data["releases"])
+    assert data["scope"]["history_complete"] is False
+
+
+async def test_fixed_commit_file_uses_conditional_raw_read_without_api_or_token() -> None:
+    requests = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        assert request.headers["host"] == "raw.githubusercontent.com"
+        assert "authorization" not in request.headers
+        assert request.url.path == f"/research-example/sample/{SHA}/docs/setup.md"
+        if "if-none-match" in request.headers:
+            return httpx.Response(304, headers={"etag": '"file"'})
+        return httpx.Response(
+            200, text="# Setup\nWindows instructions.", headers={"etag": '"file"'}
+        )
+
+    client = fetcher(handler, github_token="synthetic-test-value")
+    source = {"kind": "file", "url": f"{REPO}/blob/{SHA}/docs/setup.md"}
+    result = await client.fetch(source)
+    repeated = await client.fetch(source, result.model_dump())
+    assert len(requests) == 2
+    assert result.version == SHA and result.url == source["url"]
+    assert repeated.not_modified and repeated.content == result.content
 
 
 async def test_rate_limit_retry_after_is_exposed_without_response_body() -> None:

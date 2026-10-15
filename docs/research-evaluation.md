@@ -16,6 +16,17 @@ uses the configured model against the same synthetic inputs. Draft annotations s
 require human review, and absent token usage remains null. Read the runner's README
 for the precise scope of its two experimental interventions.
 
+For a local workbench configured through Settings, pass `--data-dir .local/research-dev`
+to `scripts/evaluate_research.py --mode live --pilot`. The selected directory is applied
+before the app-settings overlay is loaded. Vault references resolve only in the copied
+model client configuration; missing references stop the run before any request. The
+saved settings and result summaries retain no resolved key.
+
+`scripts/research_model_smoke.py` separately requires a real model-selected, successful
+research tool call. It accepts at most two reasoner requests and does not pass a plain
+chat response. It records no semantic accuracy or cost estimate. The selected model's
+SDK may perform its configured transport retries within those requests.
+
 ## 中文
 
 评测运行器默认只冻结场景、SHA-256 和运行矩阵，不请求模型。显式选择 fixture 后，才会

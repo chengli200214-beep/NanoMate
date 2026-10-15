@@ -23,12 +23,14 @@ from html2text import HTML2Text
 from nanomuse.research.clock import SystemClock, iso
 from nanomuse.research.contracts import Clock, FetchedSource
 
+from .dns import configured_resolver
 from .errors import SourceError
 from .security import PublicTransport, Resolver, validate_url
 
 MAX_BODY_BYTES = 2 * 1024 * 1024
 MAX_CONTENT_CHARS = 200_000
 MAX_REDIRECTS = 5
+RELEASE_PAGE_SIZE = 5
 _SHA = re.compile(r"[0-9a-f]{40}")
 
 
@@ -156,7 +158,7 @@ class HttpSourceFetcher:
             else github_token
         )
         self._transport = transport
-        self._resolver = resolver
+        self._resolver = resolver if resolver is not None else configured_resolver()
         self._clock = clock or SystemClock()
         self._timeout = timeout
         self._max_bytes = max_body_bytes
@@ -364,8 +366,39 @@ class HttpSourceFetcher:
     ) -> FetchedSource:
         kind = str(source.get("kind", "readme"))
         old_etag = str(previous.get("etag", "")) if previous else ""
+        if kind == "file" and repo.path and _SHA.fullmatch(repo.ref):
+            # The owner already supplied an immutable commit. Reading its public raw
+            # file needs no API ref resolution, contents request, or GitHub token.
+            endpoint = (
+                f"https://raw.githubusercontent.com/{repo.owner}/{repo.name}/"
+                f"{repo.ref}/{quote(repo.path, safe='/')}"
+            )
+            response = await self._get(client, endpoint, etag=old_etag)
+            if response.status_code == 304:
+                return self._unchanged(source, previous, response.headers.get("etag", ""))
+            try:
+                content = response.content.decode("utf-8-sig")
+            except UnicodeDecodeError as exc:
+                raise SourceError(
+                    "The GitHub file is not UTF-8 text.", code="invalid_content"
+                ) from exc
+            if "\x00" in content:
+                raise SourceError("Binary files are not supported.", code="invalid_content")
+            content = self._limit(content.strip())
+            if not content:
+                raise SourceError("The GitHub file is empty.", code="empty_source")
+            return FetchedSource(
+                url=f"{repo.url}/blob/{repo.ref}/{quote(repo.path, safe='/')}",
+                title=str(source.get("title") or f"{repo.owner}/{repo.name}: {repo.path}"),
+                content=content,
+                version=repo.ref,
+                etag=response.headers.get("etag", ""),
+                fetched_at=iso(self._clock.now()),
+            )
         if kind in ("metadata", "releases"):
-            endpoint = repo.api + ("/releases?per_page=20" if kind == "releases" else "")
+            endpoint = repo.api + (
+                f"/releases?per_page={RELEASE_PAGE_SIZE}" if kind == "releases" else ""
+            )
             response = await self._get(client, endpoint, etag=old_etag)
             if response.status_code == 304:
                 return self._unchanged(source, previous, response.headers.get("etag", ""))
@@ -413,6 +446,14 @@ class HttpSourceFetcher:
                     for release in data
                     if isinstance(release, dict)
                 ]
+                data = {
+                    "scope": {
+                        "max_records": RELEASE_PAGE_SIZE,
+                        "history_complete": False,
+                        "note": "Only one page of public release records is included.",
+                    },
+                    "releases": data,
+                }
             content = self._limit(json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2))
             return FetchedSource(
                 url=repo.url + ("/releases" if kind == "releases" else ""),

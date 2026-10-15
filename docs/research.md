@@ -31,6 +31,17 @@ and stores the token, settings, audit, SQLite database and reports under
 run the same command and data directory to resume it. `--port` and `--data-dir` allow
 another isolated local instance. Do not run two servers against one data directory.
 
+If system DNS returns a proxy's synthetic addresses, explicitly select public DNS
+for registered research sources:
+
+```powershell
+.venv/Scripts/python.exe scripts/research_dev.py --seed-fixture --source-dns cloudflare
+```
+
+This setting affects the research source reader only. It sends source hostnames to
+Cloudflare, retains public-address checks and does not alter Windows network settings.
+See [source transport](research-sources.md).
+
 This dedicated launcher skips chat onboarding and does not require a Cloud account.
 It disables connected mail, calendar, contacts, GUI, browser, skills, MCP and Hub for
 this local process. Live research still requires a model configuration. The normal
@@ -117,6 +128,33 @@ tests additionally verify real `os._exit(86)` recovery. It refuses to overwrite 
 
 Live DeepSeek research, real-source network access, overnight scheduling, next-day
 checks, reviewed scenario labels and human trials are separate acceptance items.
+
+Additional acceptance commands retain independent output directories and refuse to
+overwrite results. The model commands use the workbench's settings and encrypted vault:
+
+```powershell
+.venv/Scripts/python.exe scripts/research_network_smoke.py --source-dns cloudflare --output .local/verification/network-check
+.venv/Scripts/python.exe scripts/research_model_smoke.py --data-dir .local/research-dev --output .local/verification/model-check
+.venv/Scripts/python.exe scripts/evaluate_research.py --mode live --pilot --data-dir .local/research-dev
+.venv/Scripts/python.exe scripts/research_wall_clock_probe.py watch --output .local/verification/wall-clock
+.venv/Scripts/python.exe scripts/research_wall_clock_probe.py watch --overnight --daily-time 09:00 --timezone Asia/Shanghai --output .local/verification/overnight
+```
+
+The network command reads both repositories, metadata, releases, a pinned file and
+public documentation through Sentinel, then checks unchanged reads. `--kind file`
+can verify a failed kind in a new output directory without repeating every request.
+The model probe requires an actual model-selected research tool call. A normal chat
+reply cannot pass it. Missing credentials record `needs_configuration` with zero
+requests. Neither command measures model quality.
+
+The wall-clock probe creates two isolated fixture projects and stops their worker
+process. A timer starts a different process after 130 real seconds, checking missed-run
+merging and zero new calls, reports or notices for unchanged sources. `--overnight`
+waits until the next local date at the chosen daily time and requires six real hours.
+The computer and timer must remain running. Runtime changes during the interval reject
+the probe. Its database is separate from the workbench's projects; the timer itself
+does not run a research worker. Only a completed overnight summary establishes that
+acceptance item. Labels and human trials still require actual reviewers and users.
 The [implementation checkpoint](research-status.md) records measured results and open gates.
 See [contracts](research-contracts.md), [reasoning](research-reasoning.md),
 [source adapters](research-sources.md) and [evaluation](research-evaluation.md).

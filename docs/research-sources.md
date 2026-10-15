@@ -14,7 +14,7 @@ can be read. The adapters implement `SourceFetcher` in `nanomuse/research/contra
 | `readme` | Public GitHub repository URL | README at the resolved full commit |
 | `file` | Exact GitHub `blob` or `raw` file URL | UTF-8 file at the resolved full commit |
 | `metadata` | Public GitHub repository URL | Selected metadata JSON, with a content hash |
-| `releases` | Public GitHub repository URL | Up to 20 published release records, with a content hash |
+| `releases` | Public GitHub repository URL | One page of up to 5 public release records, with an explicit scope and content hash |
 | `document` | An explicitly added documentation URL | Readable Markdown, plain text or JSON, with a content hash |
 | `manual` | Pasted Markdown or text, with an optional source URL | Original text, with a content hash |
 
@@ -25,9 +25,16 @@ does not give the adapter permission to discover or download arbitrary files.
 GitHub file reads first resolve the ref, then request the file with that commit as
 `ref`. The returned URL contains the full commit. The saved ETag belongs to the
 ref resolution, so a later `304` can reuse the saved file without downloading it.
+An explicit file URL with a full commit reads that commit's raw public file directly,
+preserving its ETag and avoiding GitHub API quota. It uses the same destination checks
+and never sends the optional GitHub API token to the raw host.
 Metadata, releases and documentation use their endpoint's ETag. A `304` requires
 a previous snapshot. A failed request raises an error and does not relabel old
 content as freshly verified.
+
+Release JSON includes `scope.history_complete=false`: the records are a bounded page,
+not the complete release history. Bodies remain intact. A page that still exceeds a
+size limit is refused rather than silently shortened.
 
 HTML cleaning removes navigation, headers, footers, scripts, forms, sidebars,
 hidden elements and comments. Main content keeps its version and dependency text.
@@ -50,6 +57,17 @@ The connection uses the checked IP with the original Host and TLS server name, s
 a second DNS lookup cannot change the destination. Environment proxy settings are
 disabled. HTTPS redirects cannot downgrade to HTTP. Authorization and conditional
 headers are removed on a redirect to another origin.
+
+System DNS is the default. An operator can explicitly set
+`NANOMUSE_RESEARCH_DNS=cloudflare` or launch with `--source-dns cloudflare` when local
+DNS returns synthetic proxy addresses. This queries both address families through
+Cloudflare's fixed `https://1.1.1.1/dns-query` endpoint, with TLS verification, a bounded
+response, no redirects and no environment proxy. It discloses registered source
+hostnames to Cloudflare. No source content or credentials are sent to the resolver.
+Returned addresses still pass the same public-address checks and IP pinning. DNS
+failure does not silently fall back to another provider. See Cloudflare's
+[JSON API](https://developers.cloudflare.com/1.1.1.1/encryption/dns-over-https/make-api-requests/dns-json/)
+and [public addresses](https://developers.cloudflare.com/1.1.1.1/ip-addresses/).
 
 An optional `github_token` constructor argument is sent only to the HTTPS GitHub
 API. If omitted, it reads `NANOMUSE_RESEARCH_GITHUB_TOKEN`; passing an empty string
