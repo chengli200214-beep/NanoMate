@@ -27,6 +27,24 @@ research tool call. It accepts at most two reasoner requests and does not pass a
 chat response. It records no semantic accuracy or cost estimate. The selected model's
 SDK may perform its configured transport retries within those requests.
 
+## Approved live batches
+
+Live evaluations require `--review-receipt PATH` and `--scoring-rules PATH`. The receipt
+must approve every scenario, the exact scoring hash, the synthetic scope and an additional
+spending limit. The original draft manifest remains unchanged. The freeze binds the receipt,
+scoring, model settings, evaluation code and exact matrix; output review remains separate.
+
+The batch uses native tools, no hidden transport retries and a shared SQLite currency ledger.
+Each request first reserves the documented context ceiling and configured output allowance
+at verified peak cache-miss rates. Returned usage settles a conservative upper estimate,
+not the provider's bill. Setup, repairs and in-flight requests share the same allowance.
+Unknown usage or a reservation above the stopping threshold stops new paid requests.
+An interrupted request stays reserved across process restarts and requires reconciliation.
+
+`--workers 1` is the default. Up to four independent executions can run concurrently with
+one shared ledger. All variants retain the same model settings. Original failures and
+unexecuted cases remain visible; stopping never turns them into successful results.
+
 ## 中文
 
 评测运行器默认只冻结场景、SHA-256 和运行矩阵，不请求模型。显式选择 fixture 后，才会
@@ -35,3 +53,7 @@ SDK may perform its configured transport retries within those requests.
 
 离线通过只能证明脚本流程运行，不能写成语义正确率、有效提醒或模型效果改善。live 模式
 沿用现有模型配置，输入仍为同一组合成资料。标注待人工审查，缺失 token 不估算补全。
+
+live 批次另须提供审定回执与评分规则，冻结批准的范围、标注、预算和配置。共享账本在请求前
+预留保守费用，覆盖准备、修复和在途请求；用量缺失或即将超出停止阈值时停止新增付费请求。
+输出语义仍需另行复核，不能用标注获批替代结果审查。

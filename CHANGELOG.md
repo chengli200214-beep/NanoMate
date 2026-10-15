@@ -10,6 +10,7 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Runtime
 
+- Research live evaluations required hash-bound owner approval and shared a durable currency guard across preparation, repairs and concurrent executions. Unknown provider usage stopped new requests, and freezes retained scoring and model settings separately from output review.
 - Research reasoning rejected oversized tool batches without partial execution and gave the model bounded corrective feedback before retrying.
 - Research source reads added an explicit public DNS over HTTPS option for networks with synthetic DNS answers, while retaining private-address checks and IP pinning. Release snapshots bounded their page to five records and declared incomplete history.
 - Research file sources pinned to a full commit used conditional raw reads without spending GitHub API quota or forwarding API credentials.

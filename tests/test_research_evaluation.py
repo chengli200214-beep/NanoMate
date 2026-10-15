@@ -112,6 +112,8 @@ async def test_fixture_really_executes_orchestrator_and_keeps_artifacts(tmp_path
         [
             "--mode",
             "fixture",
+            "--workers",
+            "3",
             "--scenario",
             "initial-portable",
             "--first-round-only",
@@ -121,6 +123,7 @@ async def test_fixture_really_executes_orchestrator_and_keeps_artifacts(tmp_path
     )
     summary = await run_suite(args)
     assert summary["executed"] == 2
+    assert summary["workers"] == 3
     assert summary["execution_statuses"] == {"succeeded": 2}
     assert summary["execution_mode"] == "offline_scripted_workflow_verification"
     assert summary["usage"]["input_tokens"] is None

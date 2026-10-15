@@ -12,8 +12,8 @@ python scripts/evaluate_research.py
 python scripts/evaluate_research.py --mode fixture --pilot
 python scripts/evaluate_research.py --mode fixture --first-round-only
 python scripts/evaluate_research.py --mode fixture
-python scripts/evaluate_research.py --mode live --pilot --config config/config.toml
-python scripts/evaluate_research.py --mode live --config config/config.toml
+python scripts/evaluate_research.py --mode live --pilot --review-receipt PATH --scoring-rules PATH
+python scripts/evaluate_research.py --mode live --review-receipt PATH --scoring-rules PATH
 ```
 
 The default is `dry-run`: it freezes input hashes and writes a plan, without a model
@@ -29,7 +29,15 @@ additional full-version reruns each. The default complete plan therefore has 36
 executions, with first-round and preregistered-rerun results identified separately.
 `--pilot` runs the two predetermined full-version pilot cases. Use their actual live
 usage and the provider's verified prices to estimate spending before the full matrix.
-No prices or synthetic token counts are assumed by this runner.
+Live batches require hash-bound owner approval and the verified pricing policy in
+`review.py`. The shared SQLite ledger reserves the entire vendor context ceiling before
+each request at peak cache-miss rates, then settles using returned token counts. It records
+a conservative spending upper bound, not a verified bill. Setup, failed attempts and
+repairs share the same cap. Unknown usage stops new requests and keeps its reservation.
+Transport retries and tool fallback are disabled for all variants. Up to four workers
+can share the ledger; `--workers 1` is the default. Model configuration and concurrency
+are frozen before execution. Annotations can be approved without claiming independent
+annotation review or semantic review of the eventual outputs.
 
 Every execution has a separate SQLite database and artifact directory. A full update
 scenario first runs its old state, then applies the new conditions or sources. Setup
@@ -81,3 +89,10 @@ The 12 scenarios do not establish statistical significance or broad task quality
 执行前保存文件 SHA-256、commit、工作树状态及代码副本，执行途中输入改变则停止。
 结果保留每例实际行为，语义支持关系、推荐合理性和提醒质量等待人工审查，不自动产出改善
 数字。提供方未返回的 token 保持空值，未核实价格时不估算费用。
+
+真实模型批次必须通过 `--review-receipt PATH --scoring-rules PATH` 提供批准全部标注、
+评分规则、合成范围与新增费用上限的回执。冻结绑定回执和规则哈希；批次共享持久费用账本，
+按高峰缓存未命中单价为每次请求预留上下文上限与输出额度，准备、失败、修复和在途请求
+均计入。结算值是保守上界，不是服务商账单。用量缺失或即将达到停止阈值则停下，未核对的
+中断请求在重启后继续占用预留。统一关闭隐藏重试与工具回退；可用 `--workers` 选择一至四个
+独立执行并发，所有变体配置相同。标注获批与输出语义复核分别记录。

@@ -137,16 +137,26 @@ def _git_info(directory: Path) -> dict[str, Any]:
 
 
 def freeze_inputs(
-    manifest_path: Path, output: Path, matrix: list[dict[str, Any]]
+    manifest_path: Path,
+    output: Path,
+    matrix: list[dict[str, Any]],
+    *,
+    approval: dict[str, Any] | None = None,
+    review_files: list[Path] | None = None,
+    configuration: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     import nanomuse.research
 
     runtime_dir = Path(nanomuse.research.__file__).resolve().parent
     files = [
         manifest_path,
-        Path(__file__).resolve(),
         HERE.parents[1] / "scripts/evaluate_research.py",
     ]
+    files += sorted(HERE.glob("*.py"))
+    root = HERE.parents[1]
+    files += [root / "nanomuse/llm" / name for name in ("base.py", "factory.py", "openai_chat.py")]
+    files += [root / "nanomuse" / name for name in ("schema.py", "config.py")]
+    files += review_files or []
     files += sorted(runtime_dir.rglob("*.py")) + sorted(runtime_dir.rglob("*.sql"))
     files += sorted(runtime_dir.rglob("*.json"))
     records = []
@@ -169,7 +179,9 @@ def freeze_inputs(
         "runtime_code": _git_info(runtime_dir.parents[1]),
         "matrix": matrix,
         "dataset_origin": "synthetic",
-        "annotation_status": "agent_draft_pending_human_review",
+        "annotation_status": approval["status"] if approval else "agent_draft_pending_human_review",
+        "owner_approval": approval,
+        "evaluation_configuration": configuration,
     }
     freeze["freeze_sha256"] = hashlib.sha256(
         json.dumps(freeze, sort_keys=True).encode("utf-8")
@@ -395,6 +407,8 @@ async def execute_one(
     output: Path,
     mode: str,
     settings: Any = None,
+    budget: Any = None,
+    frozen: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     from nanomuse.research.clock import FakeClock
     from nanomuse.research.model import create_research_llm
@@ -427,6 +441,7 @@ async def execute_one(
                 "temperature": settings.llm.temperature,
                 "max_tokens": settings.llm.max_tokens,
                 "tool_mode": settings.llm.tool_mode,
+                "transport_retries": settings.llm.max_retries,
             }
             if mode == "live"
             else {
@@ -456,6 +471,15 @@ async def execute_one(
     try:
         if mode == "live":
             llm = create_research_llm(settings)
+            if budget is not None:
+                from evals.research.budget import BudgetedLLM
+
+                llm = BudgetedLLM(
+                    llm,
+                    budget,
+                    item["execution_id"],
+                    before_request=(lambda: verify_frozen(frozen)) if frozen else None,
+                )
             reasoner = EvaluationReasoner(ResearchReasoner(llm), item["variant"])
             engine.reasoner = reasoner
         needs_setup = scenario["group"] != "initial" and item["variant"] != "baseline"
@@ -512,6 +536,7 @@ async def execute_one(
         for index in range(scenario.get("replay_count", 0)):
             before_reports = len(store.list("report_revision", project_id))
             before_notifications = len(store.list("notification", project_id))
+            before_calls = len(reasoner.calls)
             replay = store.enqueue(project_id, "check", f"evaluation-replay-{index}")
             completed = await _drain(engine, store, replay["id"], clock)
             result["replays"].append(
@@ -521,6 +546,7 @@ async def execute_one(
                     - before_reports,
                     "additional_notifications": len(store.list("notification", project_id))
                     - before_notifications,
+                    "additional_model_calls": len(reasoner.calls) - before_calls,
                 }
             )
     except Exception as exc:
@@ -551,6 +577,7 @@ async def execute_one(
                         "source",
                         "source_snapshot",
                         "evidence",
+                        "evidence_conflict",
                         "decision_revision",
                         "report_revision",
                         "impact_event",
@@ -590,7 +617,7 @@ def summarize(results: list[dict[str, Any]], mode: str, planned: int) -> dict[st
         "interpretation": (
             "Offline results verify scripted workflow execution only. No model-quality, accuracy, "
             "or improvement claim is derived from fixture responses. Live-model runs still use "
-            "synthetic inputs and require human review of the draft annotations."
+            "synthetic inputs. Annotation approval and semantic output review are separate."
         ),
     }
 
@@ -603,14 +630,58 @@ async def run_suite(args: argparse.Namespace) -> dict[str, Any]:
     matrix = build_matrix(
         manifest, include_reruns=not args.first_round_only, pilot=args.pilot, scenario_ids=selected
     )
-    args.output.mkdir(parents=True, exist_ok=False)
-    freeze = freeze_inputs(args.manifest, args.output, matrix)
     settings = None
+    ready = True
     if args.mode == "live":
         from nanomuse.research.model import load_research_settings, research_model_ready
 
         settings = load_research_settings(args.config, args.data_dir)
-        if not research_model_ready(settings):
+        ready = research_model_ready(settings)
+        settings = settings.model_copy(deep=True)
+        settings.llm.tool_mode = "native"
+        settings.llm.max_retries = 0
+        settings.llm.vision = "off"
+    approval = policy = None
+    review_files = []
+    if args.review_receipt or args.scoring_rules:
+        from evals.research.review import load_approval
+
+        if not args.review_receipt or not args.scoring_rules:
+            raise ValueError("Supply both review receipt and scoring rules")
+        approval, policy = load_approval(args.review_receipt, args.scoring_rules, args.manifest)
+        review_files = [args.review_receipt, args.scoring_rules]
+        manifest["annotation_status"] = approval["status"]
+    if args.mode == "live" and ready and not approval:
+        raise ValueError("A live batch requires approved annotations, scoring and a spending limit")
+    configuration = {"mode": args.mode, "workers": args.workers, "budget_policy": policy}
+    if settings is not None:
+        configuration["model"] = {
+            key: getattr(settings.llm, key)
+            for key in (
+                "provider",
+                "model",
+                "temperature",
+                "max_tokens",
+                "tool_mode",
+                "max_retries",
+                "stream",
+                "vision",
+            )
+        }
+        configuration["extra_body_sha256"] = hashlib.sha256(
+            json.dumps(settings.llm.extra_body, sort_keys=True).encode()
+        ).hexdigest()
+    args.output.mkdir(parents=True, exist_ok=False)
+    freeze = freeze_inputs(
+        args.manifest,
+        args.output,
+        matrix,
+        approval=approval,
+        review_files=review_files,
+        configuration=configuration,
+    )
+    if args.mode == "live":
+        if not ready:
             summary = summarize([], args.mode, len(matrix))
             summary["configuration_error"] = (
                 "No configured model is ready. No model calls were made."
@@ -619,9 +690,20 @@ async def run_suite(args: argparse.Namespace) -> dict[str, Any]:
             return summary
     results = []
     aborted = None
-    if args.mode != "dry-run":
-        try:
-            for item in matrix:
+    budget = None
+    if args.mode == "live" and policy:
+        from evals.research.budget import BatchBudget
+
+        budget = BatchBudget(args.output / "batch-budget.db", policy)
+    queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
+    for item in matrix:
+        queue.put_nowait(item)
+
+    async def worker() -> None:
+        nonlocal aborted
+        while not queue.empty() and not aborted and not (budget and budget.stopped):
+            item = queue.get_nowait()
+            try:
                 verify_frozen(freeze)
                 row = await execute_one(
                     manifest,
@@ -629,6 +711,8 @@ async def run_suite(args: argparse.Namespace) -> dict[str, Any]:
                     args.output,
                     args.mode,
                     settings,
+                    budget,
+                    freeze,
                 )
                 results.append(row)
                 print(
@@ -636,10 +720,26 @@ async def run_suite(args: argparse.Namespace) -> dict[str, Any]:
                     f"{row['usage']['model_calls']} target model calls",
                     flush=True,
                 )
+            except Exception as exc:
+                aborted = _safe_error(exc)
+
+    if args.mode != "dry-run":
+        await asyncio.gather(*(worker() for _ in range(args.workers)))
+        try:
+            verify_frozen(freeze)
         except Exception as exc:
             aborted = _safe_error(exc)
+    results.sort(key=lambda row: row["execution_id"])
     summary = summarize(results, args.mode, len(matrix))
     summary["freeze_sha256"] = freeze["freeze_sha256"]
+    summary["annotation_status"] = manifest["annotation_status"]
+    summary["owner_approval"] = approval
+    summary["workers"] = args.workers
+    if budget:
+        summary["batch_budget"] = budget.summary()
+        if budget.stopped:
+            aborted = "Batch stopped: inspect the local currency ledger before further requests"
+        budget.close()
     if aborted:
         summary["aborted"] = aborted
     write_json(args.output / "summary.json", summary)
@@ -656,6 +756,9 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--data-dir", type=Path, default=None)
     result.add_argument("--scenario", action="append", default=[])
     result.add_argument("--first-round-only", action="store_true")
+    result.add_argument("--review-receipt", type=Path, default=None)
+    result.add_argument("--scoring-rules", type=Path, default=None)
+    result.add_argument("--workers", type=int, choices=range(1, 5), default=1)
     result.add_argument(
         "--pilot", action="store_true", help="Run the two preregistered full-version pilots"
     )
