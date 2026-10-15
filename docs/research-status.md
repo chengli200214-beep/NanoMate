@@ -1,8 +1,8 @@
 # Research implementation checkpoint, 2026-10-15
 
-The local research workspace runs and produces labelled offline reports. Real-model,
-overnight and human-review acceptance remain open. This checkpoint
-does not establish completion of the two-day plan's gates.
+The local research workspace completed a real DeepSeek tool call, two live pilots and
+a two-repository comparison with process recovery. Full evaluation, overnight acceptance
+and human review remain open. This checkpoint does not establish completion of all plan gates.
 
 The implementation reuses nanoMuse's model adapters, Sentinel, authentication and web
 shell. New modules own registered-source reads, research state, leased steps, evidence,
@@ -51,12 +51,12 @@ copies and JUnit files are under `.local/verification/current/`.
 
 ## Open acceptance
 
-1. Configure a local DeepSeek key, test a real research tool call, then run the two
-   live evaluation pilots before deciding the full evaluation budget.
+1. Review the draft annotations and choose the full evaluation budget using the measured
+   pilot usage below. Model configuration, the tool probe and both live pilots completed.
 2. Complete actual overnight catch-up and next-day scheduling. Short wall-clock recovery
    passed and the overnight timer is running, awaiting real elapsed time.
-3. Review scenario annotations and cited claims, run the live comparison, and record
-   actual reminder quality and maintenance costs. No improvement percentage is available.
+3. Review cited claims and record reminder quality and maintenance costs. A live public
+   repository comparison completed; no semantic accuracy or improvement percentage is available.
 4. Complete human trials and an owner review of generated code and design tradeoffs.
 
 ## Same-day follow-up
@@ -78,8 +78,8 @@ The semantic expectations still require a real model and reviewed annotations.
 - Release JSON declares `history_complete=false` for up to five records and keeps bodies
   intact. Full-commit files avoid API quota and never receive the API token at the raw host.
 - Model commands load the selected workbench overlay and resolve vault references only in
-  the client copy. Local preflight remains `needs_configuration`, with zero model requests.
-  A plain chat response cannot pass the new model-selected research-tool probe.
+  the client copy. Before user configuration, preflight returned `needs_configuration`, with
+  zero model requests. A plain chat response cannot pass the research-tool probe.
 - A short probe passed after 131 real seconds in distinct processes. Each schedule merged
   into one check; unchanged sources made zero new calls, reports or notices. SQLite passed
   integrity checks. Its inputs remain saved excerpts and scripted MockLLM responses.
@@ -104,6 +104,43 @@ temporary directory, a channels CLI request returning 502, and a shell test requ
 `sleep`. They have not been converted into passes. The upstream web line-ending issue
 was corrected through LF attributes for shared Ideas data. The complete upstream Python
 suite is therefore not reported as green.
+
+## Live model and recovery acceptance
+
+Runtime commit `9be1805` repaired a failure found during real repository comparison.
+The model initially requested more than eight tools in one response; extraction stopped
+without publishing a report. Oversized batches now execute no tools and receive feedback
+within the existing two-repair allowance. The failed attempt remains saved.
+
+- The configured DeepSeek model selected and executed `read_source` in one request,
+  reporting 507 tokens. The key stayed in the local vault and is absent from the records.
+- Both original pilots completed, using 48 requests and 475,890 tokens including setup.
+  On the repaired runtime both pilots completed again, using 41 requests and 413,848 tokens
+  including setup. Target stages accounted for 29 requests and 325,907 tokens in the repaired
+  run. These are separate attempts, not a controlled improvement experiment or a price quote.
+- The dependency-update pilot registered one source-change notice. Both pilots had six-section
+  reports and no observed obsolete or unbound evidence references. Inputs remain synthetic;
+  annotations and semantic support await human review. The full matrix has not run live.
+- The workbench fetched current public READMEs for Open Dots and nanoMuse, preserving commits
+  `64e48f6a784ee83471c45daf4dcfc5393dc6f30e` and
+  `c33c9e83804d226b689be28d4ebc8a70b798074e`. A forced process exit on the repaired runtime
+  recovered extraction in a new process and published one report with 14 evidence records.
+  Exact quote, candidate and version binding checks passed; semantic correctness remains open.
+- Across all retained workbench attempts, 16 requests include two interrupted outcomes marked
+  unknown. Their unreported tokens stay unknown. A subsequent unchanged-source check succeeded
+  with zero new model requests, reports or notifications; SQLite integrity was `ok`.
+- The repaired runtime passed 251 research tests, 97 documentation checks, Ruff and mypy for
+  23 files. The web implementation did not change. The earlier broad upstream failures remain.
+- The earlier overnight preparation was superseded before resumption because the runtime
+  changed. A fresh isolated preparation started at 23:10 Asia/Shanghai on 2026-10-15 and waits
+  until 09:00 on 2026-10-16. Its runtime SHA-256 is
+  `9fe9f9ee8d905c63c1bbb3a236bd0473d37afebd048b610398bfb06f6c7d39ad`.
+  This remains pending; the computer and timer must stay running.
+
+The [sanitized live summary](../evals/research/results/2026-10-15-live.json) retains both pilot
+attempts and the original repository failure. Raw records and the exported report are local
+under `.local/verification/2026-10-15-live-workbench/`. Full evaluation still requires reviewed
+annotations and a total budget; human trials, owner review and continuous recording remain open.
 
 The original user planning file is retained locally without replacing it. Runtime data,
 keys, raw logs and internal planning are excluded from the commits.

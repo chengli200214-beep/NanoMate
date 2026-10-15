@@ -111,11 +111,12 @@ and scripted responses do not replace live acceptance. Mark accelerated operatio
 | 0:35 to 1:20 | Explain completed steps and recovery logs; a live restart uses confirmed isolated demonstration data and rehearsal | Subprocess recovery and no duplicate report |
 | 1:20 to 2:05 | Change a hard requirement, observe the old report become stale, then compare report versions | Requirement revisions, stale marker and report diff |
 | 2:05 to 2:40 | Show change/mute controls and zero new calls on unchanged sources; identify semantic reminders as pending live validation | Wall-clock summary and structured-result tests; no fabricated live notice |
-| 2:40 to 3:00 | Show 248 research tests, 36 offline workflows, failure cases and the three added modules | Checkpoint, sanitized summary and attribution |
+| 2:40 to 3:00 | Show 251 research tests, the earlier 36 offline workflows, live acceptance, failure cases and the three added modules | Checkpoint, sanitized summary and attribution |
 
-Continuous recording, live-model comparisons and three human trials remain separate deliverables. Saved
-history must not be presented as a just-performed action. Scripted responses do not demonstrate
-autonomous semantic detection.
+The live two-repository comparison and process recovery are recorded in the
+[checkpoint](research-status.md). Continuous recording and three human trials remain open.
+Saved history must not be presented as a just-performed action. Scripted responses do not
+demonstrate autonomous semantic detection.
 
 ## Interview evidence
 
@@ -125,8 +126,8 @@ just because it still has a complete report. Commits must check the attempt, lea
 version and project input version together.
 
 Counts are traceable in the [checkpoint](research-status.md) and
-[sanitized follow-up](../evals/research/results/2026-10-15-followup.json). The 248 research
-tests and 36 offline workflows are not live-model task counts or accuracy measurements.
+[sanitized live summary](../evals/research/results/2026-10-15-live.json). The 251 research
+tests and earlier 36 offline workflows are not live-model task counts or accuracy measurements.
 Keep the fixture's missed conflicts and meaningful changes visible. Cost, useful-reminder
 rates and maintenance improvements require live runs and reviewed scoring. Human recruitment
 and trials remain pending.

@@ -1,0 +1,342 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-15T15:14:06.625115+00:00",
+  "runtime_commit": "9be1805",
+  "model": "deepseek-flash",
+  "credentials": "Saved by the user in the local encrypted vault; not included in artifacts.",
+  "model_tool_connectivity": {
+    "schema_version": 1,
+    "recorded_at": "2026-10-15T14:55:48.670039+00:00",
+    "status": "passed",
+    "provider": "openai",
+    "model": "deepseek-flash",
+    "input_kind": "synthetic_tool_connectivity_probe",
+    "tool_call_verified": true,
+    "calls": [
+      {
+        "attempt": 1,
+        "status": "succeeded",
+        "usage": {
+          "completion_tokens": 85,
+          "prompt_tokens": 422,
+          "total_tokens": 507,
+          "completion_tokens_details": {
+            "reasoning_tokens": 23
+          },
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "prompt_cache_hit_tokens": 0,
+          "prompt_cache_miss_tokens": 422
+        }
+      }
+    ],
+    "monetary_cost": null,
+    "quality_score": null
+  },
+  "pilots": [
+    {
+      "artifacts": ".local/verification/2026-10-15-live-pilots",
+      "runtime_commit": "9993066",
+      "summary": {
+        "execution_mode": "live_model_synthetic_inputs",
+        "dataset_origin": "synthetic",
+        "planned_executions": 2,
+        "executed": 2,
+        "execution_statuses": {
+          "succeeded": 2
+        },
+        "phase_counts": {
+          "pilot": 2
+        },
+        "usage": {
+          "model_calls": 29,
+          "input_tokens": 234132,
+          "output_tokens": 34109,
+          "total_tokens": 268241,
+          "model_duration_ms": 191337.312,
+          "monetary_cost": null
+        },
+        "median_target_duration_ms": 96111.201,
+        "model_quality_metrics": null,
+        "improvement_claim": null,
+        "manual_review_status": "pending",
+        "interpretation": "Offline results verify scripted workflow execution only. No model-quality, accuracy, or improvement claim is derived from fixture responses. Live-model runs still use synthetic inputs and require human review of the draft annotations.",
+        "freeze_sha256": "791dcb339e68730db604d438e9791afbabdb0957c8109d7dc548962c7ef42b43"
+      },
+      "usage_including_setup": {
+        "model_requests": 48,
+        "statuses": {
+          "succeeded": 45,
+          "invalid_output": 3
+        },
+        "total_tokens": 475890,
+        "known_reported_total_tokens": 475890,
+        "requests_without_reported_total_tokens": 0,
+        "monetary_cost": null
+      },
+      "observations": [
+        {
+          "scenario_id": "initial-portable",
+          "status": "succeeded",
+          "observations": {
+            "target_run_status": "succeeded",
+            "report_present": true,
+            "report_sections": 6,
+            "obsolete_or_unbound_evidence_refs": [],
+            "must_identify_observations": [
+              {
+                "candidate": "alpha",
+                "quote": "Supports Windows and Linux.",
+                "verbatim_evidence_present": true,
+                "semantic_support_review": "pending"
+              }
+            ],
+            "old_decision_statuses": {},
+            "old_decisions_invalidated": false,
+            "new_notifications": 1,
+            "new_source_change_notifications": 0,
+            "registered_conflicts": 0,
+            "allowed_selection_review": "pending",
+            "model_quality_score": null
+          }
+        },
+        {
+          "scenario_id": "update-dependency",
+          "status": "succeeded",
+          "observations": {
+            "target_run_status": "succeeded",
+            "report_present": true,
+            "report_sections": 6,
+            "obsolete_or_unbound_evidence_refs": [],
+            "must_identify_observations": [
+              {
+                "candidate": "alpha",
+                "quote": "Requires an external sandbox.",
+                "verbatim_evidence_present": true,
+                "semantic_support_review": "pending"
+              }
+            ],
+            "old_decision_statuses": {
+              "decision_run_c8f225a695ab4471_0": "stale",
+              "decision_run_c8f225a695ab4471_1": "stale",
+              "decision_run_c8f225a695ab4471_2": "active",
+              "decision_run_c8f225a695ab4471_3": "active",
+              "decision_run_c8f225a695ab4471_4": "stale",
+              "decision_run_c8f225a695ab4471_5": "active"
+            },
+            "old_decisions_invalidated": false,
+            "new_notifications": 1,
+            "new_source_change_notifications": 1,
+            "registered_conflicts": 0,
+            "allowed_selection_review": "pending",
+            "model_quality_score": null
+          }
+        }
+      ]
+    },
+    {
+      "artifacts": ".local/verification/2026-10-15-live-pilots-repaired",
+      "runtime_commit": "9be1805",
+      "summary": {
+        "execution_mode": "live_model_synthetic_inputs",
+        "dataset_origin": "synthetic",
+        "planned_executions": 2,
+        "executed": 2,
+        "execution_statuses": {
+          "succeeded": 2
+        },
+        "phase_counts": {
+          "pilot": 2
+        },
+        "usage": {
+          "model_calls": 29,
+          "input_tokens": 284742,
+          "output_tokens": 41165,
+          "total_tokens": 325907,
+          "model_duration_ms": 221859.066,
+          "monetary_cost": null
+        },
+        "median_target_duration_ms": 111125.6775,
+        "model_quality_metrics": null,
+        "improvement_claim": null,
+        "manual_review_status": "pending",
+        "interpretation": "Offline results verify scripted workflow execution only. No model-quality, accuracy, or improvement claim is derived from fixture responses. Live-model runs still use synthetic inputs and require human review of the draft annotations.",
+        "freeze_sha256": "fd68b85083c5a4b393a09c9926d669766e73483f7fe739c3131ac0ab36e443bb"
+      },
+      "usage_including_setup": {
+        "model_requests": 41,
+        "statuses": {
+          "succeeded": 41
+        },
+        "total_tokens": 413848,
+        "known_reported_total_tokens": 413848,
+        "requests_without_reported_total_tokens": 0,
+        "monetary_cost": null
+      },
+      "observations": [
+        {
+          "scenario_id": "initial-portable",
+          "status": "succeeded",
+          "observations": {
+            "target_run_status": "succeeded",
+            "report_present": true,
+            "report_sections": 6,
+            "obsolete_or_unbound_evidence_refs": [],
+            "must_identify_observations": [
+              {
+                "candidate": "alpha",
+                "quote": "Supports Windows and Linux.",
+                "verbatim_evidence_present": true,
+                "semantic_support_review": "pending"
+              }
+            ],
+            "old_decision_statuses": {},
+            "old_decisions_invalidated": false,
+            "new_notifications": 1,
+            "new_source_change_notifications": 0,
+            "registered_conflicts": 0,
+            "allowed_selection_review": "pending",
+            "model_quality_score": null
+          }
+        },
+        {
+          "scenario_id": "update-dependency",
+          "status": "succeeded",
+          "observations": {
+            "target_run_status": "succeeded",
+            "report_present": true,
+            "report_sections": 6,
+            "obsolete_or_unbound_evidence_refs": [],
+            "must_identify_observations": [
+              {
+                "candidate": "alpha",
+                "quote": "Requires an external sandbox.",
+                "verbatim_evidence_present": true,
+                "semantic_support_review": "pending"
+              }
+            ],
+            "old_decision_statuses": {
+              "decision_run_47d75331eba24186_0": "stale",
+              "decision_run_47d75331eba24186_1": "stale",
+              "decision_run_47d75331eba24186_2": "active",
+              "decision_run_47d75331eba24186_3": "active",
+              "decision_run_47d75331eba24186_4": "stale",
+              "decision_run_47d75331eba24186_5": "active"
+            },
+            "old_decisions_invalidated": false,
+            "new_notifications": 1,
+            "new_source_change_notifications": 1,
+            "registered_conflicts": 0,
+            "allowed_selection_review": "pending",
+            "model_quality_score": null
+          }
+        }
+      ]
+    }
+  ],
+  "remaining": [
+    "human review of draft annotations and key cited claims",
+    "full 32-execution evaluation and four preregistered repeats after review and budget selection",
+    "actual overnight recovery of the repaired runtime",
+    "three human trials and owner review of the core modules",
+    "continuous operation recording"
+  ],
+  "model_quality_metrics": null,
+  "improvement_claim": null,
+  "verification": {
+    "research": {
+      "tests": 251,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "documentation": {
+      "tests": 97,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "ruff": "passed",
+    "mypy": "passed",
+    "mypy_files": 23,
+    "web_changed": false,
+    "earlier_broad_upstream_failures": 3
+  },
+  "public_repository_workbench": {
+    "artifacts": ".local/verification/2026-10-15-live-workbench",
+    "input_kind": "live public README reads, with resolved commit versions",
+    "retained_failure": "Initial extraction was rejected for exceeding eight tool calls per response; no report was published.",
+    "runs": [
+      {
+        "kind": "check",
+        "status": "succeeded"
+      },
+      {
+        "kind": "research",
+        "status": "succeeded"
+      }
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/Anil-matcha/open-dots/blob/64e48f6a784ee83471c45daf4dcfc5393dc6f30e/README.md",
+        "version": "64e48f6a784ee83471c45daf4dcfc5393dc6f30e",
+        "content_hash": "7184cf330468d2695fdfa9a85cb43d991cfbfe94dad5f0d0fb11857b0b3b52dc"
+      },
+      {
+        "url": "https://github.com/nano-muse/nanoMuse/blob/c33c9e83804d226b689be28d4ebc8a70b798074e/README.md",
+        "version": "c33c9e83804d226b689be28d4ebc8a70b798074e",
+        "content_hash": "e25a6cb7c65ba0291e89df51bfd2d3f7ad51d1e6c5659d94ab55e83e58a2bf04"
+      }
+    ],
+    "report_present": true,
+    "report_count": 1,
+    "evidence_count": 14,
+    "quote_candidate_version_binding_errors": [],
+    "binding_check_is_not_semantic_review": true,
+    "usage_including_interrupted_requests": {
+      "model_requests": 16,
+      "statuses": {
+        "succeeded": 11,
+        "unknown": 2,
+        "invalid_output": 3
+      },
+      "total_tokens": null,
+      "known_reported_total_tokens": 270728,
+      "requests_without_reported_total_tokens": 2,
+      "monetary_cost": null
+    },
+    "database_integrity": "ok",
+    "repaired_runtime_process_interruption": {
+      "runtime_commit": "9be1805",
+      "stopped_at": "2026-10-15T23:06:48.5645344+08:00",
+      "pid": 24420,
+      "method": "Stop-Process -Force",
+      "run_id": "run_3d24eb08d929479a",
+      "current_stage": "extract",
+      "before_snapshot": "project.json",
+      "restart_status": "listening",
+      "restarted_pid": 24488,
+      "restarted_at": "2026-10-15T15:07:29.0317984+00:00",
+      "different_process": true,
+      "run_status_after_recovery": "succeeded",
+      "extract_attempt_after_recovery": 4
+    },
+    "unchanged_source_check": {
+      "status": "passed",
+      "new_model_calls": 0,
+      "new_reports": 0,
+      "new_notifications": 0
+    }
+  },
+  "overnight": {
+    "status": "pending_real_elapsed_time",
+    "artifacts": ".local/verification/2026-10-15-overnight-repaired",
+    "prepared_at": "2026-10-15T15:10:55.019738+00:00",
+    "resume_after_iso": "2026-10-16T01:00:02+00:00",
+    "timezone": "Asia/Shanghai",
+    "runtime_sha256": "9fe9f9ee8d905c63c1bbb3a236bd0473d37afebd048b610398bfb06f6c7d39ad",
+    "previous_preparation": "superseded_before_resume_because_the_runtime_changed",
+    "overnight_passed": false
+  }
+}
