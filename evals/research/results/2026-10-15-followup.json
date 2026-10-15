@@ -194,7 +194,7 @@
   },
   "manual_annotation_review": "pending",
   "human_trials": "not_performed",
-  "video_recording": "offline_narrated_screenshot_walkthrough_generated",
+  "video_recording": "removed_at_owner_request",
   "owner_review": "pending",
   "documentation_tests": {
     "tests": 97,
@@ -202,8 +202,10 @@
     "errors": 0,
     "skipped": 0
   },
-  "continuous_operation_recording": "not_recorded",
+  "continuous_operation_recording": "not_required_at_owner_request",
   "offline_video": {
+    "artifact_status": "removed_at_owner_request",
+    "interpretation": "Historical generation checks are retained; the video and its dedicated generation materials were removed from delivery.",
     "format": "offline_screenshot_walkthrough",
     "duration_seconds": 180.02,
     "resolution": "1920x1080",
@@ -218,7 +220,7 @@
     "visual_review": "poster_and_midpoint_and_final_frames_checked",
     "audio_mean_dbfs": -24.0,
     "audio_peak_dbfs": -0.5,
-    "local_artifact": ".local/showcase/research-walkthrough-final.mp4",
+    "former_local_artifact": ".local/showcase/research-walkthrough-final.mp4",
     "bytes": 2903175
   }
 }

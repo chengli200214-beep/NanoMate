@@ -94,27 +94,27 @@ Runs separately have queued, running, paused, needs_attention, failed, cancelled
 states. Pausing takes effect after the current step. This diagram simplifies a step lifecycle;
 see the [contract](research-contracts.md) for the complete state rules.
 
-## Three-minute narrated video and demonstration script
+## Project walkthrough and deliverables
 
-A local 180-second, 1920×1080 screenshot walkthrough includes Chinese narration, 24 captions
-and six chapters from actual workbench screenshots. Every chapter labels offline screenshot
-replay. It is not a continuous recording of UI operations. The file is
-`.local/showcase/research-walkthrough-final.mp4`, with a matching SRT, six source images and
-local generation scripts. Duration, full audio/video decoding and key frames were checked.
+Deliver the runnable workspace, Markdown reports, documentation, interface screenshots and
+reproducible acceptance records. Video, presentation slides and screen recordings were removed
+from the delivery scope at the owner's request. The generated video and its dedicated
+generation materials were removed; six interface screenshots remain under
+`.local/showcase/screenshots/`.
 
-The table below remains the script for a continuous-operation recording. Current saved sources
-and scripted responses do not replace live acceptance. Mark accelerated operations explicitly.
+Use the following order to inspect the project. Identify saved history, fixture inputs and
+scripted model responses when showing them.
 
-| Time | Action and explanation | Evidence |
+| Step | Action and explanation | Evidence |
 | --- | --- | --- |
-| 0:00 to 0:35 | Show Windows requirements, both candidates, a report and one versioned source | Project, report and evidence screens |
-| 0:35 to 1:20 | Explain completed steps and recovery logs; a live restart uses confirmed isolated demonstration data and rehearsal | Subprocess recovery and no duplicate report |
-| 1:20 to 2:05 | Change a hard requirement, observe the old report become stale, then compare report versions | Requirement revisions, stale marker and report diff |
-| 2:05 to 2:40 | Show change/mute controls and zero new calls on unchanged sources; identify semantic reminders as pending live validation | Wall-clock summary and structured-result tests; no fabricated live notice |
-| 2:40 to 3:00 | Show 251 research tests, the earlier 36 offline workflows, live acceptance, failure cases and the three added modules | Checkpoint, sanitized summary and attribution |
+| 1 | Show Windows requirements, both candidates, a report and one versioned source | Project, report and evidence screens |
+| 2 | Inspect completed steps and recovery logs; use isolated data when reproducing a process restart | Subprocess recovery and no duplicate report |
+| 3 | Change a hard requirement, observe the old report become stale, then compare report versions | Requirement revisions, stale marker and report diff |
+| 4 | Inspect change/mute controls and zero new calls on unchanged sources; identify semantic reminders as pending live validation | Wall-clock summary and structured-result tests; no fabricated live notice |
+| 5 | Inspect 251 research tests, the earlier 36 offline workflows, live acceptance, failure cases and the three added modules | Checkpoint, sanitized summary and attribution |
 
 The live two-repository comparison and process recovery are recorded in the
-[checkpoint](research-status.md). Continuous recording and three human trials remain open.
+[checkpoint](research-status.md). Three human trials remain open.
 Saved history must not be presented as a just-performed action. Scripted responses do not
 demonstrate autonomous semantic detection.
 

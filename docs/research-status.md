@@ -94,9 +94,10 @@ Raw follow-up artifacts are under `.local/verification/2026-10-15-continuation/`
 separate directories for network, model preflight, wall-clock and overnight checks.
 The [sanitized follow-up](../evals/research/results/2026-10-15-followup.json) retains failures
 and pending items; raw data and keys stay local. The [showcase guide](research-showcase.md)
-adds product scope, diagrams and a script. A 180-second narrated offline screenshot walkthrough
-passed duration, full audio/video decode and key-frame checks. Continuous operation recording
-remains pending.
+adds product scope, diagrams and a project walkthrough. Deliverables are the workspace,
+Markdown reports, documentation, screenshots and acceptance records. Video, presentation
+slides and screen recordings were removed from the delivery scope at the owner's request;
+the generated video and its dedicated generation materials were removed.
 
 The initial broad upstream Python baseline was 713 passed, 59 skipped, one deselected
 and three failed on this Windows machine. The failures concerned a runtime-check
@@ -140,7 +141,7 @@ within the existing two-repair allowance. The failed attempt remains saved.
 The [sanitized live summary](../evals/research/results/2026-10-15-live.json) retains both pilot
 attempts and the original repository failure. Raw records and the exported report are local
 under `.local/verification/2026-10-15-live-workbench/`. Full evaluation still requires reviewed
-annotations and a total budget; human trials, owner review and continuous recording remain open.
+annotations and a total budget; human trials and owner review remain open.
 
-The original user planning file is retained locally without replacing it. Runtime data,
-keys, raw logs and internal planning are excluded from the commits.
+The user planning file is retained locally, with delivery requirements updated at the owner's
+request. Runtime data, keys, raw logs and internal planning are excluded from the commits.

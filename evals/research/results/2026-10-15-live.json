@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "recorded_at": "2026-10-15T15:14:06.625115+00:00",
+  "recorded_at": "2026-10-15T15:40:20.735397+00:00",
   "runtime_commit": "9be1805",
   "model": "deepseek-flash",
   "credentials": "Saved by the user in the local encrypted vault; not included in artifacts.",
@@ -239,9 +239,16 @@
     "human review of draft annotations and key cited claims",
     "full 32-execution evaluation and four preregistered repeats after review and budget selection",
     "actual overnight recovery of the repaired runtime",
-    "three human trials and owner review of the core modules",
-    "continuous operation recording"
+    "three human trials and owner review of the core modules"
   ],
+  "delivery_scope": {
+    "excluded_formats": [
+      "video",
+      "presentation",
+      "screen_recording"
+    ],
+    "reason": "owner_request"
+  },
   "model_quality_metrics": null,
   "improvement_claim": null,
   "verification": {
