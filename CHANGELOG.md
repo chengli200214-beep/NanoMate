@@ -21,6 +21,7 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Web
 
+- Research documentation added product scope, architecture and data diagrams, and a three-minute demonstration script. A locally generated narrated screenshot walkthrough labelled its offline inputs throughout.
 - The research workspace added project conditions, source imports, evidence corrections, conflict details, run controls, change tracking and authenticated Markdown exports in English and Chinese.
 - **Each Feed section showed its own load error and retry.** Posts, activity, Next up and calendar requests kept their last successful content when a refresh failed; retrying one section no longer refetched the others.
 

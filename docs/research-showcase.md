@@ -94,10 +94,16 @@ Runs separately have queued, running, paused, needs_attention, failed, cancelled
 states. Pausing takes effect after the current step. This diagram simplifies a step lifecycle;
 see the [contract](research-contracts.md) for the complete state rules.
 
-## Three-minute demonstration script
+## Three-minute narrated video and demonstration script
 
-Current materials use saved sources and scripted model responses. Keep an offline-replay label
-visible and mark accelerated operations. This is a script, not a recorded video.
+A local 180-second, 1920×1080 screenshot walkthrough includes Chinese narration, 24 captions
+and six chapters from actual workbench screenshots. Every chapter labels offline screenshot
+replay. It is not a continuous recording of UI operations. The file is
+`.local/showcase/research-walkthrough-final.mp4`, with a matching SRT, six source images and
+local generation scripts. Duration, full audio/video decoding and key frames were checked.
+
+The table below remains the script for a continuous-operation recording. Current saved sources
+and scripted responses do not replace live acceptance. Mark accelerated operations explicitly.
 
 | Time | Action and explanation | Evidence |
 | --- | --- | --- |
@@ -107,7 +113,7 @@ visible and mark accelerated operations. This is a script, not a recorded video.
 | 2:05 to 2:40 | Show change/mute controls and zero new calls on unchanged sources; identify semantic reminders as pending live validation | Wall-clock summary and structured-result tests; no fabricated live notice |
 | 2:40 to 3:00 | Show 248 research tests, 36 offline workflows, failure cases and the three added modules | Checkpoint, sanitized summary and attribution |
 
-Recording, live-model comparisons and three human trials remain separate deliverables. Saved
+Continuous recording, live-model comparisons and three human trials remain separate deliverables. Saved
 history must not be presented as a just-performed action. Scripted responses do not demonstrate
 autonomous semantic detection.
 

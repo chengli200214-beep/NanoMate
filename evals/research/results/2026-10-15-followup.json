@@ -194,12 +194,31 @@
   },
   "manual_annotation_review": "pending",
   "human_trials": "not_performed",
-  "video_recording": "script_prepared_not_recorded",
+  "video_recording": "offline_narrated_screenshot_walkthrough_generated",
   "owner_review": "pending",
   "documentation_tests": {
     "tests": 97,
     "failures": 0,
     "errors": 0,
     "skipped": 0
+  },
+  "continuous_operation_recording": "not_recorded",
+  "offline_video": {
+    "format": "offline_screenshot_walkthrough",
+    "duration_seconds": 180.02,
+    "resolution": "1920x1080",
+    "fps": 15,
+    "voice": "Microsoft Huihui Desktop, local SAPI",
+    "scene_count": 6,
+    "subtitle_count": 24,
+    "video_sha256": "e861576d881e4aed9e624e59314e96cfd6c092e45ff9e4dda10eadbfa1146533",
+    "live_model_calls": 0,
+    "continuous_screen_recording": false,
+    "full_audio_video_decode": "passed",
+    "visual_review": "poster_and_midpoint_and_final_frames_checked",
+    "audio_mean_dbfs": -24.0,
+    "audio_peak_dbfs": -0.5,
+    "local_artifact": ".local/showcase/research-walkthrough-final.mp4",
+    "bytes": 2903175
   }
 }

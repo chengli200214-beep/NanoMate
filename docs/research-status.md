@@ -94,7 +94,9 @@ Raw follow-up artifacts are under `.local/verification/2026-10-15-continuation/`
 separate directories for network, model preflight, wall-clock and overnight checks.
 The [sanitized follow-up](../evals/research/results/2026-10-15-followup.json) retains failures
 and pending items; raw data and keys stay local. The [showcase guide](research-showcase.md)
-adds product scope, diagrams and a script. The three-minute video still requires recording.
+adds product scope, diagrams and a script. A 180-second narrated offline screenshot walkthrough
+passed duration, full audio/video decode and key-frame checks. Continuous operation recording
+remains pending.
 
 The initial broad upstream Python baseline was 713 passed, 59 skipped, one deselected
 and three failed on this Windows machine. The failures concerned a runtime-check
