@@ -318,7 +318,7 @@ class ResearchReasoner:
             )
             headers = getattr(getattr(exc, "response", None), "headers", {})
             try:
-                delay = float(headers.get("retry-after") or headers.get("Retry-After"))
+                delay = float(headers.get("retry-after") or headers.get("Retry-After") or "")
                 if math.isfinite(delay) and delay >= 0:
                     error.retry_after = delay
             except (ValueError, TypeError, AttributeError):
