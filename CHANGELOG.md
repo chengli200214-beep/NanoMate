@@ -10,6 +10,8 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Runtime
 
+- Research reasoning validated snapshot quotes and candidate references, kept unknown hard requirements explicit, and rendered versioned evidence in six-section reports. Offline fixture reports identified scripted replay.
+
 ### Web
 
 - **Each Feed section showed its own load error and retry.** Posts, activity, Next up and calendar requests kept their last successful content when a refresh failed; retrying one section no longer refetched the others.
