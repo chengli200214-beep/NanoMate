@@ -1,7 +1,7 @@
 # Research implementation checkpoint, 2026-10-15
 
 The local research workspace runs and produces labelled offline reports. Real-model,
-public-network, overnight and human-review acceptance remain open. This checkpoint
+overnight and human-review acceptance remain open. This checkpoint
 does not establish completion of the two-day plan's gates.
 
 The implementation reuses nanoMuse's model adapters, Sentinel, authentication and web
@@ -29,7 +29,7 @@ checked on Windows; a second operating system has not been claimed.
 
 ## Frozen scenario run
 
-The current run used code commit `52a1021` with a clean research tree and freeze SHA-256
+The first checkpoint used code commit `52a1021` with a clean research tree and freeze SHA-256
 `83672183d7126b44e8a778b54ea15d80ac0fe13c8b86fa713af96e0fddf35ef9`.
 
 - Twelve synthetic scenarios produced 32 initial executions and four preregistered
@@ -53,14 +53,48 @@ copies and JUnit files are under `.local/verification/current/`.
 
 1. Configure a local DeepSeek key, test a real research tool call, then run the two
    live evaluation pilots before deciding the full evaluation budget.
-2. Correct public-source routing. This machine returned private addresses for public
-   GitHub hosts, so source protection rejected the live smoke test. The guard remains
-   enabled.
-3. Perform actual stopped-service catch-up and next-day scheduling. FakeClock cases
-   passed; a real overnight interval has not elapsed as part of this checkpoint.
-4. Review scenario annotations and cited claims, run the live comparison, and record
+2. Complete actual overnight catch-up and next-day scheduling. Short wall-clock recovery
+   passed and the overnight timer is running, awaiting real elapsed time.
+3. Review scenario annotations and cited claims, run the live comparison, and record
    actual reminder quality and maintenance costs. No improvement percentage is available.
-5. Complete human trials and an owner review of generated code and design tradeoffs.
+4. Complete human trials and an owner review of generated code and design tradeoffs.
+
+## Same-day follow-up
+
+Runtime commit `d675f28` reran all 36 fixture workflows, with 72 target MockLLM requests.
+Its freeze SHA-256 is
+`1fa1b89dd176c0391e7a2ceeb08e975022596d74448cc509f53f4ee1fabec34a`.
+The semantic expectations still require a real model and reviewed annotations.
+
+- 248 research tests, 97 documentation checks and 30 repeated fault assertions passed.
+  Ruff passed; mypy checked 22 runtime and acceptance-script files. Web code did not change.
+- Explicit `--source-dns cloudflare` obtained real public addresses on this machine while
+  retaining private-address rejection, redirect validation and IP pinning. Windows DNS
+  settings were not changed.
+- Three retained network attempts cover every required target at least once. The first
+  was 5/6, with oversized releases rejected. After bounded release pagination, the next
+  was 5/6, with a fixed file rate-limited by GitHub. A conditional raw read then passed
+  that file check 1/1. This is cumulative source coverage, not one 6/6 run. Failures remain.
+- Release JSON declares `history_complete=false` for up to five records and keeps bodies
+  intact. Full-commit files avoid API quota and never receive the API token at the raw host.
+- Model commands load the selected workbench overlay and resolve vault references only in
+  the client copy. Local preflight remains `needs_configuration`, with zero model requests.
+  A plain chat response cannot pass the new model-selected research-tool probe.
+- A short probe passed after 131 real seconds in distinct processes. Each schedule merged
+  into one check; unchanged sources made zero new calls, reports or notices. SQLite passed
+  integrity checks. Its inputs remain saved excerpts and scripted MockLLM responses.
+- The isolated overnight worker has exited. A background timer will start a new worker after
+  09:00 Asia/Shanghai on 2026-10-16. This is pending, not passed. The computer and timer must
+  stay running; research runtime changes reject the probe. The workbench restarted with both
+  projects and reports intact and returned health 200.
+- Local annotation, trial and owner-review worksheets are prepared but unfilled. No outside
+  invitations were sent and no self-test is reported as a human trial.
+
+Raw follow-up artifacts are under `.local/verification/2026-10-15-continuation/`, with
+separate directories for network, model preflight, wall-clock and overnight checks.
+The [sanitized follow-up](../evals/research/results/2026-10-15-followup.json) retains failures
+and pending items; raw data and keys stay local. The [showcase guide](research-showcase.md)
+adds product scope, diagrams and a script. The three-minute video still requires recording.
 
 The initial broad upstream Python baseline was 713 passed, 59 skipped, one deselected
 and three failed on this Windows machine. The failures concerned a runtime-check

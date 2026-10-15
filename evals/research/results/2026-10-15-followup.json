@@ -1,0 +1,205 @@
+{
+  "recorded_at": "2026-10-15T10:20:45.986536+00:00",
+  "runtime_commit": "d675f289ebfd381d2bc318f0e7f22864479caa32",
+  "research_tests": {
+    "tests": 248,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "fault_matrix": {
+    "tests": 30,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "static_checks": {
+    "ruff": "passed",
+    "mypy_files": 22,
+    "mypy": "passed"
+  },
+  "previous_web_verification": {
+    "tests": 130,
+    "changed_in_followup": false
+  },
+  "network": {
+    "mode": "live_network_without_model",
+    "source_dns": "cloudflare",
+    "all_six_targets_covered_across_attempts": true,
+    "one_complete_six_of_six_run": false,
+    "retained_attempts": [
+      {
+        "artifacts": ".local/verification/2026-10-15-network",
+        "passed": 5,
+        "planned": 6,
+        "sources": [
+          {
+            "kind": "readme",
+            "url": "https://github.com/Anil-matcha/open-dots",
+            "status": "passed",
+            "version": "1bb35aed1d2b418e2e809f0eb5254dade7a0efa5",
+            "repeat_not_modified": true
+          },
+          {
+            "kind": "readme",
+            "url": "https://github.com/nano-muse/nanoMuse",
+            "status": "passed",
+            "version": "a0d727fc04eafa74694a05af8aeac3d793efbafd",
+            "repeat_not_modified": true
+          },
+          {
+            "kind": "metadata",
+            "url": "https://github.com/nano-muse/nanoMuse",
+            "status": "passed",
+            "version": "sha256:4479893846ed6baefa9dd3ec752592f1f86c3a6b00caa798a667568d7b9d78b6",
+            "repeat_not_modified": true
+          },
+          {
+            "kind": "releases",
+            "url": "https://github.com/nano-muse/nanoMuse",
+            "status": "failed"
+          },
+          {
+            "kind": "file",
+            "url": "https://github.com/nano-muse/nanoMuse/blob/a0d727fc04eafa74694a05af8aeac3d793efbafd/docs/architecture.md",
+            "status": "passed",
+            "version": "a0d727fc04eafa74694a05af8aeac3d793efbafd",
+            "repeat_not_modified": true
+          },
+          {
+            "kind": "document",
+            "url": "https://www.python-httpx.org/advanced/transports/",
+            "status": "passed",
+            "version": "sha256:29ca16551efe4c32b915b8c960e0b58a948096c80f147e745726c0bb3fdef4eb",
+            "repeat_not_modified": true
+          }
+        ]
+      },
+      {
+        "artifacts": ".local/verification/2026-10-15-network-final",
+        "passed": 5,
+        "planned": 6,
+        "sources": [
+          {
+            "kind": "readme",
+            "url": "https://github.com/Anil-matcha/open-dots",
+            "status": "passed",
+            "version": "1bb35aed1d2b418e2e809f0eb5254dade7a0efa5",
+            "repeat_not_modified": true
+          },
+          {
+            "kind": "readme",
+            "url": "https://github.com/nano-muse/nanoMuse",
+            "status": "passed",
+            "version": "a0d727fc04eafa74694a05af8aeac3d793efbafd",
+            "repeat_not_modified": true
+          },
+          {
+            "kind": "metadata",
+            "url": "https://github.com/nano-muse/nanoMuse",
+            "status": "passed",
+            "version": "sha256:4479893846ed6baefa9dd3ec752592f1f86c3a6b00caa798a667568d7b9d78b6",
+            "repeat_not_modified": true
+          },
+          {
+            "kind": "releases",
+            "url": "https://github.com/nano-muse/nanoMuse",
+            "status": "passed",
+            "version": "sha256:28f22039e33f4c49438be183175a97e0fd23928fa3d7620a10f280a1e3232af5",
+            "repeat_not_modified": true
+          },
+          {
+            "kind": "file",
+            "url": "https://github.com/nano-muse/nanoMuse/blob/a0d727fc04eafa74694a05af8aeac3d793efbafd/docs/architecture.md",
+            "status": "failed",
+            "error_code": "rate_limited"
+          },
+          {
+            "kind": "document",
+            "url": "https://www.python-httpx.org/advanced/transports/",
+            "status": "passed",
+            "version": "sha256:29ca16551efe4c32b915b8c960e0b58a948096c80f147e745726c0bb3fdef4eb",
+            "repeat_not_modified": true
+          }
+        ]
+      },
+      {
+        "artifacts": ".local/verification/2026-10-15-network-fixed-file",
+        "passed": 1,
+        "planned": 1,
+        "sources": [
+          {
+            "kind": "file",
+            "url": "https://github.com/nano-muse/nanoMuse/blob/a0d727fc04eafa74694a05af8aeac3d793efbafd/docs/architecture.md",
+            "status": "passed",
+            "version": "a0d727fc04eafa74694a05af8aeac3d793efbafd",
+            "repeat_not_modified": true
+          }
+        ]
+      }
+    ],
+    "model_calls": 0,
+    "interpretation": "All target types were fetched and conditionally rechecked at least once. Failures remain, including release size overflow and unauthenticated GitHub API rate limiting. Source content does not establish model quality."
+  },
+  "fixture_execution": {
+    "execution_mode": "offline_scripted_workflow_verification",
+    "planned_executions": 36,
+    "executed": 36,
+    "execution_statuses": {
+      "succeeded": 36
+    },
+    "phase_counts": {
+      "first_round": 32,
+      "preregistered_rerun": 4
+    },
+    "usage": {
+      "model_calls": 72,
+      "input_tokens": null,
+      "output_tokens": null,
+      "total_tokens": null,
+      "model_duration_ms": 160.241,
+      "monetary_cost": null
+    },
+    "model_quality_metrics": null,
+    "improvement_claim": null,
+    "freeze_sha256": "1fa1b89dd176c0391e7a2ceeb08e975022596d74448cc509f53f4ee1fabec34a"
+  },
+  "short_wall_clock": {
+    "mode": "short_wall_clock",
+    "status": "passed",
+    "elapsed_seconds": 131.7474594116211,
+    "crossed_local_date": false,
+    "merged_runs_per_project": 1,
+    "new_model_calls": 0,
+    "new_reports": 0,
+    "new_notifications": 0,
+    "database_integrity": "ok",
+    "runtime_sha256": "910b270540360a39d20254e48f23d176b3669a564735b283c045aeb22441c184",
+    "inputs": "saved_public_excerpts_and_scripted_MockLLM"
+  },
+  "overnight": {
+    "status": "waiting_for_elapsed_time",
+    "planned_resume_at": "2026-10-16T01:00:02+00:00",
+    "timezone": "Asia/Shanghai",
+    "runtime_sha256": "910b270540360a39d20254e48f23d176b3669a564735b283c045aeb22441c184",
+    "inputs": "saved_public_excerpts_and_scripted_MockLLM",
+    "timer_started": true,
+    "acceptance_passed": false
+  },
+  "live_model": {
+    "status": "needs_configuration",
+    "model_calls": 0,
+    "tool_call_verified": false,
+    "quality_score": null
+  },
+  "manual_annotation_review": "pending",
+  "human_trials": "not_performed",
+  "video_recording": "script_prepared_not_recorded",
+  "owner_review": "pending",
+  "documentation_tests": {
+    "tests": 97,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

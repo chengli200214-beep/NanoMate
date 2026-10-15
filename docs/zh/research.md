@@ -106,6 +106,7 @@ DeepSeek 真实研究、真实来源网络访问、夜间停机与次日定时�
 [研究推理](research-reasoning.md)、[来源读取](research-sources.md)，实验口径见
 [评测说明](research-evaluation.md)。
 已完成的检查和待办验收见 [开发与验证记录](research-status.md)。
+产品范围、架构与数据模型图、三分钟演示脚本见[作品展示说明](research-showcase.md)。
 
 以下命令分别留存验收结果，输出目录不能覆盖。模型命令使用工作台原有配置和加密保险库：
 

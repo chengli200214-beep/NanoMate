@@ -128,6 +128,8 @@ tests additionally verify real `os._exit(86)` recovery. It refuses to overwrite 
 
 Live DeepSeek research, real-source network access, overnight scheduling, next-day
 checks, reviewed scenario labels and human trials are separate acceptance items.
+See the [product and demonstration guide](research-showcase.md) for scope, diagrams and
+the three-minute script.
 
 Additional acceptance commands retain independent output directories and refuse to
 overwrite results. The model commands use the workbench's settings and encrypted vault:
