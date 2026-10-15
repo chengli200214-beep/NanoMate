@@ -1,4 +1,4 @@
-import { Bug, LayoutGrid, Lightbulb, Menu, MessageCircle, MonitorSmartphone, Newspaper, Search, SlidersHorizontal, SquareCheckBig, TerminalSquare, UserRound, Wrench, X } from "lucide-react";
+import { Bug, FlaskConical, LayoutGrid, Lightbulb, Menu, MessageCircle, MonitorSmartphone, Newspaper, Search, SlidersHorizontal, SquareCheckBig, TerminalSquare, UserRound, Wrench, X } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
 import { desktopBridge } from "../desktop";
 import { useDeveloperTools } from "../devtools";
@@ -59,6 +59,7 @@ export function Sidebar() {
     { id: "feed", label: "Feed", icon: <Newspaper size={21} />, badge: feedUnseen },
     { id: "ideas", label: "Ideas", icon: <Lightbulb size={21} /> },
     { id: "goals", label: "Goals", icon: <SquareCheckBig size={21} />, badge: proposals },
+    { id: "research", label: "Research", icon: <FlaskConical size={21} /> },
     { id: "library", label: "Library", icon: <LayoutGrid size={21} /> },
     { id: "devices", label: "Devices", icon: <MonitorSmartphone size={21} />, dot: online > 0 },
     ...(developer ? [{ id: "coding" as Tab, label: "Coding", icon: <TerminalSquare size={21} /> }] : []),

@@ -1,4 +1,4 @@
-import { LayoutGrid, Lightbulb, Loader2, MessageCircle, Newspaper, SquareCheckBig, WifiOff } from "lucide-react";
+import { FlaskConical, LayoutGrid, Lightbulb, Loader2, MessageCircle, Newspaper, SquareCheckBig, WifiOff } from "lucide-react";
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { api, setToken } from "./api";
 import { BrandMark } from "./components/BrandMark";
@@ -29,6 +29,7 @@ const GoalsScreen = lazy(() => import("./screens/GoalsScreen").then((m) => ({ de
 const IdeasScreen = lazy(() => import("./screens/IdeasScreen").then((m) => ({ default: m.IdeasScreen })));
 const LibraryScreen = lazy(() => import("./screens/LibraryScreen").then((m) => ({ default: m.LibraryScreen })));
 const MemoryScreen = lazy(() => import("./screens/MemoryScreen").then((m) => ({ default: m.MemoryScreen })));
+const ResearchScreen = lazy(() => import("./screens/ResearchScreen").then((m) => ({ default: m.ResearchScreen })));
 const Onboarding = lazy(() => import("./screens/Onboarding").then((m) => ({ default: m.Onboarding })));
 const SettingsScreen = lazy(() => import("./screens/SettingsScreen").then((m) => ({ default: m.SettingsScreen })));
 const SkillsScreen = lazy(() => import("./screens/SkillsScreen").then((m) => ({ default: m.SkillsScreen })));
@@ -41,13 +42,14 @@ function Loading() {
   );
 }
 
-/** The five glyphs: outlined at rest, filled with the button's own ink when selected. The fill is the state. */
+/** The tab glyphs: outlined at rest, filled with the button's own ink when selected. The fill is the state. */
 const glyph = (active: boolean) => ({ size: 26, strokeWidth: active ? 2 : 1.7, fill: active ? "currentColor" : "none", fillOpacity: active ? 0.18 : 0 });
 const TABS: Array<{ id: Tab; label: string; icon: (active: boolean) => ReactNode }> = [
   { id: "chat", label: "Chat", icon: (a) => <MessageCircle {...glyph(a)} /> },
   { id: "feed", label: "Feed", icon: (a) => <Newspaper {...glyph(a)} /> },
   { id: "ideas", label: "Ideas", icon: (a) => <Lightbulb {...glyph(a)} /> },
   { id: "goals", label: "Goals", icon: (a) => <SquareCheckBig {...glyph(a)} /> },
+  { id: "research", label: "Research", icon: (a) => <FlaskConical {...glyph(a)} /> },
   { id: "library", label: "Library", icon: (a) => <LayoutGrid {...glyph(a)} /> },
 ];
 
@@ -149,6 +151,7 @@ export default function App() {
             {state.tab === "feed" && <FeedScreen />}
             {state.tab === "ideas" && <IdeasScreen />}
             {state.tab === "goals" && <GoalsScreen />}
+            {state.tab === "research" && <ResearchScreen />}
             {state.tab === "library" && <LibraryScreen />}
             {state.tab === "memory" && <MemoryScreen />}
             {state.tab === "skills" && <SkillsScreen />}
@@ -161,13 +164,13 @@ export default function App() {
             {state.tab === "avatar" && <AvatarStudioScreen />}
           </Suspense>
         </main>
-        {/* Muse's bottom bar, as the Android app draws it: a floating frosted-glass pill, five glyphs,
+        {/* Muse's bottom bar, as the Android app draws it: a floating frosted-glass pill with tab glyphs,
             icons only. The pill sits 12px above the bottom edge, blurs what is behind it and carries
             a hairline edge; the current tab shows its filled glyph on an ink indicator (black in the
             light theme, white in the dark one, the glyph in the opposite colour), the others stay
             outlined in the muted grey. No labels: the fill and the indicator are the
             state. The pill is as wide as the chat's composer above it (the same 12px from the sides,
-            `px-3` on the Composer's form), 420px at most and centred on a wider screen; the five
+            `px-3` on the Composer's form), 420px at most and centred on a wider screen; the
             slots share it equally and the indicator disc keeps its 60 by 46 inside the slot. In lite
             (the phone in the showcase) it shows whatever the width; otherwise a wide window has the
             sidebar instead. The nav itself lets taps through to the screen; only the pill takes them. */}

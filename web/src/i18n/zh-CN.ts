@@ -1,9 +1,12 @@
+import researchZhCN from "./research.zh-CN";
+
 /**
  * 简体中文. Keys are the English source strings; `{name}`-style placeholders are kept as-is.
  * A missing key falls back to English, so this file can lag behind without breaking anything.
  * Run `npm test` — the i18n test lists the strings that still lack a translation.
  */
 const zhCN: Record<string, string> = {
+  ...researchZhCN,
   // ── Shell, tabs, connection ───────────────────────────────────────────────────────
   Chat: "聊天",
   Feed: "动态",
