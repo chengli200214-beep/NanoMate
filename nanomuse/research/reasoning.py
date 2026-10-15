@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import time
 import uuid
@@ -40,6 +41,7 @@ class ResearchModelError(RuntimeError):
     def __init__(self, message: str, status_code: int | None = None):
         super().__init__(message)
         self.status_code = status_code
+        self.retry_after: float | None = None
         self.retryable = status_code is None or status_code == 429 or status_code >= 500
         if status_code in {401, 403}:
             self.code = "authentication"
@@ -314,6 +316,13 @@ class ResearchReasoner:
                 f"Provider request failed ({type(exc).__name__})",
                 status_code if isinstance(status_code, int) else None,
             )
+            headers = getattr(getattr(exc, "response", None), "headers", {})
+            try:
+                delay = float(headers.get("retry-after") or headers.get("Retry-After"))
+                if math.isfinite(delay) and delay >= 0:
+                    error.retry_after = delay
+            except (ValueError, TypeError, AttributeError):
+                pass
             entry["status"] = "failed"
             entry["error_type"] = error.code
             raise error from exc

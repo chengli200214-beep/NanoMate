@@ -37,6 +37,7 @@ stage, model, request attempt, reported input and output tokens, elapsed millise
 and outcome. Missing provider token usage stays `None`; costs are not estimated.
 Provider errors, format errors, reference errors, and call-budget exhaustion have
 separate error codes. No failed provider request is retried by the reasoner itself.
+Numeric provider `Retry-After` headers are forwarded to the durable retry scheduler.
 
 `set_call_budget(remaining)` sets a shared allowance across extraction, comparison,
 and every impact call in a run. Every actual provider request consumes one allowance
@@ -75,6 +76,8 @@ A source with no readable paragraph contributes no fixture evidence. This filter
 not change live-model extraction.
 
 ## 中文
+
+提供方返回数值型 `Retry-After` 时，等待秒数传给持久调度器；重试仍受次数上限约束。
 
 研究推理沿用 `BaseLLM` 和 Sentinel，接收冻结的项目条件、来源快照、证据、结论和来源变化。
 `extract`、`compare`、`impact` 返回契约定义的结构化结果，正式保存和发布由编排器完成。

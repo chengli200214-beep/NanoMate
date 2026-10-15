@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from copy import deepcopy
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -318,6 +319,26 @@ async def test_provider_error_is_classified_and_counted_without_logging_credenti
     assert "sensitive provider diagnostics" not in str(caught.value)
     assert reasoner.calls[-1]["error_type"] == "authentication"
     assert reasoner.calls[-1]["input_tokens"] is None
+
+
+@pytest.mark.parametrize("header,delay", [("7", 7.0), ("invalid", None), ("inf", None)])
+async def test_provider_retry_after_is_forwarded_to_durable_scheduler(
+    header: str,
+    delay: float | None,
+) -> None:
+    class Limited(RuntimeError):
+        status_code = 429
+        response = SimpleNamespace(headers={"Retry-After": header})
+
+    def fail(_: Any) -> LLMResponse:
+        raise Limited("rate limited")
+
+    reasoner = ResearchReasoner(MockLLM([fail]))
+    with pytest.raises(ResearchModelError) as caught:
+        await reasoner.extract(context())
+    assert caught.value.retryable and caught.value.code == "rate_limit"
+    assert caught.value.retry_after == delay
+    assert len(reasoner.calls) == 1
 
 
 async def test_injected_shell_call_is_unavailable() -> None:
