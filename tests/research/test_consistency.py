@@ -338,6 +338,117 @@ async def test_meaningful_change_is_deduplicated_and_muting_is_scoped(tmp_path: 
     store.close()
 
 
+class UncertainConflictReasoner(ScriptedConflictReasoner):
+    async def compare(self, context: dict[str, Any]) -> Comparison:
+        if not any("not supported" in row["quote"] for row in context["evidence"]):
+            return await FixtureReasoner.compare(self, context)
+        return await super().compare(context)
+
+    async def impact(self, context: dict[str, Any]) -> ImpactJudgment:
+        self._queue(
+            ImpactJudgment(
+                change_summary="Current local-deployment claims disagree, verification is needed.",
+                affected_constraints=["local"],
+                evidence_refs=[
+                    row["id"] for row in context["evidence"] if row["candidate"] == REPOS[0]
+                ],
+                impact_level="uncertain",
+                recommended_action="Keep the verdict unknown and verify the current sources.",
+            )
+        )
+        return await ResearchReasoner.impact(self, context)
+
+
+class ConflictUpdateFetcher(FixtureFetcher):
+    version = "v1"
+
+    async def fetch(
+        self, source: dict[str, Any], previous: dict[str, Any] | None = None
+    ) -> FetchedSource:
+        if source["kind"] != "manual":
+            return await super().fetch(source, previous)
+        changed = source["title"] == "Changing deployment page"
+        version = self.version if changed else "unchanged"
+        content = "Local deployment is supported."
+        if changed and self.version != "v1":
+            content = "Local deployment is not supported."
+        return FetchedSource(
+            url=source["url"],
+            content=content,
+            version=version,
+            not_modified=bool(previous and previous["version"] == version),
+        )
+
+
+@pytest.mark.parametrize(
+    "hard,muted,expected", [(True, False, 1), (False, False, 0), (True, True, 0)]
+)
+async def test_uncertain_hard_conflict_notifies_once_with_original_judgment_and_scoped_mute(
+    tmp_path: Path, hard: bool, muted: bool, expected: int
+) -> None:
+    store = ResearchStore(tmp_path, FakeClock())
+    spec = project_spec().model_dump()
+    spec["constraints"][0]["hard"] = hard
+    project = store.create_project(ProjectSpec.model_validate(spec))
+    changing = None
+    for title in ("Stable deployment page", "Changing deployment page"):
+        source = store.add_source(
+            project["id"],
+            SourceInput(
+                candidate=REPOS[0],
+                kind="manual",
+                title=title,
+                content="Local deployment is supported.",
+            ),
+        )
+        if title == "Changing deployment page":
+            changing = source
+    assert changing
+    fetcher = ConflictUpdateFetcher()
+    worker = ResearchOrchestrator(store, fetcher=fetcher, reasoner=UncertainConflictReasoner())
+    store.enqueue(project["id"])
+    await finish(worker)
+    assert store.list("evidence_conflict", project["id"]) == []
+    if muted:
+        with store.transaction():
+            store._put(
+                "mute_rule",
+                {
+                    "id": "mute_conflict",
+                    "project_id": project["id"],
+                    "source_id": changing["id"],
+                    "impact_level": "recommendation",
+                    "enabled": True,
+                },
+            )
+    before = len(store.list("notification", project["id"]))
+    fetcher.version = "v2"
+    store.enqueue(project["id"], "check")
+    await finish(worker)
+    event = store.list("impact_event", project["id"])[0]
+    assert len(store.list("notification", project["id"])) - before == expected
+    assert event["impact_level"] == ("recommendation" if hard else "uncertain")
+    if hard:
+        assert event["model_judgment"]["impact_level"] == "uncertain"
+        assert event["notification_policy"]["constraint_refs"] == ["local"]
+    current_run = store.project(project["id"])["current_report"]["run_id"]
+    current_decisions = [
+        row
+        for row in store.list("decision_revision", project["id"])
+        if row["run_id"] == current_run
+    ]
+    assert current_decisions and all(row["verdict"] == "unknown" for row in current_decisions)
+    reports = len(store.list("report_revision", project["id"]))
+    calls = len(store.list("model_call", project["id"]))
+    notices = len(store.list("notification", project["id"]))
+    store.enqueue(project["id"], "check")
+    await finish(worker)
+    assert len(store.list("report_revision", project["id"])) == reports
+    assert len(store.list("model_call", project["id"])) == calls
+    assert len(store.list("notification", project["id"])) == notices
+    store.close()
+
+
 def test_hosted_api_runs_fixture_through_sentinel_without_model_key(settings: Settings) -> None:
     settings.server.token = "research-local-test"
     settings.llm.api_key = ""

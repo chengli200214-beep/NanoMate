@@ -30,6 +30,12 @@ Lists return JSON arrays. Objects and action results return JSON objects. Errors
 - GET `/reports/{id}/export`: Markdown response.
 - PUT `/projects/{id}/tracking`: `{enabled, interval_minutes, timezone, daily_time, max_calls}`.
 - GET `/projects/{id}/changes`: `{events, notifications, mute_rules}`.
+  An event may include `model_judgment` and `notification_policy`. If an uncertain
+  source update contributes current evidence to an unresolved hard-requirement conflict,
+  the attention policy sets the applied `impact_level` to `recommendation` and retains
+  the original model judgment. `notification_policy` records its id, constraint refs and
+  evidence refs. Comparison verdicts stay unknown; recommendation-level muting and event
+  deduplication still apply. These fields are optional, so older clients can ignore them.
 - POST `/changes/{id}/action`: `{action: accept|useless|mute|unmute}`.
 - POST `/notifications/{id}/feedback`: `{feedback: useful|useless|read}`.
 - GET `/projects/{id}/diagnostics`: `{runs, steps, calls, events}`.

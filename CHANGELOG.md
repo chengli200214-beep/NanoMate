@@ -11,6 +11,8 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 ### Runtime
 
 - Research acceptance retained the complete live matrix, bounded failures and a separate conflict-reminder repair result. Annotation approval, workflow execution and semantic output review were reported separately.
+- Research tracking notified once when a changed source left a hard requirement in conflict, even when the model's impact judgment was uncertain. Event records preserved the original judgment and applied policy; scoped muting and unknown verdicts stayed in effect.
+- Research repair evaluations reused the approved batch ledger, retaining prior spending and separate frozen results.
 - Research live evaluations required hash-bound owner approval and shared a durable currency guard across preparation, repairs and concurrent executions. Unknown provider usage stopped new requests, and freezes retained scoring and model settings separately from output review.
 - Research reasoning rejected oversized tool batches without partial execution and gave the model bounded corrective feedback before retrying.
 - Research source reads added an explicit public DNS over HTTPS option for networks with synthetic DNS answers, while retaining private-address checks and IP pinning. Release snapshots bounded their page to five records and declared incomplete history.

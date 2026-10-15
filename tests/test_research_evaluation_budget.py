@@ -224,3 +224,43 @@ def test_existing_ledger_refuses_a_different_spending_policy(tmp_path: Path) -> 
     budget.close()
     with pytest.raises(ValueError, match="cannot change"):
         BatchBudget(path, policy(limit_cny="100"))
+
+
+def test_a_repair_reuses_prior_settled_spending_instead_of_resetting_the_cap(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "budget.db"
+    approved = policy(limit_cny="3", stop_reserve_cny="0.5")
+    original = BatchBudget(path, approved)
+    identifier = original.reserve("original-batch", 4096)
+    original.settle(
+        identifier, {"prompt_tokens": 500_000, "completion_tokens": 0, "total_tokens": 500_000}
+    )
+    original.close()
+    repair = BatchBudget(path, approved)
+    with pytest.raises(BatchBudgetStopped, match="threshold"):
+        repair.reserve("repair-batch", 4096)
+    assert repair.summary()["known_peak_cost_upper_cny"] == 1
+    assert repair.summary()["requests"] == 1
+    repair.close()
+
+
+async def test_a_targeted_repair_keeps_its_own_matrix_separate(tmp_path: Path) -> None:
+    args = parser().parse_args(
+        [
+            "--mode",
+            "fixture",
+            "--variant",
+            "full",
+            "--scenario",
+            "update-conflict",
+            "--first-round-only",
+            "--output",
+            str(tmp_path / "targeted"),
+        ]
+    )
+    summary = await run_suite(args)
+    assert summary["executed"] == summary["planned_executions"] == 1
+    assert summary["execution_statuses"] == {"succeeded": 1}
+    frozen = json.loads((args.output / "freeze.json").read_text("utf-8"))
+    assert frozen["matrix"][0]["variant"] == "full"

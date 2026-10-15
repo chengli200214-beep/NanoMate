@@ -45,6 +45,11 @@ An interrupted request stays reserved across process restarts and requires recon
 one shared ledger. All variants retain the same model settings. Original failures and
 unexecuted cases remain visible; stopping never turns them into successful results.
 
+For a separate repair attempt, `--variant` can select one intervention or the full
+version. `--budget-ledger PATH` reuses an existing approved ledger, including all prior
+settled spending; it does not grant another allowance. Repairs use a new output directory
+and freeze, retain a budget-before snapshot, and never replace the original matrix results.
+
 ## 中文
 
 评测运行器默认只冻结场景、SHA-256 和运行矩阵，不请求模型。显式选择 fixture 后，才会

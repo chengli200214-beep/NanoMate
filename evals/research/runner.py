@@ -477,7 +477,7 @@ async def execute_one(
                 llm = BudgetedLLM(
                     llm,
                     budget,
-                    item["execution_id"],
+                    item.get("budget_execution_id", item["execution_id"]),
                     before_request=(lambda: verify_frozen(frozen)) if frozen else None,
                 )
             reasoner = EvaluationReasoner(ResearchReasoner(llm), item["variant"])
@@ -630,6 +630,8 @@ async def run_suite(args: argparse.Namespace) -> dict[str, Any]:
     matrix = build_matrix(
         manifest, include_reruns=not args.first_round_only, pilot=args.pilot, scenario_ids=selected
     )
+    if args.variant:
+        matrix = [row for row in matrix if row["variant"] in args.variant]
     settings = None
     ready = True
     if args.mode == "live":
@@ -653,7 +655,14 @@ async def run_suite(args: argparse.Namespace) -> dict[str, Any]:
         manifest["annotation_status"] = approval["status"]
     if args.mode == "live" and ready and not approval:
         raise ValueError("A live batch requires approved annotations, scoring and a spending limit")
-    configuration = {"mode": args.mode, "workers": args.workers, "budget_policy": policy}
+    if args.budget_ledger and not args.budget_ledger.is_file():
+        raise ValueError("A shared batch ledger must already exist")
+    configuration = {
+        "mode": args.mode,
+        "workers": args.workers,
+        "budget_policy": policy,
+        "shared_budget_ledger": bool(args.budget_ledger),
+    }
     if settings is not None:
         configuration["model"] = {
             key: getattr(settings.llm, key)
@@ -694,7 +703,10 @@ async def run_suite(args: argparse.Namespace) -> dict[str, Any]:
     if args.mode == "live" and policy:
         from evals.research.budget import BatchBudget
 
-        budget = BatchBudget(args.output / "batch-budget.db", policy)
+        budget = BatchBudget(args.budget_ledger or args.output / "batch-budget.db", policy)
+    budget_before = budget.summary() if budget else None
+    if budget_before:
+        write_json(args.output / "budget-before.json", budget_before)
     queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
     for item in matrix:
         queue.put_nowait(item)
@@ -707,7 +719,11 @@ async def run_suite(args: argparse.Namespace) -> dict[str, Any]:
                 verify_frozen(freeze)
                 row = await execute_one(
                     manifest,
-                    {**item, "freeze_sha256": freeze["freeze_sha256"]},
+                    {
+                        **item,
+                        "freeze_sha256": freeze["freeze_sha256"],
+                        "budget_execution_id": f"{args.output.name}/{item['execution_id']}",
+                    },
                     args.output,
                     args.mode,
                     settings,
@@ -737,6 +753,7 @@ async def run_suite(args: argparse.Namespace) -> dict[str, Any]:
     summary["workers"] = args.workers
     if budget:
         summary["batch_budget"] = budget.summary()
+        summary["budget_before"] = budget_before
         if budget.stopped:
             aborted = "Batch stopped: inspect the local currency ledger before further requests"
         budget.close()
@@ -759,6 +776,8 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--review-receipt", type=Path, default=None)
     result.add_argument("--scoring-rules", type=Path, default=None)
     result.add_argument("--workers", type=int, choices=range(1, 5), default=1)
+    result.add_argument("--budget-ledger", type=Path, default=None)
+    result.add_argument("--variant", action="append", choices=VARIANTS, default=[])
     result.add_argument(
         "--pilot", action="store_true", help="Run the two preregistered full-version pilots"
     )

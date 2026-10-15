@@ -297,3 +297,22 @@ def test_renderer_cannot_publish_a_definitive_conflicted_verdict() -> None:
 def test_conflict_shape_does_not_accept_a_single_reference() -> None:
     with pytest.raises(ValueError):
         ConflictDraft.model_validate(conflict() | {"evidence_refs": ["ea"]})
+
+
+async def test_uncertain_update_on_another_source_does_not_promote_an_existing_conflict() -> None:
+    from nanomuse.research.contracts import ImpactJudgment
+    from nanomuse.research.impact import evaluated_event
+
+    context = conflict_context()
+    comparison = await ResearchReasoner(MockLLM([response(proposed())])).compare(context)
+    judgment = ImpactJudgment(
+        change_summary="A different source changed.",
+        affected_constraints=["windows"],
+        impact_level="uncertain",
+    )
+    event = evaluated_event(
+        {"after_snapshot": "sb"}, judgment, comparison, context["spec"], context["evidence"]
+    )
+    assert event["impact_level"] == "uncertain"
+    assert "notification_policy" not in event and "model_judgment" not in event
+    assert comparison.decisions[0].verdict == "unknown"

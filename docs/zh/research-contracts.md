@@ -32,6 +32,12 @@
 | POST `/notifications/{id}/feedback` | useful、useless 或 read |
 | GET `/projects/{id}/diagnostics` | runs、steps、calls、events |
 
+变化事件可附带 `model_judgment` 与 `notification_policy`。模型将变化判为 uncertain，且
+变化后的当前证据参与尚未解决的硬条件冲突时，提醒策略将生效的 `impact_level` 设为
+recommendation，并保留模型原判断。`notification_policy` 保存策略 id、条件与证据引用。
+候选判断仍为 unknown，recommendation 级静默和事件去重继续生效。新增字段均为可选，旧
+客户端可忽略。
+
 ProjectSpec 包含 title、goal、两个或三个 candidates、constraints 与 live/fixture 模式。
 证据包含候选、维度、事实、原文、快照、核验级别、状态、来源地址、版本与抓取时间。冲突
 包含同一候选的至少两个不同有效证据 ID、原因和从实际绑定资料生成的版本范围。冲突不能

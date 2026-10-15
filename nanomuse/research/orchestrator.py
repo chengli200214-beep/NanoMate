@@ -392,7 +392,11 @@ class ResearchOrchestrator:
                     "changes": [{**event, "before": before, "after": after}],
                 }
                 judgment = await reasoner.impact(impact_context)
-                events.append({**event, **judgment.model_dump(), "status": "evaluated"})
+                from nanomuse.research.impact import evaluated_event
+
+                events.append(
+                    evaluated_event(event, judgment, comparison, spec, context["evidence"])
+                )
             decisions = [d["id"] for d in context["decisions"] if d.get("run_id") == run["id"]]
             return {
                 "report": {
