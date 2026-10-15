@@ -1,0 +1,252 @@
+{
+  "schema_version": 1,
+  "fixture": true,
+  "captured_at": "2026-10-15T08:21:15.540982+00:00",
+  "description": "Attributed public-source snapshots for explicit offline replay. No live model verification.",
+  "sources": {
+    "readme:https://github.com/nano-muse/nanoMuse": {
+      "url": "https://github.com/nano-muse/nanoMuse/blob/a0d727fc04eafa74694a05af8aeac3d793efbafd/README.md",
+      "title": "nano-muse/nanoMuse README excerpt (fixture)",
+      "content": "## Install\n\n| | |\n|---|---|\n| **Browser** | [demo.nanomuse.dev](https://demo.nanomuse.dev/): a nanoMuse on a simulated phone, after a sign-in. A demo; the apps below are the real thing |\n| **Android** 8.0+, arm64 | [nanoMuse-1.0.5-arm64.apk](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-1.0.5-arm64.apk): every version is signed with the same key and installs over the last |\n| **iPhone / iPad** | [TestFlight](https://testflight.apple.com/join/ZHexbDqc): a beta that passed Apple's beta review; the link installs it · [iOS](docs/ios.md) |\n| **macOS** 12+ | [Apple Silicon](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-mac-arm64.dmg) · [Intel](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-mac-x64.dmg). Not notarised: right-click → *Open* the first time |\n| **Windows** 10+ | [nanoMuse-Desktop-1.0.5-win-x64.exe](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-win-x64.exe): click *Run anyway* once |\n| **Linux** x64 | [AppImage](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.AppImage) · [.deb](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.deb) · [tar.gz](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.tar.gz) |\n| **Docker** | `bash scripts/self-host.sh --local` for your own relay; `docker compose up -d app` for the web app on a server of yours; see [self-hosting](docs/self-hosting.md) |\n\nAll downloads come from the [latest release](https://github.com/nano-muse/nanoMuse/releases/latest); the same files are on [nanomuse.cn/dl](https://nanomuse.cn/dl/) when GitHub is slow where you are. Open the app, sign in with an e-mail or a mainland-China phone number, and it has a model to think with. The phone, the desktop and the web share one account and show the same conversations.\n\n## What it does\n\n<table>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Does things.</b><br>A Linux shell, a browser, MCP servers and skills, and, with <i>Hands</i> on, the apps on your phone and the windows on your computer through their screens, for everything that never had an API.</td>\n    <td width=\"50%\" valign=\"top\"><b>Asks first.</b><br>A stop before deleting, sending or paying, remembered for once, this chat or always; passwords and codes are yours to type. A login or a CAPTCHA is handed to you, <i>Done</i> resumes.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Reaches your other devices.</b><br>Say it on the phone, it runs on your PC; <code>@Mac …</code> at the start of a message sends the task there. Approvals come back to the device in your hand.</td>\n    <td width=\"50%\" valign=\"top\"><b>Keeps going.</b><br>Goals checked on a schedule, routines that run while the app is closed, a feed written for you each morning.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Remembers you.</b><br>What it is, what it knows about you and when it wakes are Markdown files you can read and edit.</td>\n    <td width=\"50%\" valign=\"top\"><b>Lives in your chat apps.</b><br>It answers in 飞书, 钉钉, 企业微信 and Telegram.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>A look of its own.</b><br>Describe one, your image model draws it, a video model makes it move. A small dragon by default.</td>\n    <td width=\"50%\" valign=\"top\"><b>Any model.</b><br>The relay's allowance, your own key at one of twenty providers (Bailian, OpenRouter, OpenAI, Gemini, DeepSeek and more), or a plan you already pay for: ChatGPT, Claude, Kimi. A provider without picture or video models leaves those two off, and the app says so.</td>\n  </tr>\n</table>",
+      "version": "a0d727fc04eafa74694a05af8aeac3d793efbafd",
+      "fetched_at": "2026-10-15T08:21:15.540982+00:00",
+      "provenance": {
+        "source_url": "https://raw.githubusercontent.com/nano-muse/nanoMuse/a0d727fc04eafa74694a05af8aeac3d793efbafd/README.md",
+        "source_sha256": "9f079f4e2f75c75fea14213f020189b463423d801982847a0d2799b31fa30364",
+        "excerpt_line_ranges": [
+          [
+            56,
+            90
+          ]
+        ],
+        "selection": "Exact README excerpts, not a full repository capability assessment."
+      }
+    },
+    "readme:https://raw.githubusercontent.com/nano-muse/nanoMuse/a0d727fc04eafa74694a05af8aeac3d793efbafd/README.md": {
+      "url": "https://github.com/nano-muse/nanoMuse/blob/a0d727fc04eafa74694a05af8aeac3d793efbafd/README.md",
+      "title": "nano-muse/nanoMuse README excerpt (fixture)",
+      "content": "## Install\n\n| | |\n|---|---|\n| **Browser** | [demo.nanomuse.dev](https://demo.nanomuse.dev/): a nanoMuse on a simulated phone, after a sign-in. A demo; the apps below are the real thing |\n| **Android** 8.0+, arm64 | [nanoMuse-1.0.5-arm64.apk](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-1.0.5-arm64.apk): every version is signed with the same key and installs over the last |\n| **iPhone / iPad** | [TestFlight](https://testflight.apple.com/join/ZHexbDqc): a beta that passed Apple's beta review; the link installs it · [iOS](docs/ios.md) |\n| **macOS** 12+ | [Apple Silicon](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-mac-arm64.dmg) · [Intel](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-mac-x64.dmg). Not notarised: right-click → *Open* the first time |\n| **Windows** 10+ | [nanoMuse-Desktop-1.0.5-win-x64.exe](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-win-x64.exe): click *Run anyway* once |\n| **Linux** x64 | [AppImage](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.AppImage) · [.deb](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.deb) · [tar.gz](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.tar.gz) |\n| **Docker** | `bash scripts/self-host.sh --local` for your own relay; `docker compose up -d app` for the web app on a server of yours; see [self-hosting](docs/self-hosting.md) |\n\nAll downloads come from the [latest release](https://github.com/nano-muse/nanoMuse/releases/latest); the same files are on [nanomuse.cn/dl](https://nanomuse.cn/dl/) when GitHub is slow where you are. Open the app, sign in with an e-mail or a mainland-China phone number, and it has a model to think with. The phone, the desktop and the web share one account and show the same conversations.\n\n## What it does\n\n<table>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Does things.</b><br>A Linux shell, a browser, MCP servers and skills, and, with <i>Hands</i> on, the apps on your phone and the windows on your computer through their screens, for everything that never had an API.</td>\n    <td width=\"50%\" valign=\"top\"><b>Asks first.</b><br>A stop before deleting, sending or paying, remembered for once, this chat or always; passwords and codes are yours to type. A login or a CAPTCHA is handed to you, <i>Done</i> resumes.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Reaches your other devices.</b><br>Say it on the phone, it runs on your PC; <code>@Mac …</code> at the start of a message sends the task there. Approvals come back to the device in your hand.</td>\n    <td width=\"50%\" valign=\"top\"><b>Keeps going.</b><br>Goals checked on a schedule, routines that run while the app is closed, a feed written for you each morning.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Remembers you.</b><br>What it is, what it knows about you and when it wakes are Markdown files you can read and edit.</td>\n    <td width=\"50%\" valign=\"top\"><b>Lives in your chat apps.</b><br>It answers in 飞书, 钉钉, 企业微信 and Telegram.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>A look of its own.</b><br>Describe one, your image model draws it, a video model makes it move. A small dragon by default.</td>\n    <td width=\"50%\" valign=\"top\"><b>Any model.</b><br>The relay's allowance, your own key at one of twenty providers (Bailian, OpenRouter, OpenAI, Gemini, DeepSeek and more), or a plan you already pay for: ChatGPT, Claude, Kimi. A provider without picture or video models leaves those two off, and the app says so.</td>\n  </tr>\n</table>",
+      "version": "a0d727fc04eafa74694a05af8aeac3d793efbafd",
+      "fetched_at": "2026-10-15T08:21:15.540982+00:00",
+      "provenance": {
+        "source_url": "https://raw.githubusercontent.com/nano-muse/nanoMuse/a0d727fc04eafa74694a05af8aeac3d793efbafd/README.md",
+        "source_sha256": "9f079f4e2f75c75fea14213f020189b463423d801982847a0d2799b31fa30364",
+        "excerpt_line_ranges": [
+          [
+            56,
+            90
+          ]
+        ],
+        "selection": "Exact README excerpts, not a full repository capability assessment."
+      }
+    },
+    "readme:https://github.com/nano-muse/nanoMuse/blob/a0d727fc04eafa74694a05af8aeac3d793efbafd/README.md": {
+      "url": "https://github.com/nano-muse/nanoMuse/blob/a0d727fc04eafa74694a05af8aeac3d793efbafd/README.md",
+      "title": "nano-muse/nanoMuse README excerpt (fixture)",
+      "content": "## Install\n\n| | |\n|---|---|\n| **Browser** | [demo.nanomuse.dev](https://demo.nanomuse.dev/): a nanoMuse on a simulated phone, after a sign-in. A demo; the apps below are the real thing |\n| **Android** 8.0+, arm64 | [nanoMuse-1.0.5-arm64.apk](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-1.0.5-arm64.apk): every version is signed with the same key and installs over the last |\n| **iPhone / iPad** | [TestFlight](https://testflight.apple.com/join/ZHexbDqc): a beta that passed Apple's beta review; the link installs it · [iOS](docs/ios.md) |\n| **macOS** 12+ | [Apple Silicon](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-mac-arm64.dmg) · [Intel](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-mac-x64.dmg). Not notarised: right-click → *Open* the first time |\n| **Windows** 10+ | [nanoMuse-Desktop-1.0.5-win-x64.exe](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-win-x64.exe): click *Run anyway* once |\n| **Linux** x64 | [AppImage](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.AppImage) · [.deb](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.deb) · [tar.gz](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.tar.gz) |\n| **Docker** | `bash scripts/self-host.sh --local` for your own relay; `docker compose up -d app` for the web app on a server of yours; see [self-hosting](docs/self-hosting.md) |\n\nAll downloads come from the [latest release](https://github.com/nano-muse/nanoMuse/releases/latest); the same files are on [nanomuse.cn/dl](https://nanomuse.cn/dl/) when GitHub is slow where you are. Open the app, sign in with an e-mail or a mainland-China phone number, and it has a model to think with. The phone, the desktop and the web share one account and show the same conversations.\n\n## What it does\n\n<table>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Does things.</b><br>A Linux shell, a browser, MCP servers and skills, and, with <i>Hands</i> on, the apps on your phone and the windows on your computer through their screens, for everything that never had an API.</td>\n    <td width=\"50%\" valign=\"top\"><b>Asks first.</b><br>A stop before deleting, sending or paying, remembered for once, this chat or always; passwords and codes are yours to type. A login or a CAPTCHA is handed to you, <i>Done</i> resumes.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Reaches your other devices.</b><br>Say it on the phone, it runs on your PC; <code>@Mac …</code> at the start of a message sends the task there. Approvals come back to the device in your hand.</td>\n    <td width=\"50%\" valign=\"top\"><b>Keeps going.</b><br>Goals checked on a schedule, routines that run while the app is closed, a feed written for you each morning.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Remembers you.</b><br>What it is, what it knows about you and when it wakes are Markdown files you can read and edit.</td>\n    <td width=\"50%\" valign=\"top\"><b>Lives in your chat apps.</b><br>It answers in 飞书, 钉钉, 企业微信 and Telegram.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>A look of its own.</b><br>Describe one, your image model draws it, a video model makes it move. A small dragon by default.</td>\n    <td width=\"50%\" valign=\"top\"><b>Any model.</b><br>The relay's allowance, your own key at one of twenty providers (Bailian, OpenRouter, OpenAI, Gemini, DeepSeek and more), or a plan you already pay for: ChatGPT, Claude, Kimi. A provider without picture or video models leaves those two off, and the app says so.</td>\n  </tr>\n</table>",
+      "version": "a0d727fc04eafa74694a05af8aeac3d793efbafd",
+      "fetched_at": "2026-10-15T08:21:15.540982+00:00",
+      "provenance": {
+        "source_url": "https://raw.githubusercontent.com/nano-muse/nanoMuse/a0d727fc04eafa74694a05af8aeac3d793efbafd/README.md",
+        "source_sha256": "9f079f4e2f75c75fea14213f020189b463423d801982847a0d2799b31fa30364",
+        "excerpt_line_ranges": [
+          [
+            56,
+            90
+          ]
+        ],
+        "selection": "Exact README excerpts, not a full repository capability assessment."
+      }
+    },
+    "readme:https://raw.githubusercontent.com/nano-muse/nanoMuse/main/README.md": {
+      "url": "https://github.com/nano-muse/nanoMuse/blob/a0d727fc04eafa74694a05af8aeac3d793efbafd/README.md",
+      "title": "nano-muse/nanoMuse README excerpt (fixture)",
+      "content": "## Install\n\n| | |\n|---|---|\n| **Browser** | [demo.nanomuse.dev](https://demo.nanomuse.dev/): a nanoMuse on a simulated phone, after a sign-in. A demo; the apps below are the real thing |\n| **Android** 8.0+, arm64 | [nanoMuse-1.0.5-arm64.apk](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-1.0.5-arm64.apk): every version is signed with the same key and installs over the last |\n| **iPhone / iPad** | [TestFlight](https://testflight.apple.com/join/ZHexbDqc): a beta that passed Apple's beta review; the link installs it · [iOS](docs/ios.md) |\n| **macOS** 12+ | [Apple Silicon](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-mac-arm64.dmg) · [Intel](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-mac-x64.dmg). Not notarised: right-click → *Open* the first time |\n| **Windows** 10+ | [nanoMuse-Desktop-1.0.5-win-x64.exe](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-win-x64.exe): click *Run anyway* once |\n| **Linux** x64 | [AppImage](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.AppImage) · [.deb](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.deb) · [tar.gz](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.tar.gz) |\n| **Docker** | `bash scripts/self-host.sh --local` for your own relay; `docker compose up -d app` for the web app on a server of yours; see [self-hosting](docs/self-hosting.md) |\n\nAll downloads come from the [latest release](https://github.com/nano-muse/nanoMuse/releases/latest); the same files are on [nanomuse.cn/dl](https://nanomuse.cn/dl/) when GitHub is slow where you are. Open the app, sign in with an e-mail or a mainland-China phone number, and it has a model to think with. The phone, the desktop and the web share one account and show the same conversations.\n\n## What it does\n\n<table>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Does things.</b><br>A Linux shell, a browser, MCP servers and skills, and, with <i>Hands</i> on, the apps on your phone and the windows on your computer through their screens, for everything that never had an API.</td>\n    <td width=\"50%\" valign=\"top\"><b>Asks first.</b><br>A stop before deleting, sending or paying, remembered for once, this chat or always; passwords and codes are yours to type. A login or a CAPTCHA is handed to you, <i>Done</i> resumes.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Reaches your other devices.</b><br>Say it on the phone, it runs on your PC; <code>@Mac …</code> at the start of a message sends the task there. Approvals come back to the device in your hand.</td>\n    <td width=\"50%\" valign=\"top\"><b>Keeps going.</b><br>Goals checked on a schedule, routines that run while the app is closed, a feed written for you each morning.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Remembers you.</b><br>What it is, what it knows about you and when it wakes are Markdown files you can read and edit.</td>\n    <td width=\"50%\" valign=\"top\"><b>Lives in your chat apps.</b><br>It answers in 飞书, 钉钉, 企业微信 and Telegram.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>A look of its own.</b><br>Describe one, your image model draws it, a video model makes it move. A small dragon by default.</td>\n    <td width=\"50%\" valign=\"top\"><b>Any model.</b><br>The relay's allowance, your own key at one of twenty providers (Bailian, OpenRouter, OpenAI, Gemini, DeepSeek and more), or a plan you already pay for: ChatGPT, Claude, Kimi. A provider without picture or video models leaves those two off, and the app says so.</td>\n  </tr>\n</table>",
+      "version": "a0d727fc04eafa74694a05af8aeac3d793efbafd",
+      "fetched_at": "2026-10-15T08:21:15.540982+00:00",
+      "provenance": {
+        "source_url": "https://raw.githubusercontent.com/nano-muse/nanoMuse/a0d727fc04eafa74694a05af8aeac3d793efbafd/README.md",
+        "source_sha256": "9f079f4e2f75c75fea14213f020189b463423d801982847a0d2799b31fa30364",
+        "excerpt_line_ranges": [
+          [
+            56,
+            90
+          ]
+        ],
+        "selection": "Exact README excerpts, not a full repository capability assessment."
+      }
+    },
+    "readme:https://github.com/nano-muse/nanoMuse/blob/main/README.md": {
+      "url": "https://github.com/nano-muse/nanoMuse/blob/a0d727fc04eafa74694a05af8aeac3d793efbafd/README.md",
+      "title": "nano-muse/nanoMuse README excerpt (fixture)",
+      "content": "## Install\n\n| | |\n|---|---|\n| **Browser** | [demo.nanomuse.dev](https://demo.nanomuse.dev/): a nanoMuse on a simulated phone, after a sign-in. A demo; the apps below are the real thing |\n| **Android** 8.0+, arm64 | [nanoMuse-1.0.5-arm64.apk](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-1.0.5-arm64.apk): every version is signed with the same key and installs over the last |\n| **iPhone / iPad** | [TestFlight](https://testflight.apple.com/join/ZHexbDqc): a beta that passed Apple's beta review; the link installs it · [iOS](docs/ios.md) |\n| **macOS** 12+ | [Apple Silicon](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-mac-arm64.dmg) · [Intel](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-mac-x64.dmg). Not notarised: right-click → *Open* the first time |\n| **Windows** 10+ | [nanoMuse-Desktop-1.0.5-win-x64.exe](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-win-x64.exe): click *Run anyway* once |\n| **Linux** x64 | [AppImage](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.AppImage) · [.deb](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.deb) · [tar.gz](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.tar.gz) |\n| **Docker** | `bash scripts/self-host.sh --local` for your own relay; `docker compose up -d app` for the web app on a server of yours; see [self-hosting](docs/self-hosting.md) |\n\nAll downloads come from the [latest release](https://github.com/nano-muse/nanoMuse/releases/latest); the same files are on [nanomuse.cn/dl](https://nanomuse.cn/dl/) when GitHub is slow where you are. Open the app, sign in with an e-mail or a mainland-China phone number, and it has a model to think with. The phone, the desktop and the web share one account and show the same conversations.\n\n## What it does\n\n<table>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Does things.</b><br>A Linux shell, a browser, MCP servers and skills, and, with <i>Hands</i> on, the apps on your phone and the windows on your computer through their screens, for everything that never had an API.</td>\n    <td width=\"50%\" valign=\"top\"><b>Asks first.</b><br>A stop before deleting, sending or paying, remembered for once, this chat or always; passwords and codes are yours to type. A login or a CAPTCHA is handed to you, <i>Done</i> resumes.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Reaches your other devices.</b><br>Say it on the phone, it runs on your PC; <code>@Mac …</code> at the start of a message sends the task there. Approvals come back to the device in your hand.</td>\n    <td width=\"50%\" valign=\"top\"><b>Keeps going.</b><br>Goals checked on a schedule, routines that run while the app is closed, a feed written for you each morning.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>Remembers you.</b><br>What it is, what it knows about you and when it wakes are Markdown files you can read and edit.</td>\n    <td width=\"50%\" valign=\"top\"><b>Lives in your chat apps.</b><br>It answers in 飞书, 钉钉, 企业微信 and Telegram.</td>\n  </tr>\n  <tr>\n    <td width=\"50%\" valign=\"top\"><b>A look of its own.</b><br>Describe one, your image model draws it, a video model makes it move. A small dragon by default.</td>\n    <td width=\"50%\" valign=\"top\"><b>Any model.</b><br>The relay's allowance, your own key at one of twenty providers (Bailian, OpenRouter, OpenAI, Gemini, DeepSeek and more), or a plan you already pay for: ChatGPT, Claude, Kimi. A provider without picture or video models leaves those two off, and the app says so.</td>\n  </tr>\n</table>",
+      "version": "a0d727fc04eafa74694a05af8aeac3d793efbafd",
+      "fetched_at": "2026-10-15T08:21:15.540982+00:00",
+      "provenance": {
+        "source_url": "https://raw.githubusercontent.com/nano-muse/nanoMuse/a0d727fc04eafa74694a05af8aeac3d793efbafd/README.md",
+        "source_sha256": "9f079f4e2f75c75fea14213f020189b463423d801982847a0d2799b31fa30364",
+        "excerpt_line_ranges": [
+          [
+            56,
+            90
+          ]
+        ],
+        "selection": "Exact README excerpts, not a full repository capability assessment."
+      }
+    },
+    "releases:https://github.com/nano-muse/nanoMuse": {
+      "url": "https://github.com/nano-muse/nanoMuse/releases.atom",
+      "title": "nano-muse/nanoMuse release feed excerpt (fixture)",
+      "content": "<id>tag:github.com,2008:Repository/1382865521/v1.0.5</id>\n<updated>2026-10-13T18:24:55Z</updated>\n<title>nanoMuse 1.0.5 · Lookout</title>\n<content type=\"html\">&lt;h1&gt;nanoMuse 1.0.5 · Lookout&lt;/h1&gt;\n&lt;p&gt;🐉 &lt;strong&gt;nanoMuse &lt;code&gt;1.0.5&lt;/code&gt; “Lookout”&lt;/strong&gt;: the day after Compass, a second look at the whole project together with the day&#39;s reports; the daily feed is written out of sight, the Android approval card fits the screen, the desktop&#39;s dead buttons work and a quit protects the work in progress, the Windows release can update itself, and the relay&#39;s console finds anything.&lt;/p&gt;\n&lt;p&gt;1.0.4 went out on 2026-10-13. The same day we read nanoMuse through once more, this time with the reports and pull requests that arrived while Compass was being built, and nine passes again went over the relay, the Python runtime, the web console, the desktop, the Android and iPhone apps, the hosted showcase, the documentation and the workflows (&lt;a href=&quot;https://github.com/nano-muse/nanoMuse/pull/444&quot; data-hovercard-type=&quot;pull_request&quot; data-hovercard-url=&quot;/nano-muse/nanoMuse/pull/444/hovercard&quot;&gt;#444&lt;/a&gt; to &lt;a href=&quot;https://github.com/nano-muse/nanoMuse/pull/455&quot; data-hovercard-type=&quot;pull_request&quot; data-hovercard-url=&quot;/nano-muse/nanoMuse/pull/455/hovercard&quot;&gt;#455&lt;/a&gt;). What they found fills this version. Some of it you will see at once: the chat the daily feed is written in no longer sits in your chat list on any device, and a routine&#39;s turn opens with its result; a long command no longer pushes the Android approval card&#39;s buttons off the screen (&lt;a href=&quot;https://github.com/nano-muse/nanoMuse/issues/436&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/nano-muse/nanoMuse/issues/436/hovercard&quot;&gt;#436&lt;/a&gt;, reported by @HBSTAR0501); the ChatGPT sign-in on a phone with a proxy has a way through (&lt;a href=&quot;https://github.com/nano-muse/nanoMuse/issues/441&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/nano-muse/nanoMuse/issues/441/hovercard&quot;&gt;#441&lt;/a&gt;, reported by @Kooooooo-G); the iPhone&#39;s conversation scrolls under the header, Siri understands the app&#39;s phrases in nine languages, and an emoji face set on the desktop shows on the phone (&lt;a href=&quot;https://github.com/nano-muse/nanoMuse/issues/435&quot; data-hovercard-type=&quot;issue&quot; data-hovercard-url=&quot;/nano-muse/nanoMuse/issues/435/hovercard&quot;&gt;#435&lt;/a&gt;, reported by &lt;a class=&quot;user-mention notranslate&quot; data-hovercard-type=&quot;user&quot; data-hovercard-url=&quot;/users/Yousanflics/hovercard&quot; data-octo-click=&quot;hovercard-link-click&quot; data-octo-dimensions=&quot;link_type:self&quot; href=&quot;https://github.com/Yousanflics&quot;&gt;@Yousanflics&lt;/a&gt;); eight desktop buttons that quietly did nothing do their job again, and quitting the desktop asks before it ends a reply, a hands run or a task another device is waiting on. Others you will not see and should not ha",
+      "version": "sha256:c94fba05396178ec168fe5280013afaf40d51b6c20901f1208a98db9aec212e6",
+      "fetched_at": "2026-10-15T08:21:15.540982+00:00",
+      "provenance": {
+        "source_url": "https://github.com/nano-muse/nanoMuse/releases.atom",
+        "selection": "Latest public Atom entry excerpt, or the full feed when there are no entries.",
+        "capture_sha256": "90cb68cb2adbe76dd06a6351ee38b012474153eded5718799a84a2afd788882b"
+      }
+    },
+    "readme:https://github.com/Anil-matcha/open-dots": {
+      "url": "https://github.com/Anil-matcha/open-dots/blob/03f820993a036992f57964cd069ec5403ee567e6/README.md",
+      "title": "Anil-matcha/open-dots README excerpt (fixture)",
+      "content": "# Open Dots: Open-Source Alternative to Paid AI Agents\n\n**Open Dots is an open-source, self-hosted alternative for people exploring\npaid AI agent products such as OpenAI Dots, Meta Muse, Grok Bot, Instinct,\nManus Cue, Claude Cowork, and ChatGPT agent.** The current prototype focuses\non coding-agent workflows: run Claude Code tasks from Telegram or the web,\nreview risky actions, connect GitHub, and schedule recurring prompts. Its\nfeatures differ from those services; it is not a feature-for-feature\nreplacement.\n\nBoth interfaces use the same API, sandbox, and credentials for each user.\n\n## What it does\n\n- Run coding-agent tasks in disposable sandboxes from Telegram or a browser.\n- Connect Claude through its OAuth login flow and optionally connect a user's GitHub account.\n- Ask for approval before risky actions such as file writes, shell commands, and Git pushes.\n- Continue completed tasks in the same Claude conversation from the web UI.\n- Schedule recurring prompts and receive run results in Telegram.\n- Store user credentials encrypted and manage sandbox, task, permission, and schedule records in PostgreSQL.\n\n### Prerequisites\n\n- [uv](https://docs.astral.sh/uv/) for Python dependency management\n- [Node.js](https://nodejs.org/) (20.9+) and npm, for the web UI (required by Next.js 16)\n- [Docker](https://docs.docker.com/get-docker/) (for Postgres; not needed with the experimental SQLite option, see `DATABASE_BACKEND` below)\n- Bash (Git Bash on Windows works fine) to use `scripts/dev.sh`",
+      "version": "03f820993a036992f57964cd069ec5403ee567e6",
+      "fetched_at": "2026-10-15T08:21:15.540982+00:00",
+      "provenance": {
+        "source_url": "https://raw.githubusercontent.com/Anil-matcha/open-dots/03f820993a036992f57964cd069ec5403ee567e6/README.md",
+        "source_sha256": "0a4687f1a6aed058b707eda0ef6bc734c42744eb71b516ae95f4d5bb55996673",
+        "excerpt_line_ranges": [
+          [
+            1,
+            11
+          ],
+          [
+            31,
+            39
+          ],
+          [
+            46,
+            51
+          ]
+        ],
+        "selection": "Exact README excerpts, not a full repository capability assessment."
+      }
+    },
+    "readme:https://raw.githubusercontent.com/Anil-matcha/open-dots/03f820993a036992f57964cd069ec5403ee567e6/README.md": {
+      "url": "https://github.com/Anil-matcha/open-dots/blob/03f820993a036992f57964cd069ec5403ee567e6/README.md",
+      "title": "Anil-matcha/open-dots README excerpt (fixture)",
+      "content": "# Open Dots: Open-Source Alternative to Paid AI Agents\n\n**Open Dots is an open-source, self-hosted alternative for people exploring\npaid AI agent products such as OpenAI Dots, Meta Muse, Grok Bot, Instinct,\nManus Cue, Claude Cowork, and ChatGPT agent.** The current prototype focuses\non coding-agent workflows: run Claude Code tasks from Telegram or the web,\nreview risky actions, connect GitHub, and schedule recurring prompts. Its\nfeatures differ from those services; it is not a feature-for-feature\nreplacement.\n\nBoth interfaces use the same API, sandbox, and credentials for each user.\n\n## What it does\n\n- Run coding-agent tasks in disposable sandboxes from Telegram or a browser.\n- Connect Claude through its OAuth login flow and optionally connect a user's GitHub account.\n- Ask for approval before risky actions such as file writes, shell commands, and Git pushes.\n- Continue completed tasks in the same Claude conversation from the web UI.\n- Schedule recurring prompts and receive run results in Telegram.\n- Store user credentials encrypted and manage sandbox, task, permission, and schedule records in PostgreSQL.\n\n### Prerequisites\n\n- [uv](https://docs.astral.sh/uv/) for Python dependency management\n- [Node.js](https://nodejs.org/) (20.9+) and npm, for the web UI (required by Next.js 16)\n- [Docker](https://docs.docker.com/get-docker/) (for Postgres; not needed with the experimental SQLite option, see `DATABASE_BACKEND` below)\n- Bash (Git Bash on Windows works fine) to use `scripts/dev.sh`",
+      "version": "03f820993a036992f57964cd069ec5403ee567e6",
+      "fetched_at": "2026-10-15T08:21:15.540982+00:00",
+      "provenance": {
+        "source_url": "https://raw.githubusercontent.com/Anil-matcha/open-dots/03f820993a036992f57964cd069ec5403ee567e6/README.md",
+        "source_sha256": "0a4687f1a6aed058b707eda0ef6bc734c42744eb71b516ae95f4d5bb55996673",
+        "excerpt_line_ranges": [
+          [
+            1,
+            11
+          ],
+          [
+            31,
+            39
+          ],
+          [
+            46,
+            51
+          ]
+        ],
+        "selection": "Exact README excerpts, not a full repository capability assessment."
+      }
+    },
+    "readme:https://github.com/Anil-matcha/open-dots/blob/03f820993a036992f57964cd069ec5403ee567e6/README.md": {
+      "url": "https://github.com/Anil-matcha/open-dots/blob/03f820993a036992f57964cd069ec5403ee567e6/README.md",
+      "title": "Anil-matcha/open-dots README excerpt (fixture)",
+      "content": "# Open Dots: Open-Source Alternative to Paid AI Agents\n\n**Open Dots is an open-source, self-hosted alternative for people exploring\npaid AI agent products such as OpenAI Dots, Meta Muse, Grok Bot, Instinct,\nManus Cue, Claude Cowork, and ChatGPT agent.** The current prototype focuses\non coding-agent workflows: run Claude Code tasks from Telegram or the web,\nreview risky actions, connect GitHub, and schedule recurring prompts. Its\nfeatures differ from those services; it is not a feature-for-feature\nreplacement.\n\nBoth interfaces use the same API, sandbox, and credentials for each user.\n\n## What it does\n\n- Run coding-agent tasks in disposable sandboxes from Telegram or a browser.\n- Connect Claude through its OAuth login flow and optionally connect a user's GitHub account.\n- Ask for approval before risky actions such as file writes, shell commands, and Git pushes.\n- Continue completed tasks in the same Claude conversation from the web UI.\n- Schedule recurring prompts and receive run results in Telegram.\n- Store user credentials encrypted and manage sandbox, task, permission, and schedule records in PostgreSQL.\n\n### Prerequisites\n\n- [uv](https://docs.astral.sh/uv/) for Python dependency management\n- [Node.js](https://nodejs.org/) (20.9+) and npm, for the web UI (required by Next.js 16)\n- [Docker](https://docs.docker.com/get-docker/) (for Postgres; not needed with the experimental SQLite option, see `DATABASE_BACKEND` below)\n- Bash (Git Bash on Windows works fine) to use `scripts/dev.sh`",
+      "version": "03f820993a036992f57964cd069ec5403ee567e6",
+      "fetched_at": "2026-10-15T08:21:15.540982+00:00",
+      "provenance": {
+        "source_url": "https://raw.githubusercontent.com/Anil-matcha/open-dots/03f820993a036992f57964cd069ec5403ee567e6/README.md",
+        "source_sha256": "0a4687f1a6aed058b707eda0ef6bc734c42744eb71b516ae95f4d5bb55996673",
+        "excerpt_line_ranges": [
+          [
+            1,
+            11
+          ],
+          [
+            31,
+            39
+          ],
+          [
+            46,
+            51
+          ]
+        ],
+        "selection": "Exact README excerpts, not a full repository capability assessment."
+      }
+    },
+    "readme:https://raw.githubusercontent.com/Anil-matcha/open-dots/main/README.md": {
+      "url": "https://github.com/Anil-matcha/open-dots/blob/03f820993a036992f57964cd069ec5403ee567e6/README.md",
+      "title": "Anil-matcha/open-dots README excerpt (fixture)",
+      "content": "# Open Dots: Open-Source Alternative to Paid AI Agents\n\n**Open Dots is an open-source, self-hosted alternative for people exploring\npaid AI agent products such as OpenAI Dots, Meta Muse, Grok Bot, Instinct,\nManus Cue, Claude Cowork, and ChatGPT agent.** The current prototype focuses\non coding-agent workflows: run Claude Code tasks from Telegram or the web,\nreview risky actions, connect GitHub, and schedule recurring prompts. Its\nfeatures differ from those services; it is not a feature-for-feature\nreplacement.\n\nBoth interfaces use the same API, sandbox, and credentials for each user.\n\n## What it does\n\n- Run coding-agent tasks in disposable sandboxes from Telegram or a browser.\n- Connect Claude through its OAuth login flow and optionally connect a user's GitHub account.\n- Ask for approval before risky actions such as file writes, shell commands, and Git pushes.\n- Continue completed tasks in the same Claude conversation from the web UI.\n- Schedule recurring prompts and receive run results in Telegram.\n- Store user credentials encrypted and manage sandbox, task, permission, and schedule records in PostgreSQL.\n\n### Prerequisites\n\n- [uv](https://docs.astral.sh/uv/) for Python dependency management\n- [Node.js](https://nodejs.org/) (20.9+) and npm, for the web UI (required by Next.js 16)\n- [Docker](https://docs.docker.com/get-docker/) (for Postgres; not needed with the experimental SQLite option, see `DATABASE_BACKEND` below)\n- Bash (Git Bash on Windows works fine) to use `scripts/dev.sh`",
+      "version": "03f820993a036992f57964cd069ec5403ee567e6",
+      "fetched_at": "2026-10-15T08:21:15.540982+00:00",
+      "provenance": {
+        "source_url": "https://raw.githubusercontent.com/Anil-matcha/open-dots/03f820993a036992f57964cd069ec5403ee567e6/README.md",
+        "source_sha256": "0a4687f1a6aed058b707eda0ef6bc734c42744eb71b516ae95f4d5bb55996673",
+        "excerpt_line_ranges": [
+          [
+            1,
+            11
+          ],
+          [
+            31,
+            39
+          ],
+          [
+            46,
+            51
+          ]
+        ],
+        "selection": "Exact README excerpts, not a full repository capability assessment."
+      }
+    },
+    "readme:https://github.com/Anil-matcha/open-dots/blob/main/README.md": {
+      "url": "https://github.com/Anil-matcha/open-dots/blob/03f820993a036992f57964cd069ec5403ee567e6/README.md",
+      "title": "Anil-matcha/open-dots README excerpt (fixture)",
+      "content": "# Open Dots: Open-Source Alternative to Paid AI Agents\n\n**Open Dots is an open-source, self-hosted alternative for people exploring\npaid AI agent products such as OpenAI Dots, Meta Muse, Grok Bot, Instinct,\nManus Cue, Claude Cowork, and ChatGPT agent.** The current prototype focuses\non coding-agent workflows: run Claude Code tasks from Telegram or the web,\nreview risky actions, connect GitHub, and schedule recurring prompts. Its\nfeatures differ from those services; it is not a feature-for-feature\nreplacement.\n\nBoth interfaces use the same API, sandbox, and credentials for each user.\n\n## What it does\n\n- Run coding-agent tasks in disposable sandboxes from Telegram or a browser.\n- Connect Claude through its OAuth login flow and optionally connect a user's GitHub account.\n- Ask for approval before risky actions such as file writes, shell commands, and Git pushes.\n- Continue completed tasks in the same Claude conversation from the web UI.\n- Schedule recurring prompts and receive run results in Telegram.\n- Store user credentials encrypted and manage sandbox, task, permission, and schedule records in PostgreSQL.\n\n### Prerequisites\n\n- [uv](https://docs.astral.sh/uv/) for Python dependency management\n- [Node.js](https://nodejs.org/) (20.9+) and npm, for the web UI (required by Next.js 16)\n- [Docker](https://docs.docker.com/get-docker/) (for Postgres; not needed with the experimental SQLite option, see `DATABASE_BACKEND` below)\n- Bash (Git Bash on Windows works fine) to use `scripts/dev.sh`",
+      "version": "03f820993a036992f57964cd069ec5403ee567e6",
+      "fetched_at": "2026-10-15T08:21:15.540982+00:00",
+      "provenance": {
+        "source_url": "https://raw.githubusercontent.com/Anil-matcha/open-dots/03f820993a036992f57964cd069ec5403ee567e6/README.md",
+        "source_sha256": "0a4687f1a6aed058b707eda0ef6bc734c42744eb71b516ae95f4d5bb55996673",
+        "excerpt_line_ranges": [
+          [
+            1,
+            11
+          ],
+          [
+            31,
+            39
+          ],
+          [
+            46,
+            51
+          ]
+        ],
+        "selection": "Exact README excerpts, not a full repository capability assessment."
+      }
+    },
+    "releases:https://github.com/Anil-matcha/open-dots": {
+      "url": "https://github.com/Anil-matcha/open-dots/releases.atom",
+      "title": "Anil-matcha/open-dots release feed excerpt (fixture)",
+      "content": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<feed xmlns=\"http://www.w3.org/2005/Atom\" xmlns:media=\"http://search.yahoo.com/mrss/\" xml:lang=\"en-US\">\n  <id>tag:github.com,2008:https://github.com/Anil-matcha/open-dots/releases</id>\n  <link type=\"text/html\" rel=\"alternate\" href=\"https://github.com/Anil-matcha/open-dots/releases\"/>\n  <link type=\"application/atom+xml\" rel=\"self\" href=\"https://github.com/Anil-matcha/open-dots/releases.atom\"/>\n  <title>Release notes from open-dots</title>\n  <updated>2026-10-15T08:21:19Z</updated>\n</feed>\n",
+      "version": "sha256:4d43b4b0a3c033aa368fb0f456a0c4e7ae3cf4e5b31fc77c4935d89802f92c11",
+      "fetched_at": "2026-10-15T08:21:15.540982+00:00",
+      "provenance": {
+        "source_url": "https://github.com/Anil-matcha/open-dots/releases.atom",
+        "selection": "Latest public Atom entry excerpt, or the full feed when there are no entries.",
+        "capture_sha256": "4d43b4b0a3c033aa368fb0f456a0c4e7ae3cf4e5b31fc77c4935d89802f92c11"
+      }
+    }
+  }
+}
