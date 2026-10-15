@@ -1,0 +1,162 @@
+{
+  "recorded_at": "2026-10-15T09:20:58.964573+00:00",
+  "runtime_commit": "52a1021d4c7e845e34412f03de8593b9879dc7b8",
+  "runtime_research_tree_dirty": false,
+  "manifest_sha256": "0f79e6976a24eff7ee57da7994d27048d3c6c211baac50fa1e3d636a73822af7",
+  "freeze_sha256": "83672183d7126b44e8a778b54ea15d80ac0fe13c8b86fa713af96e0fddf35ef9",
+  "research_tests_in_separate_clone_and_venv": {
+    "tests": 226,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "web_tests": {
+    "tests": 130,
+    "failures": 0,
+    "lint": "passed",
+    "typecheck": "passed",
+    "production_build": "passed"
+  },
+  "fault_matrix": {
+    "tests": 30,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "real_process_exit_points": [
+    "after_claim",
+    "before_step_commit",
+    "after_step_commit",
+    "after_report_write"
+  ],
+  "scenario_execution": {
+    "execution_mode": "offline_scripted_workflow_verification",
+    "dataset_origin": "synthetic",
+    "planned_executions": 36,
+    "executed": 36,
+    "execution_statuses": {
+      "succeeded": 36
+    },
+    "phase_counts": {
+      "first_round": 32,
+      "preregistered_rerun": 4
+    },
+    "usage": {
+      "model_calls": 72,
+      "input_tokens": null,
+      "output_tokens": null,
+      "total_tokens": null,
+      "model_duration_ms": 194.262,
+      "monetary_cost": null
+    },
+    "median_target_duration_ms": 64.6465,
+    "model_quality_metrics": null,
+    "improvement_claim": null,
+    "manual_review_status": "pending",
+    "interpretation": "Offline results verify scripted workflow execution only. No model-quality, accuracy, or improvement claim is derived from fixture responses. Live-model runs still use synthetic inputs and require human review of the draft annotations.",
+    "freeze_sha256": "83672183d7126b44e8a778b54ea15d80ac0fe13c8b86fa713af96e0fddf35ef9"
+  },
+  "full_variant_observations": [
+    {
+      "scenario": "initial-portable",
+      "expected_conflict": false,
+      "observed_conflicts": 0,
+      "expected_notice": null,
+      "observed_source_change_notices": 0,
+      "obsolete_or_unbound_reference_count": 0
+    },
+    {
+      "scenario": "initial-hard-conflict",
+      "expected_conflict": false,
+      "observed_conflicts": 0,
+      "expected_notice": null,
+      "observed_source_change_notices": 0,
+      "obsolete_or_unbound_reference_count": 0
+    },
+    {
+      "scenario": "initial-missing",
+      "expected_conflict": false,
+      "observed_conflicts": 0,
+      "expected_notice": null,
+      "observed_source_change_notices": 0,
+      "obsolete_or_unbound_reference_count": 0
+    },
+    {
+      "scenario": "initial-conflicting-docs",
+      "expected_conflict": true,
+      "observed_conflicts": 0,
+      "expected_notice": null,
+      "observed_source_change_notices": 0,
+      "obsolete_or_unbound_reference_count": 0
+    },
+    {
+      "scenario": "constraints-no-sandbox",
+      "expected_conflict": false,
+      "observed_conflicts": 0,
+      "expected_notice": null,
+      "observed_source_change_notices": 0,
+      "obsolete_or_unbound_reference_count": 0
+    },
+    {
+      "scenario": "constraints-platform",
+      "expected_conflict": false,
+      "observed_conflicts": 0,
+      "expected_notice": null,
+      "observed_source_change_notices": 0,
+      "obsolete_or_unbound_reference_count": 0
+    },
+    {
+      "scenario": "constraints-budget",
+      "expected_conflict": false,
+      "observed_conflicts": 0,
+      "expected_notice": null,
+      "observed_source_change_notices": 0,
+      "obsolete_or_unbound_reference_count": 0
+    },
+    {
+      "scenario": "constraints-preference-to-hard",
+      "expected_conflict": false,
+      "observed_conflicts": 0,
+      "expected_notice": null,
+      "observed_source_change_notices": 0,
+      "obsolete_or_unbound_reference_count": 0
+    },
+    {
+      "scenario": "update-dependency",
+      "expected_conflict": false,
+      "observed_conflicts": 0,
+      "expected_notice": true,
+      "observed_source_change_notices": 0,
+      "obsolete_or_unbound_reference_count": 0
+    },
+    {
+      "scenario": "update-wording",
+      "expected_conflict": false,
+      "observed_conflicts": 0,
+      "expected_notice": false,
+      "observed_source_change_notices": 0,
+      "obsolete_or_unbound_reference_count": 0
+    },
+    {
+      "scenario": "update-duplicate",
+      "expected_conflict": false,
+      "observed_conflicts": 0,
+      "expected_notice": true,
+      "observed_source_change_notices": 0,
+      "obsolete_or_unbound_reference_count": 0
+    },
+    {
+      "scenario": "update-conflict",
+      "expected_conflict": true,
+      "observed_conflicts": 0,
+      "expected_notice": true,
+      "observed_source_change_notices": 0,
+      "obsolete_or_unbound_reference_count": 0
+    }
+  ],
+  "live_model_acceptance": "pending_local_DeepSeek_configuration",
+  "live_source_acceptance": "blocked_by_private_address_DNS_answers_for_public_GitHub_hosts",
+  "overnight_and_next_day_acceptance": "pending_real_elapsed_time",
+  "human_trials": "not_performed",
+  "raw_artifacts_local": ".local/verification/current/"
+}

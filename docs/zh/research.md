@@ -96,6 +96,7 @@ DeepSeek 真实研究、真实来源网络访问、夜间停机与次日定时�
 均需另行完成验收。接口见 [契约](research-contracts.md)，实现见
 [研究推理](research-reasoning.md)、[来源读取](research-sources.md)，实验口径见
 [评测说明](research-evaluation.md)。
+已完成的检查和待办验收见 [开发与验证记录](research-status.md)。
 
 ## 实现参与方式
 

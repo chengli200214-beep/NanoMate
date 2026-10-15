@@ -117,6 +117,7 @@ tests additionally verify real `os._exit(86)` recovery. It refuses to overwrite 
 
 Live DeepSeek research, real-source network access, overnight scheduling, next-day
 checks, reviewed scenario labels and human trials are separate acceptance items.
+The [implementation checkpoint](research-status.md) records measured results and open gates.
 See [contracts](research-contracts.md), [reasoning](research-reasoning.md),
 [source adapters](research-sources.md) and [evaluation](research-evaluation.md).
 
