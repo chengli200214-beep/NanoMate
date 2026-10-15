@@ -12,6 +12,12 @@ database, publish a report, or notify anyone. Every model tool call passes throu
 `Sentinel.guard`. A standalone reasoner without an injected Sentinel uses the upstream
 Sentinel with an in-memory audit and declines interactions that require approval.
 
+A response may request at most eight tools. An oversized batch executes no tools and
+receives corrective feedback within the same two-repair allowance used for invalid JSON
+and references. Rejected tool-call IDs are omitted from the next request. The prompt also
+permits direct final JSON without submitting each evidence draft separately. Model-call
+budgets and the tool allowlist still apply.
+
 Quotes must be exact substrings of the identified snapshot. A decision can cite only
 active evidence for the same candidate. A documentation page cannot be labelled a code
 observation. A hard requirement with no direct current evidence remains unknown.

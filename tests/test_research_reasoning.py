@@ -367,6 +367,45 @@ async def test_native_research_tool_goes_through_real_sentinel(tmp_path: Path) -
     assert gate.tainted
 
 
+async def test_oversized_tool_batch_is_repaired_without_partial_execution() -> None:
+    oversized = LLMResponse(tool_calls=[call("read_source", snapshot_id="sa") for _ in range(9)])
+    llm = MockLLM(
+        [oversized, LLMResponse(tool_calls=[call("read_source", snapshot_id="sa")]), response([])]
+    )
+    reasoner = ResearchReasoner(llm)
+    assert await reasoner.extract(context()) == []
+    assert len(reasoner.calls) == 3
+    assert reasoner.calls[0]["status"] == "invalid_output"
+    assert reasoner.calls[0]["error_type"] == "model_format"
+    assert len(reasoner.sentinel.audit.tail()) == 1
+    retry_messages = llm.calls[1]["messages"]
+    assert "no tool ran" in retry_messages[-1].content
+    assert not any(message.tool_calls for message in retry_messages)
+
+
+async def test_tool_batch_and_json_errors_share_the_two_repair_allowance() -> None:
+    oversized = LLMResponse(tool_calls=[call("read_source", snapshot_id="sa") for _ in range(9)])
+    llm = MockLLM([oversized, response({"wrong": "shape"}), oversized, response([])])
+    reasoner = ResearchReasoner(llm)
+    with pytest.raises(ResearchFormatError, match="at most eight"):
+        await reasoner.extract(context())
+    assert len(reasoner.calls) == len(llm.calls) == 3
+    assert reasoner.sentinel.audit.tail() == []
+
+
+async def test_eight_tool_calls_remain_supported() -> None:
+    llm = MockLLM(
+        [
+            LLMResponse(tool_calls=[call("read_source", snapshot_id="sa") for _ in range(8)]),
+            response([]),
+        ]
+    )
+    reasoner = ResearchReasoner(llm)
+    await reasoner.extract(context())
+    assert len(reasoner.sentinel.audit.tail()) == 8
+    assert len(reasoner.calls) == 2
+
+
 async def test_sentinel_deny_does_not_execute_tool(tmp_path: Path) -> None:
     gate = Sentinel(
         SentinelSettings(deny_tools=["read_source"]),
