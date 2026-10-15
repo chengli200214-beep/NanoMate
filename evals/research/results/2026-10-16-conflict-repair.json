@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "purpose": "separate_targeted_reminder_repair_not_a_replacement_for_original_matrix",
+  "code_commit": "8f21dcb",
+  "branch": "codex/research-conflict-reminder",
+  "freeze_sha256": "15783891739c845238b0b530bae66084baccadad09f8165f0197631aa7172d46",
+  "workflow_status": "succeeded",
+  "reminder_check": "passed",
+  "source_change_notifications": 1,
+  "original_model_impact_level": "uncertain",
+  "applied_impact_level": "recommendation",
+  "policy": "changed_hard_requirement_conflict",
+  "conflicted_hard_requirement_remains_unknown": true,
+  "new_provider_requests_including_setup": 32,
+  "input_tokens_including_setup": 363226,
+  "output_tokens_including_setup": 59169,
+  "total_tokens_including_setup": 422395,
+  "target_usage": {
+    "model_calls": 17,
+    "input_tokens": 195974,
+    "output_tokens": 30967,
+    "total_tokens": 226941,
+    "model_duration_ms": 144902.32200000001,
+    "monetary_cost": null
+  },
+  "shared_currency_guard": {
+    "previous_requests": 505,
+    "cumulative_requests": 537,
+    "unsettled_requests": 0,
+    "prior_spending_retained": true,
+    "actual_provider_bill_verified": false
+  },
+  "controlled_replay": {
+    "status": "passed",
+    "mode": "isolated_replay_of_actual_saved_live_outputs_not_a_new_model_run",
+    "additional_notifications": 1,
+    "additional_model_calls": 0,
+    "additional_report_records": 0,
+    "original_database_unchanged": true
+  },
+  "validation": {
+    "scoped_pytest": 367,
+    "ruff": "passed",
+    "mypy_source_files": 24,
+    "docs_build": "passed"
+  },
+  "limitations": [
+    "Only the reminder behavior was retested; other generated claims still require semantic review.",
+    "Original C4 fixture wording and its before/after limitation remain unchanged.",
+    "The repair is isolated and has not replaced the original workbench runtime or overnight baseline."
+  ]
+}

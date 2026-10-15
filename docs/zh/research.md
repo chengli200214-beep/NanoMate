@@ -113,7 +113,7 @@ DeepSeek 真实研究、真实来源网络访问、夜间停机与次日定时�
 ```powershell
 .venv/Scripts/python.exe scripts/research_network_smoke.py --source-dns cloudflare --output .local/verification/network-check
 .venv/Scripts/python.exe scripts/research_model_smoke.py --data-dir .local/research-dev --output .local/verification/model-check
-.venv/Scripts/python.exe scripts/evaluate_research.py --mode live --pilot --data-dir .local/research-dev
+.venv/Scripts/python.exe scripts/evaluate_research.py --mode live --pilot --data-dir .local/research-dev --review-receipt PATH --scoring-rules PATH
 .venv/Scripts/python.exe scripts/research_wall_clock_probe.py watch --output .local/verification/wall-clock
 .venv/Scripts/python.exe scripts/research_wall_clock_probe.py watch --overnight --daily-time 09:00 --timezone Asia/Shanghai --output .local/verification/overnight
 ```

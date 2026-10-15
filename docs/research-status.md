@@ -1,8 +1,9 @@
-# Research implementation checkpoint, 2026-10-15
+# Research implementation checkpoint, 2026-10-16
 
-The local research workspace completed a real DeepSeek tool call, two live pilots and
-a two-repository comparison with process recovery. Full evaluation, overnight acceptance
-and human review remain open. This checkpoint does not establish completion of all plan gates.
+The local research workspace completed its frozen live matrix after owner approval of
+the synthetic scope and scoring. Of 36 executions, 34 succeeded, one failed and one
+needed attention. An isolated conflict-reminder repair passed targeted live validation;
+real-report claim support, overnight acceptance and human review remain open.
 
 The implementation reuses nanoMuse's model adapters, Sentinel, authentication and web
 shell. New modules own registered-source reads, research state, leased steps, evidence,
@@ -44,15 +45,15 @@ The first checkpoint used code commit `52a1021` with a clean research tree and f
   persisted, both sides remain visible, definitive verdicts are rejected, meaningful
   updates notify once, and mute rules suppress the scoped notification.
 
-Workflow success is not a semantic pass. Annotations are agent-authored drafts awaiting
-human review. The [sanitized result summary](../evals/research/results/2026-10-15-offline.json)
+Workflow success is not a semantic pass. At this offline checkpoint, agent-authored
+annotations awaited human review. The [sanitized result summary](../evals/research/results/2026-10-15-offline.json)
 retains expected and observed behavior. Detailed local traces, databases, frozen input
 copies and JUnit files are under `.local/verification/current/`.
 
 ## Open acceptance
 
-1. Review the draft annotations and choose the full evaluation budget using the measured
-   pilot usage below. Model configuration, the tool probe and both live pilots completed.
+1. Integrate the isolated reminder repair after the original overnight probe and review
+   retained failures. Annotation approval and the frozen full matrix have completed.
 2. Complete actual overnight catch-up and next-day scheduling. Short wall-clock recovery
    passed and the overnight timer is running, awaiting real elapsed time.
 3. Review cited claims and record reminder quality and maintenance costs. A live public
@@ -121,7 +122,7 @@ within the existing two-repair allowance. The failed attempt remains saved.
   run. These are separate attempts, not a controlled improvement experiment or a price quote.
 - The dependency-update pilot registered one source-change notice. Both pilots had six-section
   reports and no observed obsolete or unbound evidence references. Inputs remain synthetic;
-  annotations and semantic support await human review. The full matrix has not run live.
+  semantic support awaits human review. At that pilot checkpoint the full matrix had not run live.
 - The workbench fetched current public READMEs for Open Dots and nanoMuse, preserving commits
   `64e48f6a784ee83471c45daf4dcfc5393dc6f30e` and
   `c33c9e83804d226b689be28d4ebc8a70b798074e`. A forced process exit on the repaired runtime
@@ -140,8 +141,66 @@ within the existing two-repair allowance. The failed attempt remains saved.
 
 The [sanitized live summary](../evals/research/results/2026-10-15-live.json) retains both pilot
 attempts and the original repository failure. Raw records and the exported report are local
-under `.local/verification/2026-10-15-live-workbench/`. Full evaluation still requires reviewed
-annotations and a total budget; human trials and owner review remain open.
+under `.local/verification/2026-10-15-live-workbench/`. Before the full matrix, annotation and
+spending decisions remained pending; human trials and owner review remain open.
 
 The user planning file is retained locally, with delivery requirements updated at the owner's
 request. Runtime data, keys, raw logs and internal planning are excluded from the commits.
+
+## Frozen live matrix, 2026-10-16
+
+The owner approved S1, the twelve draft labels and the scoring rules. S1 uses two fictional
+candidates and eight synthetic snapshots; the original three-real-repository scope remains
+outside this evaluation. The real two-repository smoke is reported separately.
+
+Evaluation commit `3b90b07` froze code, model settings, approval and scoring hashes with
+freeze SHA-256 `eeee804ef9f76f0392a91c7b128211f3959e3ceedf2911f036ab836984b16d38`.
+The research runtime remained `9be1805`. Three workers used the same native-tool model
+configuration, no hidden retries and one persistent currency ledger.
+
+- All 36 executions were attempted: first round 31 succeeded and one failed; specified
+  reruns three succeeded and one needed attention. The full version's twelve first-round
+  workflows succeeded, which is not a semantic score.
+- Preparation and targets made 505 provider requests with returned usage, totaling
+  4,204,306 tokens. Target stages accounted for 323 requests and 2,843,149 tokens.
+  No provider usage was unknown and no reservation remained unsettled. Monetary figures
+  stay local and are conservative estimates rather than a verified provider bill.
+- Published target reports had no observed current-reference, version-binding or content
+  integrity error. The 30-case fault matrix passed. Source-change reminders for the full
+  dependency, wording, duplicate and conflict cases were respectively 1, 0, 1 and 0;
+  the conflict case required one, so that reminder check failed. The successful full-version
+  duplicate replay added no requests, reports or notifications.
+- The no-impact-filter duplicate control failed on truncated model output. The second
+  specified dependency rerun exhausted its extraction call limit. Both remain recorded.
+- The conflict fixture's unchanged platform page mentions a Linux-only README even before
+  the update. This limits the before/after interpretation; inputs and expected behavior
+  were not edited after execution.
+- The saved real report incorrectly required relay sign-in or self-hosting, although its
+  registered README also supports own-key use with no server. Several compound claims
+  also bind narrower quotes than their scope. The fixed critical-claim set covers five
+  reports and 38 compound claim groups; owner output review remains pending and the
+  source-support gate needs revision.
+
+See the [sanitized matrix result](../evals/research/results/2026-10-16-live-matrix.json).
+Raw artifacts, local claim-review material and a corrected real-report draft are under
+`.local/verification/2026-10-16-full-evaluation/`. The correction does not replace the
+original report or its failed review. Reminder repair is isolated from the original
+runtime while the 09:00 overnight probe is pending.
+
+## Separate conflict-reminder repair
+
+Commit `8f21dcb` on `codex/research-conflict-reminder` retains the model's uncertain
+judgment and applies an attention policy when changed current evidence participates in
+an unresolved hard-requirement conflict. The comparison remains unknown. Scoped muting
+and event deduplication passed their regression tests.
+
+An isolated database replay of the actual saved C4 output emitted one reminder with zero
+new model calls or report records and left the original database unchanged. A separate
+live-model rerun also emitted one reminder while preserving `model_judgment=uncertain`
+and the applied policy. It made 32 requests including setup, with 422,395 returned tokens.
+The shared ledger retained all 505 earlier requests, totaling 537 settled requests.
+
+The repair passed 367 scoped checks, Ruff, mypy for 24 files and the docs build. It does
+not replace the original 36 results or establish semantic correctness of every generated
+claim. The original workbench and overnight baseline remain on the earlier runtime.
+See the [separate repair result](../evals/research/results/2026-10-16-conflict-repair.json).

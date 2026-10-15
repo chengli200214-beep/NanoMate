@@ -1,0 +1,286 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-15T16:50:01.002245+00:00",
+  "evaluation_commit": "3b90b07",
+  "research_runtime_commit": "9be1805",
+  "scope": "S1: two fictional candidates, eight synthetic snapshots; real-repository smoke reported separately",
+  "freeze_sha256": "eeee804ef9f76f0392a91c7b128211f3959e3ceedf2911f036ab836984b16d38",
+  "annotation_status": "owner_approved_agent_authored_not_independent",
+  "approval_receipt_sha256": "ca41cad78f2c1ac6483795bfd3567f4112cc514f1a040e00630d9ac94da89fd6",
+  "scoring_sha256": "91519708de99be6ce99a873ce47697f08eca236d4e8d6cb146e3d2a9c3da2e57",
+  "independent_annotation_review": false,
+  "model_configuration": {
+    "model": "deepseek-flash",
+    "temperature": 0.3,
+    "max_tokens": 4096,
+    "tool_mode": "native",
+    "transport_retries": 0,
+    "stream": true,
+    "workers": 3
+  },
+  "planned_executions": 36,
+  "executed": 36,
+  "workflow_statuses": {
+    "succeeded": 34,
+    "failed": 1,
+    "needs_attention": 1
+  },
+  "first_round": {
+    "executed": 32,
+    "statuses": {
+      "succeeded": 31,
+      "failed": 1
+    }
+  },
+  "preregistered_reruns": {
+    "executed": 4,
+    "statuses": {
+      "succeeded": 3,
+      "needs_attention": 1
+    }
+  },
+  "usage_including_setup": {
+    "logical_calls": 505,
+    "input_tokens": 3618043,
+    "output_tokens": 586263,
+    "total_tokens": 4204306
+  },
+  "target_usage": {
+    "model_calls": 323,
+    "input_tokens": 2451860,
+    "output_tokens": 391289,
+    "total_tokens": 2843149,
+    "model_duration_ms": 1924392.988,
+    "monetary_cost": null
+  },
+  "currency_guard": {
+    "provider_attempts": 505,
+    "unsettled_requests": 0,
+    "stop_reasons": [],
+    "prior_setup_and_failures_included": true,
+    "actual_provider_bill_verified": false,
+    "internal_amounts_retained_locally": true
+  },
+  "mechanical_checks": {
+    "published_target_reports": 34,
+    "current_evidence_binding_errors": 0,
+    "published_report_integrity_errors": 0,
+    "frozen_inputs_unchanged": true,
+    "fault_matrix": {
+      "tests": 30,
+      "failures": 0
+    }
+  },
+  "full_first_round": [
+    {
+      "scenario_id": "initial-portable",
+      "workflow_status": "succeeded",
+      "new_source_change_notifications": 0,
+      "semantic_verdict": null,
+      "replay_deltas": []
+    },
+    {
+      "scenario_id": "initial-hard-conflict",
+      "workflow_status": "succeeded",
+      "new_source_change_notifications": 0,
+      "semantic_verdict": null,
+      "replay_deltas": []
+    },
+    {
+      "scenario_id": "initial-missing",
+      "workflow_status": "succeeded",
+      "new_source_change_notifications": 0,
+      "semantic_verdict": null,
+      "replay_deltas": []
+    },
+    {
+      "scenario_id": "initial-conflicting-docs",
+      "workflow_status": "succeeded",
+      "new_source_change_notifications": 0,
+      "semantic_verdict": null,
+      "replay_deltas": []
+    },
+    {
+      "scenario_id": "constraints-no-sandbox",
+      "workflow_status": "succeeded",
+      "new_source_change_notifications": 0,
+      "semantic_verdict": null,
+      "replay_deltas": []
+    },
+    {
+      "scenario_id": "constraints-platform",
+      "workflow_status": "succeeded",
+      "new_source_change_notifications": 0,
+      "semantic_verdict": null,
+      "replay_deltas": []
+    },
+    {
+      "scenario_id": "constraints-budget",
+      "workflow_status": "succeeded",
+      "new_source_change_notifications": 0,
+      "semantic_verdict": null,
+      "replay_deltas": []
+    },
+    {
+      "scenario_id": "constraints-preference-to-hard",
+      "workflow_status": "succeeded",
+      "new_source_change_notifications": 0,
+      "semantic_verdict": null,
+      "replay_deltas": []
+    },
+    {
+      "scenario_id": "update-dependency",
+      "workflow_status": "succeeded",
+      "new_source_change_notifications": 1,
+      "semantic_verdict": null,
+      "replay_deltas": []
+    },
+    {
+      "scenario_id": "update-wording",
+      "workflow_status": "succeeded",
+      "new_source_change_notifications": 0,
+      "semantic_verdict": null,
+      "replay_deltas": []
+    },
+    {
+      "scenario_id": "update-duplicate",
+      "workflow_status": "succeeded",
+      "new_source_change_notifications": 1,
+      "semantic_verdict": null,
+      "replay_deltas": [
+        {
+          "additional_reports": 0,
+          "additional_notifications": 0,
+          "additional_model_calls": 0
+        }
+      ]
+    },
+    {
+      "scenario_id": "update-conflict",
+      "workflow_status": "succeeded",
+      "new_source_change_notifications": 0,
+      "semantic_verdict": null,
+      "replay_deltas": []
+    }
+  ],
+  "retained_failures": [
+    {
+      "execution_id": "31-update-duplicate-no_impact_filter-r0",
+      "status": "failed",
+      "error": "ResearchFormatError: Model response was truncated"
+    },
+    {
+      "execution_id": "36-update-dependency-full-r2",
+      "status": "needs_attention",
+      "error": "ResearchCallLimitError: The extract stage exhausted its model call limit"
+    }
+  ],
+  "semantic_findings": [
+    "C4: a current conflict was recorded, but zero source-change reminders were emitted where one was required.",
+    "C4's unchanged platform page already mentions a Linux-only README before the update; this limits interpretation of the before/after scenario. The frozen input was not changed.",
+    "The saved real-repository report incorrectly treats relay sign-in or self-hosting as required; its registered README also supports own-key use with no server.",
+    "Several real-report compound claims bind narrower quotes than the facts they assert; full-source support and quote coverage require separate review."
+  ],
+  "model_quality_metrics": null,
+  "human_semantic_review": "pending",
+  "critical_claim_gate": "needs_revision_with_owner_review_pending",
+  "improvement_claim": null,
+  "artifacts": ".local/verification/2026-10-16-full-evaluation",
+  "operational_comparison_first_round": [
+    {
+      "variant": "baseline",
+      "scenario_group": "constraint_change",
+      "executions": 4,
+      "statuses": {
+        "succeeded": 4
+      },
+      "target_requests": 34,
+      "target_tokens": 214201,
+      "setup_tokens": 0
+    },
+    {
+      "variant": "baseline",
+      "scenario_group": "initial",
+      "executions": 4,
+      "statuses": {
+        "succeeded": 4
+      },
+      "target_requests": 37,
+      "target_tokens": 237352,
+      "setup_tokens": 0
+    },
+    {
+      "variant": "baseline",
+      "scenario_group": "source_update",
+      "executions": 4,
+      "statuses": {
+        "succeeded": 4
+      },
+      "target_requests": 37,
+      "target_tokens": 264960,
+      "setup_tokens": 0
+    },
+    {
+      "variant": "full",
+      "scenario_group": "constraint_change",
+      "executions": 4,
+      "statuses": {
+        "succeeded": 4
+      },
+      "target_requests": 13,
+      "target_tokens": 91350,
+      "setup_tokens": 288620
+    },
+    {
+      "variant": "full",
+      "scenario_group": "initial",
+      "executions": 4,
+      "statuses": {
+        "succeeded": 4
+      },
+      "target_requests": 33,
+      "target_tokens": 206761,
+      "setup_tokens": 0
+    },
+    {
+      "variant": "full",
+      "scenario_group": "source_update",
+      "executions": 4,
+      "statuses": {
+        "succeeded": 4
+      },
+      "target_requests": 59,
+      "target_tokens": 638929,
+      "setup_tokens": 287022
+    },
+    {
+      "variant": "no_impact_filter",
+      "scenario_group": "source_update",
+      "executions": 4,
+      "statuses": {
+        "succeeded": 3,
+        "failed": 1
+      },
+      "target_requests": 62,
+      "target_tokens": 691191,
+      "setup_tokens": 298567
+    },
+    {
+      "variant": "no_version_invalidation",
+      "scenario_group": "constraint_change",
+      "executions": 4,
+      "statuses": {
+        "succeeded": 4
+      },
+      "target_requests": 13,
+      "target_tokens": 88511,
+      "setup_tokens": 198490
+    }
+  ],
+  "comparison_limits": [
+    "Target costs and prior setup are shown separately, including failed executions.",
+    "Quality review is pending, so token differences are not quality-matched performance improvements.",
+    "The initial baseline and full variants use the same pipeline; their differences reflect run variability.",
+    "Four cases per group do not establish a general saving or statistically significant effect."
+  ]
+}
