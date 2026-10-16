@@ -1,5 +1,18 @@
 # Research contracts v1
 
+Requirement revisions trigger fresh extraction of current snapshots even when the text is
+unchanged. A source's optional `extracted_spec_id` records the last completed extraction scope;
+older records without it remain readable and are refreshed on the next research run. Facts
+omitted by fresh extraction are superseded, while user corrections and the facts they replace
+remain protected from automatic resurrection.
+
+Conflicting non-preference verdicts for one candidate and hard constraint are rejected before
+publication. The model must return a consistent judgment or leave unrelated observations
+unbound with empty `constraint_refs`; unresolved source conflicts still require unknown.
+Short quotations without terminal sentence punctuation retain their containing paragraph
+when it fits the 2,000-character limit. This preserves qualifiers but does not prove entailment.
+Candidate rows describe their own facts; cross-candidate summaries must identify both sources.
+
 The local development plan owns the product scope. `nanomuse/research/contracts.py` owns
 the shared types. Sources and reasoners implement its protocols. State uses SQLite and
 JSON dictionaries at the service boundary. All project records are scoped by project ID.

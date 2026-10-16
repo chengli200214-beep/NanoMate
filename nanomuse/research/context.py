@@ -123,6 +123,27 @@ def validate_evidence(draft: EvidenceDraft, context: dict[str, Any]) -> Evidence
     return draft
 
 
+def complete_evidence_quote(draft: EvidenceDraft, context: dict[str, Any]) -> EvidenceDraft:
+    """Keep the containing source paragraph when it fits the quotation contract.
+
+    This preserves qualifiers around a model-selected fragment. It does not establish
+    that the fact follows from the quote, and never changes the source or the fact.
+    """
+    draft = validate_evidence(draft, context)
+    if draft.quote.rstrip().endswith((".", "。", "!", "！", "?", "？")):
+        return draft
+    snapshot = next(s for s in context["snapshots"] if s["id"] == draft.snapshot_id)
+    content = str(snapshot["content"])
+    start = content.index(draft.quote)
+    end = start + len(draft.quote)
+    left = content.rfind("\n\n", 0, start)
+    right = content.find("\n\n", end)
+    paragraph = content[left + 2 if left >= 0 else 0 : right if right >= 0 else len(content)]
+    if len(paragraph) <= 2000:
+        return draft.model_copy(update={"quote": paragraph})
+    return draft
+
+
 def validate_conflicts(
     conflicts: list[ConflictDraft],
     context: dict[str, Any],
@@ -363,6 +384,7 @@ def validate_comparison(comparison: Comparison, context: dict[str, Any]) -> Comp
                     )
                 )
                 unknowns.append(f"{candidate}: {constraint.text}")
+    validate_hard_verdicts(spec, checked)
     return bind_recommendation(
         spec,
         comparison.model_copy(
@@ -383,6 +405,27 @@ def constraint_verdict(decisions: list[DecisionDraft]) -> str:
     if "unknown" in verdicts or "meets" not in verdicts:
         return "unknown"
     return "meets"
+
+
+def validate_hard_verdicts(spec: ProjectSpec, decisions: list[DecisionDraft]) -> None:
+    """Contradictory rows must be repaired, never silently change a condition's meaning."""
+    for candidate in spec.candidates:
+        for constraint in spec.constraints:
+            if not constraint.hard:
+                continue
+            verdicts = {
+                row.verdict
+                for row in decisions
+                if row.candidate == candidate
+                and constraint.id in row.constraint_refs
+                and row.verdict != "preference"
+            }
+            if len(verdicts) > 1:
+                raise ResearchValidationError(
+                    f"Inconsistent verdicts for {candidate} / {constraint.id}. "
+                    "Use one consistent hard-condition judgment; unrelated observations must "
+                    "have empty constraint_refs. An unresolved conflict requires unknown."
+                )
 
 
 def bind_recommendation(spec: ProjectSpec, comparison: Comparison) -> Comparison:

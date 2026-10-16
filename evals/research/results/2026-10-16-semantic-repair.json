@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-16",
+  "scope": "Requirement interpretation repairs and accelerated recovery",
+  "verification": {
+    "related_tests_passed": 411,
+    "ruff": "passed",
+    "format": "passed",
+    "mypy_source_files": 161
+  },
+  "live_synthetic": {
+    "planned": 12,
+    "succeeded": 12,
+    "target_and_replay_calls": 119,
+    "including_setup_requests": 181,
+    "core_scenarios_met_by_assistant_review": 12,
+    "all_claims_supported": false,
+    "remaining_findings": [
+      {
+        "case": "constraints-preference-to-hard",
+        "finding": "Two unbound rows describe the entire README as only its title and introduction, omitting its explicit documentation-gap sentence. Hard verdicts remain correctly unknown."
+      },
+      {
+        "case": "update-duplicate",
+        "finding": "An Alpha evidence fact incorrectly includes Beta readability/unknown claims. Comparison identifies and rejects those claims, but the raw fact remains visible."
+      },
+      {
+        "case": "update-conflict",
+        "finding": "An inference locator says the platform snapshot cannot be re-read; comparison successfully reads it and flags the inconsistent metadata. The raw locator remains visible."
+      }
+    ],
+    "human_review_completed": false,
+    "frozen_inputs_sha256": "dac6a015e6014a2cac90bb0889aaa39c5fb96b46e80c31e7d13084e456a76064"
+  },
+  "recovery": {
+    "accelerated_cases_passed": 4,
+    "accelerated_elapsed_seconds": 16.032942800004093,
+    "cases": [
+      "cross_midnight",
+      "week_offline",
+      "spring_dst",
+      "fall_dst"
+    ],
+    "separate_processes": true,
+    "zero_new_calls_reports_notifications": true,
+    "short_real_elapsed_seconds": 131.53482055664062,
+    "current_runtime_sha256": "0aaf2cc4bba567d90b19123b97acc63ee807ccdba47a2937fa91072ce1391078",
+    "current_runtime_real_overnight_verified": false,
+    "limits": "Tests application scheduling and persisted recovery, not OS sleep, network longevity or physical overnight elapsed time."
+  },
+  "previous_cohorts": "Retained unchanged; this cohort does not replace earlier failures.",
+  "trials": "waived_by_user",
+  "real_saved_readme_probe": {
+    "status": "succeeded",
+    "model_requests": 6,
+    "isolated_from_workbench": true,
+    "sources": "same fixed README commits as previous review",
+    "quotation_membership": "passed",
+    "windows_runtime_requirement": "unknown for both candidates",
+    "assistant_review": "partial",
+    "remaining_findings": [
+      "The Open Dots candidate row still compares itself against nanoMuse without binding nanoMuse evidence in that row.",
+      "A claim of lacking an existing evidence/report mechanism is broader than its architecture, permission and test quotations.",
+      "The uncertainty text refers to relay dependencies without making the optional own-key/no-server route explicit."
+    ],
+    "human_review_completed": false
+  }
+}

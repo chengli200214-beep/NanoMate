@@ -233,6 +233,42 @@ def test_readded_candidate_restores_its_sources(store: ResearchStore) -> None:
     assert store.get("source", source["id"])["enabled"] is True
 
 
+async def test_changed_requirement_reextracts_unchanged_snapshots(store: ResearchStore) -> None:
+    class ScopedFixture(FixtureReasoner):
+        dimensions: list[str] = []
+
+        async def extract(self, context: dict[str, Any]) -> Any:
+            dimension = context["spec"]["constraints"][0]["id"]
+            self.dimensions.append(dimension)
+            return [
+                row.model_copy(update={"dimension": dimension})
+                for row in await super().extract(context)
+            ]
+
+    project = store.create_project(spec())
+    reasoner = ScopedFixture()
+    engine = ResearchOrchestrator(store, reasoner=reasoner)
+    store.enqueue(project["id"])
+    await drain(engine)
+    original = store.snapshots(project["id"])
+    old_evidence = store.list("evidence", project["id"])
+    store.revise(
+        project["id"],
+        spec(constraints=[{"id": "sandbox", "text": "No external sandbox", "hard": True}]),
+    )
+    await drain(engine)
+    assert reasoner.dimensions == ["local", "sandbox"]
+    assert store.snapshots(project["id"]) == original
+    assert all(store.get("evidence", row["id"])["status"] == "superseded" for row in old_evidence)
+    assert {
+        e["dimension"]
+        for e in engine._context(project["id"], store.project(project["id"])["spec"])["evidence"]
+    } == {"sandbox"}
+    store.enqueue(project["id"], "check")
+    await drain(engine)
+    assert reasoner.dimensions == ["local", "sandbox"]
+
+
 @pytest.mark.parametrize("repeat", range(3))
 async def test_correction_keeps_source_quote_and_uncertainty(
     store: ResearchStore, repeat: int

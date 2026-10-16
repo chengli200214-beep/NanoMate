@@ -18,6 +18,7 @@ from nanomuse.research.context import (
     require_unknown_for_conflicts,
     validate_conflicts,
     validate_decision_support,
+    validate_hard_verdicts,
 )
 from nanomuse.research.contracts import Comparison, ProjectSpec
 
@@ -69,6 +70,7 @@ def render_report(
         check_snapshots=False,
     )
     decisions = require_unknown_for_conflicts(result.decisions, conflicts)
+    validate_hard_verdicts(project, decisions)
     result = bind_recommendation(
         project, result.model_copy(update={"conflicts": conflicts, "decisions": decisions})
     )

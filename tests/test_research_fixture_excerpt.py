@@ -101,8 +101,8 @@ async def test_fixture_excerpt_remains_an_exact_substring_within_1000_characters
 
 
 async def test_fixture_selection_does_not_change_live_model_extract() -> None:
-    # A configured model chooses the exact quote. The fixture-only formatting filter
-    # must not be applied to its result, even when it quoted a decorative source line.
+    # A model-selected decorative line remains quoted. Source paragraph completion
+    # may retain surrounding text, but must not apply the fixture-only line filter.
     llm = MockLLM(
         [
             LLMResponse(
@@ -114,4 +114,5 @@ async def test_fixture_selection_does_not_change_live_model_extract() -> None:
         ]
     )
     result = await ResearchReasoner(llm).extract(context("# Project\n| | |\n"))
-    assert result[0].quote == "| | |"
+    assert "| | |" in result[0].quote
+    assert result[0].fact == "Table structure"

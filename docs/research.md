@@ -178,6 +178,14 @@ See [contracts](research-contracts.md), [reasoning](research-reasoning.md),
 
 ## Implementation ownership
 
+For a fast recovery check, run `python scripts/research_accelerated_probe.py --output <new-directory>`.
+It uses controlled application clocks in separate prepare and resume processes for a date
+change, a week offline and both New York daylight-saving transitions. Each case checks interval
+and daily scheduling, merged catch-up, unchanged reports and zero duplicate model calls or
+notices. It never changes the operating-system clock. Combine this with the short real-clock
+probe and crash matrix for application-level recovery acceptance. It does not verify physical
+overnight operation, OS sleep or long-lived network connections.
+
 AI coding agents implemented the source, reasoning, web and evaluation lanes in
 separate worktrees. Integration defined the shared contracts, durable state and
 orchestration, reviewed the modules, and added consistency and process-recovery checks.

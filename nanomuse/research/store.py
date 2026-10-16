@@ -529,6 +529,12 @@ class ResearchStore:
                 from nanomuse.research.contracts import EvidenceDraft
 
                 spec_record = self.get("spec_revision", run["spec_id"])
+                protected = {
+                    row.get("supersedes")
+                    for row in self.list("evidence", project_id)
+                    if row.get("verification") == "user_correction"
+                }
+                emitted: set[str] = set()
                 for evidence in output.get("evidence", []):
                     snapshot = self.get("source_snapshot", evidence["snapshot_id"])
                     if (
@@ -556,17 +562,29 @@ class ResearchStore:
                         "version": snapshot["version"],
                         "fetched_at": snapshot["fetched_at"],
                     }
-                    previous = self.db.execute(
-                        "SELECT data FROM evidence WHERE id=?", (evidence["id"],)
-                    ).fetchone()
-                    if previous and json.loads(previous[0])["status"] == "superseded":
+                    if evidence["id"] in protected:
                         continue
+                    emitted.add(evidence["id"])
                     self._put("evidence", evidence)
                 verified = set(output.get("verified_snapshots", []))
                 for old in self.list("evidence", project_id):
-                    if old["snapshot_id"] in verified and old["status"] == "stale":
+                    if (
+                        old["snapshot_id"] in verified
+                        and old["id"] not in emitted
+                        and (
+                            old["status"] == "stale"
+                            or (
+                                old["status"] == "active"
+                                and old.get("verification") != "user_correction"
+                            )
+                        )
+                    ):
                         old["status"] = "superseded"
                         self._put("evidence", old)
+                for source in self.list("source", project_id):
+                    if source.get("latest_snapshot_id") in verified:
+                        source["extracted_spec_id"] = run["spec_id"]
+                        self._put("source", source)
             elif step["stage"] == "compare":
                 from nanomuse.research.context import validate_comparison
                 from nanomuse.research.contracts import Comparison

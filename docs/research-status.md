@@ -1,5 +1,46 @@
 # Research implementation checkpoint, 2026-10-16
 
+## Requirement and recovery follow-up
+
+Requirement revisions now re-extract unchanged snapshots for the new specification,
+superseding obsolete machine facts while preserving user corrections. Inconsistent
+verdicts attached to the same hard condition are rejected for repair. Unrelated
+observations must not bind to that condition. Short quotation fragments retain their
+qualifying source paragraph when it fits the evidence contract; this is not a semantic
+entailment guarantee.
+
+The follow-up passed 411 related tests, repository Ruff and formatting checks, and mypy
+for 161 source files. Four controlled-clock recovery cases passed in 16.03 real seconds:
+cross-midnight, seven days offline, spring daylight-saving transition and fall transition.
+Each used separate prepare/resume processes and persisted databases, tested interval and
+daily schedules, merged missed checks, and produced no new model calls, reports or notices.
+A separate real-clock stopped-worker probe passed after 131.535 seconds. Both probes cover
+runtime digest `0aaf2cc4bba567d90b19123b97acc63ee807ccdba47a2937fa91072ce1391078`.
+These checks verify application recovery without waiting overnight. They do not establish
+OS sleep/resume, long-lived network behavior or a physical overnight pass of this runtime.
+Run the reusable [accelerated probe](../scripts/research_accelerated_probe.py) as documented
+in [the research guide](research.md).
+
+The new full-variant live rerun completed all twelve synthetic scenarios. Assistant review
+found all twelve core scenario behaviors met, including the repaired sandbox and Linux
+condition cases. The batch used 181 requests including setup, with 119 target/replay calls.
+This is a separate cohort, with no ablation rerun. Three reports still contain incidental
+errors: an incomplete description of a source's entire contents, a cross-candidate
+readability claim in an evidence fact, and a false unreadable-source note in a locator.
+The latter two were identified by the comparison stage but remain visible in the underlying
+evidence. All stored quotations match their snapshots; that does not validate these extra
+claims. Comprehensive semantic acceptance remains open. See the
+[follow-up record](../evals/research/results/2026-10-16-semantic-repair.json).
+
+A separate fixed-README probe succeeded with six model requests in isolated storage.
+Both Windows runtime requirements correctly remained unknown and all quotations matched
+their snapshots. Its semantic review remains partial: one candidate row still makes a
+cross-candidate comparison without that candidate's evidence, an absence claim exceeds
+the cited text, and optional relay use is not clearly qualified. It did not replace the
+workbench's existing editorial report.
+
+The sections below retain earlier checkpoints and their original populations.
+
 The review repairs are implemented on `research-assistant`. The main repair is `c67f3c9`,
 dependency-scoped muting and safe diagnostic refinements are `c78fe0c`, and the shared
 hard-condition aggregate verdict is `d45ccad`. The earlier conflict-reminder fix was

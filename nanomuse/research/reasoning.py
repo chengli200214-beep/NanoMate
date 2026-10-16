@@ -19,11 +19,11 @@ from nanomuse.llm.mock import MockLLM
 from nanomuse.research.context import (
     ResearchValidationError,
     build_context,
+    complete_evidence_quote,
     evidence_is_current,
     normalize_context,
     source_observation,
     validate_comparison,
-    validate_evidence,
 )
 from nanomuse.research.contracts import Comparison, DecisionDraft, EvidenceDraft, ImpactJudgment
 from nanomuse.research.tools import ResearchToolState, build_research_tools
@@ -105,12 +105,19 @@ _STAGE_INSTRUCTIONS = {
         "Extract concise evidence for the project requirements. Return an array of EvidenceDraft. "
         "Use the exact constraint ID as dimension for evidence supporting that requirement. "
         "Split compound facts into separate evidence with a quote covering each fact. "
+        "Quote the complete relevant paragraph or bullet including its qualifications, "
+        "not a sentence fragment. Never infer 'only', 'required' or 'no other' from an "
+        "incomplete quotation. Distinguish optional deployment paths. "
         "For documentation use verification=documentation; source requires a source-code snapshot."
     ),
     "compare": (
         "Compare current evidence. Return a Comparison with decisions, unknowns, and next_steps. "
         "Include conflicts for incompatible current evidence and keep both source references. "
         "Bind decisions to valid constraint_refs and evidence_refs. Each definitive hard verdict "
+        "must be consistent with every other row for that candidate and constraint. "
+        "Unrelated platform observations must have empty constraint_refs, even if they use "
+        "the same broad dimension. Each candidate row describes that candidate only: "
+        "put cross-candidate comparisons in the summary and cite both evidence IDs there. "
         "needs direct evidence whose dimension equals that constraint ID. Select exactly one "
         "recommended_candidate by its registered candidate ID, or null to abstain. "
         "The selected candidate must meet every hard requirement. Do not recommend a candidate "
@@ -175,7 +182,7 @@ class ResearchReasoner:
 
         def validate(value: Any) -> list[EvidenceDraft]:
             drafts = adapter.validate_python(value)
-            return [validate_evidence(item, normalized) for item in drafts]
+            return [complete_evidence_quote(item, normalized) for item in drafts]
 
         return await self._request("extract", normalized, adapter.json_schema(), validate)
 

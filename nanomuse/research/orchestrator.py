@@ -371,7 +371,14 @@ class ResearchOrchestrator:
                 for e in self.store.list("evidence", project_id)
                 if e["status"] == "stale"
             }
-            existing = {e["snapshot_id"] for e in context["evidence"]} - needs_verification
+            extracted_for_spec = {
+                s.get("latest_snapshot_id")
+                for s in self.store.list("source", project_id)
+                if s.get("extracted_spec_id") == run["spec_id"]
+            }
+            existing = (
+                {e["snapshot_id"] for e in context["evidence"]} & extracted_for_spec
+            ) - needs_verification
             selected = [s for s in context["snapshots"] if s["id"] not in existing]
             if not selected:
                 return {"evidence": []}

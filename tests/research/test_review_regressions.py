@@ -17,7 +17,7 @@ from nanomuse.llm.mock import MockLLM
 from nanomuse.research.api import install_research
 from nanomuse.research.clock import FakeClock
 from nanomuse.research.context import ResearchValidationError, build_context, validate_comparison
-from nanomuse.research.contracts import Comparison, ImpactJudgment, ProjectSpec
+from nanomuse.research.contracts import Comparison, EvidenceDraft, ImpactJudgment, ProjectSpec
 from nanomuse.research.errors import safe_error
 from nanomuse.research.impact import evaluated_event, mute_scope
 from nanomuse.research.orchestrator import ResearchOrchestrator
@@ -31,6 +31,74 @@ from nanomuse.schema import Function, LLMResponse, ToolCall
 
 ALPHA = "https://github.com/research-example/alpha"
 BETA = "https://github.com/research-example/beta"
+
+
+def test_short_quote_retains_complete_qualifying_paragraph() -> None:
+    from nanomuse.research.context import complete_evidence_quote
+
+    paragraph = "Threads keep conversations in the\ndatabase and survive restart. Local mode only."
+    context = {
+        "spec": {"candidates": [ALPHA]},
+        "snapshots": [
+            {"id": "s", "candidate": ALPHA, "content": "# Title\n\n" + paragraph + "\n\nNext."}
+        ],
+    }
+    draft = EvidenceDraft(
+        snapshot_id="s",
+        candidate=ALPHA,
+        dimension="storage",
+        fact="Saved conversations",
+        quote="Threads keep conversations in the",
+    )
+    expanded = complete_evidence_quote(draft, context)
+    assert expanded.quote == paragraph
+    assert expanded.fact == draft.fact
+
+
+def test_off_requirement_unknown_does_not_override_documented_support() -> None:
+    context, proposed = inputs()
+    proposed.recommended_candidate = ALPHA
+    proposed.decisions.append(
+        proposed.decisions[0].model_copy(
+            update={
+                "dimension": "other_platform",
+                "verdict": "unknown",
+                "constraint_refs": [],
+                "conclusion": "Another platform is not established.",
+            }
+        )
+    )
+    checked = validate_comparison(proposed, context)
+    assert checked.recommended_candidate == ALPHA
+    hard = (
+        render_report(context["spec"], checked, context["evidence"])
+        .split("## 2.")[1]
+        .split("## 3.")[0]
+    )
+    assert "Meets / 满足" in next(line for line in hard.splitlines() if ALPHA in line)
+
+
+async def test_model_repairs_mixed_hard_verdict_before_publication() -> None:
+    context, good = inputs()
+    good.recommended_candidate = ALPHA
+    extra = good.decisions[0].model_copy(update={"verdict": "unknown"})
+    bad = good.model_copy(update={"decisions": good.decisions + [extra]})
+    good = good.model_copy(
+        update={
+            "decisions": good.decisions + [extra.model_copy(update={"constraint_refs": []})],
+        }
+    )
+    reasoner = ResearchReasoner(
+        MockLLM(
+            [
+                LLMResponse(content=bad.model_dump_json()),
+                LLMResponse(content=good.model_dump_json()),
+            ]
+        )
+    )
+    result = await reasoner.compare(context)
+    assert result.recommended_candidate == ALPHA
+    assert len(reasoner.calls) == 2
 
 
 def inputs() -> tuple[dict[str, Any], Comparison]:
@@ -119,6 +187,12 @@ def test_recommendation_and_hard_table_share_one_verdict(
     proposed.recommended_candidate = ALPHA
     proposed.decisions[0] = proposed.decisions[0].model_copy(update={"verdict": first})
     proposed.decisions.append(proposed.decisions[0].model_copy(update={"verdict": extra}))
+    if first != extra and extra in {"unknown", "fails"}:
+        with pytest.raises(ResearchValidationError, match="Inconsistent verdicts"):
+            validate_comparison(proposed, context)
+        with pytest.raises(ResearchValidationError, match="Inconsistent verdicts"):
+            render_report(context["spec"], proposed, context["evidence"])
+        return
     checked = validate_comparison(proposed, context)
     assert (checked.recommended_candidate == ALPHA) == eligible
     markdown = render_report(context["spec"], checked, context["evidence"])
