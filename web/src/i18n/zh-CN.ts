@@ -1,3 +1,4 @@
+import assistantPersonalZhCN from "./assistant-personal.zh-CN";
 import researchZhCN from "./research.zh-CN";
 
 /**
@@ -6,6 +7,23 @@ import researchZhCN from "./research.zh-CN";
  * Run `npm test` — the i18n test lists the strings that still lack a translation.
  */
 const zhCN: Record<string, string> = {
+  "View preference source task": "查看偏好来源任务",
+  "Result needs verification": "结果需要核对",
+  "Preferences are context. Your current request takes priority. Changes and deletion use a versioned task.": "偏好仅作为背景参考，当前请求优先。修改或删除会留下带版本的任务记录。",
+  "Confirmed personal preferences": "已确认的个人偏好",
+  "Read verified output": "查看已核验的产物",
+  "File changed or missing": "文件已变化或不存在",
+  "File verified": "文件已核验",
+  "Task outputs": "任务产物",
+  "Confirm preference change": "确认偏好变更",
+  "Confirm this preference intent before it enters long-term memory.": "请确认这项偏好，再存入长期记忆。",
+  "Preference change recorded": "偏好变更已记录",
+  "Reminder configuration saved": "提醒设置已保存",
+  "Review the current inputs and create a revised plan.": "请核对当前输入，再更新剩余计划。",
+  "Tasks can update reminders, produce source excerpts, save confirmed preferences or run research. Checkpoints wait for your evidence.": "任务可修改提醒、生成资料摘录、保存已确认的偏好或执行调研。检查点等待你填写完成证据。",
+  "Waiting for approval": "等待审批",
+  "Executing action": "正在执行操作",
+  ...assistantPersonalZhCN,
   "Initial plan": "初始计划",
   "Research needs attention. Review the project and create a revised plan.": "调研需要处理，请核对项目后更新剩余计划。",
   "Completed": "已完成",

@@ -1,4 +1,4 @@
-"""Reminders and routines (create / list / cancel)."""
+"""Reminders and routines (create / update / list / cancel)."""
 
 from __future__ import annotations
 
@@ -19,7 +19,10 @@ class Reminders(BaseTool):
         'unread email", "check the weather for the ride"). Actions: `create` (text, kind, and '
         "either `at` = 'YYYY-MM-DD HH:MM' local time for a one-off, or `repeat` = 'daily 08:00' | "
         "'weekdays 07:30' | 'weekly mon 09:00' | 'monthly 1 09:00' for a routine), `list`, "
-        "`cancel` (reminder_id). Work out the exact time from the current date/time in your "
+        "`update` (reminder_id, expected_revision from list, and fields to change), "
+        "`cancel` (reminder_id). Updating keeps the same reminder and changes its revision. "
+        "Setting at converts a routine to a one-off; setting repeat changes its cadence. "
+        "Work out the exact time from the current date/time in your "
         "context ('tomorrow morning' → tomorrow 09:00; 'in 20 minutes' → now + 20 min). Use this "
         "whenever the user says remind me / every morning / at 6pm / later today; it fires whether "
         "or not the app is open, and shows in the app under Upcoming."
@@ -27,7 +30,7 @@ class Reminders(BaseTool):
     parameters: dict[str, Any] = {
         "type": "object",
         "properties": {
-            "action": {"type": "string", "enum": ["create", "list", "cancel"]},
+            "action": {"type": "string", "enum": ["create", "update", "list", "cancel"]},
             "text": {
                 "type": "string",
                 "description": "What to remind about, or what to do, in the user's words.",
@@ -45,6 +48,7 @@ class Reminders(BaseTool):
                 ),
             },
             "reminder_id": {"type": "string"},
+            "expected_revision": {"type": "integer", "minimum": 1},
         },
         "required": ["action"],
     }
@@ -58,7 +62,7 @@ class Reminders(BaseTool):
     def assess(self, args: dict[str, Any]) -> CallAssessment:
         a = super().assess(args)
         action = str(args.get("action") or "?")
-        if action == "create":
+        if action in {"create", "update"}:
             # a reminder, a routine above all, is work the model does later on its own:
             # creating one changes state (strict mode asks); listing and cancelling stay safe
             a.risk = RiskLevel.MODERATE
@@ -79,6 +83,7 @@ class Reminders(BaseTool):
         at: str | None = None,
         repeat: str | None = None,
         reminder_id: str | None = None,
+        expected_revision: int | None = None,
         **_: Any,
     ) -> ToolResult:
         try:
@@ -102,10 +107,23 @@ class Reminders(BaseTool):
                 if not items:
                     return ToolResult(output="Nothing scheduled.")
                 return ToolResult(output="\n".join(i.render() for i in items))
+            if action == "update":
+                if not reminder_id or expected_revision is None:
+                    return ToolResult.fail("`reminder_id` and `expected_revision` are required")
+                item = self.store.update(
+                    reminder_id,
+                    expected_revision=expected_revision,
+                    text=text,
+                    at=at,
+                    repeat=repeat,
+                    kind=kind,
+                )
+                self._changed()
+                return ToolResult(output=f"Updated.\n{item.render()}")
             if action == "cancel":
                 if not reminder_id:
                     return ToolResult.fail("`reminder_id` is required")
-                cancelled = self.store.cancel(reminder_id)
+                cancelled = self.store.cancel(reminder_id, expected_revision=expected_revision)
                 if cancelled is None:
                     return ToolResult.fail(f"no active reminder {reminder_id}")
                 self._changed()

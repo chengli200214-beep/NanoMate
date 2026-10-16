@@ -18,12 +18,11 @@ afterEach(async () => { if (screen) await act(async () => screen.unmount()); });
 
 it("keeps a stable request key across a lost creation response", async () => {
   await act(async () => { screen = create(createElement(TasksScreen)); });
-  const inputs = screen.root.findAllByType("input");
-  const areas = screen.root.findAllByType("textarea");
+  const field = (name: string, type: "input" | "textarea") => screen.root.findAllByType("label").find((n) => text(n).startsWith(name))!.findByType(type);
   await act(async () => {
-    inputs[0].props.onChange({ target: { value: "Study" } });
-    areas[0].props.onChange({ target: { value: "A written review" } });
-    areas[1].props.onChange({ target: { value: "Read\nReview" } });
+    field("Task title", "input").props.onChange({ target: { value: "Study" } });
+    field("Success criteria", "textarea").props.onChange({ target: { value: "A written review" } });
+    field("Checkpoints, one per line", "textarea").props.onChange({ target: { value: "Read\nReview" } });
   });
   vi.mocked(request).mockImplementation(async (_path, init) => {
     if (init?.method === "POST") throw new Error("lost response");
@@ -56,4 +55,18 @@ it("confirms only a current checkpoint and sends its revision with evidence", as
   await act(async () => { button("Confirm checkpoint").props.onClick(); });
   expect(JSON.parse(String(vi.mocked(request).mock.calls.find((c) => c[0].endsWith("/confirm"))?.[1]?.body)))
     .toEqual({ expected_revision: 2, evidence: "Saved review", request_id: expect.any(String) });
+});
+
+it("opens the immutable task that supplied a personal preference", async () => {
+  const task = { id: "origin", title: "Preference source", status: "completed", revision: 1,
+    plans: [{ revision: 1, reason: "Initial plan", spec: { title: "Preference source", success_criteria: "Saved", steps: [] } }], steps: [] };
+  vi.mocked(request).mockImplementation(async (path) => {
+    if (path === "/api/assistant/preferences") return [{ key: "style", value: "Brief", revision: 1, status: "active", purpose: "Replies", source_task: "origin" }] as never;
+    if (path === "/api/assistant/tasks/origin") return task as never;
+    return [] as never;
+  });
+  await act(async () => { screen = create(createElement(TasksScreen)); });
+  await act(async () => { button("View preference source task").props.onClick(); });
+  expect(vi.mocked(request).mock.calls.some((c) => c[0] === "/api/assistant/tasks/origin")).toBe(true);
+  expect(screen.root.findAllByType("h2").some((n) => text(n) === "Preference source · Completed")).toBe(true);
 });

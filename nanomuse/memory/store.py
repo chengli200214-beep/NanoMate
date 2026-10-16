@@ -183,6 +183,8 @@ class MemoryStore:
         item = self.get(memory_id)
         if item is None:
             return None
+        if self._is_owned_projection(item):
+            raise ValueError("Update confirmed preferences through the task ledger")
         item.content = content
         item.category = category or item.category
         item.updated_at = _now()
@@ -225,7 +227,9 @@ class MemoryStore:
         if not items:
             return 0
         self._conn.executemany("DELETE FROM memories WHERE id = ?", [(m.id,) for m in items])
-        self._log("forget", items, None, f"matched {query!r}")
+        ordinary = [item for item in items if not self._is_owned_projection(item)]
+        if ordinary:
+            self._log("forget", ordinary, None, f"matched {query!r}")
         self._conn.commit()
         return len(items)
 
@@ -327,6 +331,8 @@ class MemoryStore:
         before = [m for m in (self.get(i) for i in ids) if m is not None]
         if not before or not content.strip():
             return None
+        if any(self._is_owned_projection(item) for item in before):
+            return None
         after = MemoryItem(
             id="m_" + uuid.uuid4().hex[:8],
             content=content.strip(),
@@ -346,6 +352,8 @@ class MemoryStore:
         """Forget one memory in a way that can be undone."""
         item = self.get(memory_id)
         if item is None:
+            return None
+        if self._is_owned_projection(item):
             return None
         self._conn.execute("DELETE FROM memories WHERE id = ?", (item.id,))
         change = self._log("drop", [item], None, reason)
@@ -380,6 +388,63 @@ class MemoryStore:
         return change
 
     # ------------------------------------------------------------------ meta
+    @staticmethod
+    def _is_owned_projection(item: MemoryItem) -> bool:
+        return item.source.startswith("assistant_preference:")
+
+    def set_owned_projection(
+        self, memory_id: str, content: str, category: str, source: str
+    ) -> MemoryItem:
+        """Upsert one confirmed preference without content deduplication or tidy logs.
+
+        Only the preference adapter writes this reserved ID space. Unlike ordinary
+        memories, a confirmed value cannot be merged into another record or a
+        reversible history entry that would survive its later revocation.
+        """
+        if not memory_id.startswith("m_pref_") or not source.startswith("assistant_preference:"):
+            raise ValueError("Unsupported owned memory projection")
+        content = content.strip()
+        if not content:
+            raise ValueError("Memory projection content is empty")
+        existing = self.get(memory_id)
+        if existing is not None and not self._is_owned_projection(existing):
+            raise ValueError("Memory projection ID is owned by another source")
+        if (
+            existing is not None
+            and existing.content == content
+            and existing.category == category
+            and existing.source == source
+        ):
+            return existing
+        now = _now()
+        self._conn.execute(
+            "INSERT INTO memories(id,content,category,created_at,source,updated_at) "
+            "VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET "
+            "content=excluded.content,category=excluded.category,source=excluded.source,"
+            "updated_at=excluded.updated_at",
+            (memory_id, content, category, existing.created_at if existing else now, source, now),
+        )
+        self._conn.execute("DELETE FROM memory_vectors WHERE memory_id=?", (memory_id,))
+        self._conn.commit()
+        if self.index is not None:
+            self.index.invalidate_cache()
+        result = self.get(memory_id)
+        assert result is not None
+        return result
+
+    def remove_owned_projection(self, memory_id: str) -> None:
+        """Remove only the adapter-owned record and its vectors, without an undo copy."""
+        if not memory_id.startswith("m_pref_"):
+            raise ValueError("Unsupported owned memory projection")
+        existing = self.get(memory_id)
+        if existing is not None and not self._is_owned_projection(existing):
+            raise ValueError("Memory projection ID is owned by another source")
+        self._conn.execute("DELETE FROM memories WHERE id=?", (memory_id,))
+        self._conn.execute("DELETE FROM memory_vectors WHERE memory_id=?", (memory_id,))
+        self._conn.commit()
+        if self.index is not None:
+            self.index.invalidate_cache()
+
     def get_meta(self, key: str, default: str = "") -> str:
         row = self._conn.execute("SELECT value FROM memory_meta WHERE key = ?", (key,)).fetchone()
         return str(row["value"]) if row else default

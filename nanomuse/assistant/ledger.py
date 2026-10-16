@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sqlite3
 import time
@@ -13,26 +14,34 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-
-class Conflict(ValueError):
-    """A stale revision or incompatible state needs a fresh user decision."""
+from nanomuse.assistant.documents import DocumentSpec
+from nanomuse.assistant.errors import Conflict
+from nanomuse.assistant.preferences import PreferenceAction
+from nanomuse.assistant.reminders import ReminderAction
 
 
 class StepSpec(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-    adapter: str = Field(pattern="^(checkpoint|research)$")
+    adapter: str = Field(pattern="^(checkpoint|research|reminder|document|preference)$")
     title: str = Field(min_length=1, max_length=500)
     project_id: str = Field(default="", max_length=100)
     kind: str = Field(default="research", pattern="^(research|check)$")
     spec_id: str = Field(default="", max_length=100)
     input_version: int = Field(default=0, ge=0)
+    reminder: ReminderAction | None = None
+    document: DocumentSpec | None = None
+    preference: PreferenceAction | None = None
 
     @model_validator(mode="after")
     def project_required(self) -> StepSpec:
         if self.adapter == "research" and not self.project_id:
             raise ValueError("Research steps require a project")
-        if self.adapter == "checkpoint" and self.project_id:
-            raise ValueError("Checkpoints cannot bind research projects")
+        if self.adapter != "research" and self.project_id:
+            raise ValueError("Only research steps can bind research projects")
+        for adapter in ("reminder", "document", "preference"):
+            payload = getattr(self, adapter)
+            if (self.adapter == adapter) != (payload is not None):
+                raise ValueError(f"Only {adapter} steps require a {adapter} payload")
         return self
 
 
@@ -45,6 +54,24 @@ class Plan(BaseModel):
 
 def uid() -> str:
     return uuid.uuid4().hex
+
+
+def request_plan(plan: Plan | dict[str, Any]) -> dict[str, Any]:
+    """Compare user intent across additive fields and frozen input metadata."""
+    value = Plan.model_validate(plan).model_dump()
+    for step in value["steps"]:
+        step.pop("spec_id", None)
+        step.pop("input_version", None)
+        if step.get("document"):
+            step["document"].pop("source_hashes", None)
+    return value
+
+
+def mutation_payload(payload: Any) -> str:
+    if isinstance(payload, list) and len(payload) > 3 and payload[1] == "revise":
+        payload = [*payload]
+        payload[3] = request_plan(payload[3])
+    return json.dumps(payload, sort_keys=True)
 
 
 class Ledger:
@@ -93,12 +120,14 @@ class Ledger:
         request_id: str,
         due_at: float,
         schedule_id: str = "",
+        confirm_preferences: bool = False,
     ) -> str:
         payload = plan.model_dump_json()
         previous = db.execute("SELECT * FROM task WHERE request_id=?", (request_id,)).fetchone()
         if previous:
-            if previous["request_payload"] != json.dumps([payload, due_at, schedule_id]):
-                raise Conflict("Request ID already used with different inputs")
+            self._creation_matches(
+                previous["request_payload"], plan, due_at, schedule_id, confirm_preferences
+            )
             return str(previous["id"])
         task_id = uid()
         db.execute(
@@ -106,7 +135,7 @@ class Ledger:
             (
                 task_id,
                 request_id,
-                json.dumps([payload, due_at, schedule_id]),
+                json.dumps([payload, due_at, schedule_id, confirm_preferences]),
                 plan.title,
                 due_at,
                 schedule_id,
@@ -114,11 +143,52 @@ class Ledger:
             ),
         )
         self._plan(db, task_id, 1, plan, "Initial plan")
+        if confirm_preferences:
+            for step in db.execute("SELECT * FROM step WHERE task_id=?", (task_id,)).fetchall():
+                if json.loads(step["spec"])["adapter"] == "preference":
+                    db.execute(
+                        "INSERT INTO step_approval VALUES(?,?,?)",
+                        (
+                            step["id"],
+                            hashlib.sha256(step["spec"].encode()).hexdigest(),
+                            self.clock(),
+                        ),
+                    )
+                    self._event(
+                        db, task_id, "preference_confirmed", {"step_id": step["id"], "revision": 1}
+                    )
         return task_id
 
-    def create(self, plan: Plan, request_id: str, due_at: float = 0) -> dict[str, Any]:
+    @staticmethod
+    def _creation_matches(
+        payload: str, plan: Plan, due_at: float, schedule_id: str, confirm_preferences: bool
+    ) -> None:
+        previous = json.loads(payload)
+        approved = previous[3] if len(previous) > 3 else False
+        if (
+            request_plan(json.loads(previous[0])) != request_plan(plan)
+            or previous[1:3] != [due_at, schedule_id]
+            or approved != confirm_preferences
+        ):
+            raise Conflict("Request ID already used with different inputs")
+
+    def replay_creation(
+        self, plan: Plan, request_id: str, due_at: float = 0, confirm_preferences: bool = False
+    ) -> dict[str, Any] | None:
         with self.transaction() as db:
-            task_id = self._create(db, plan, request_id, due_at)
+            row = db.execute("SELECT * FROM task WHERE request_id=?", (request_id,)).fetchone()
+            if row is None:
+                return None
+            self._creation_matches(row["request_payload"], plan, due_at, "", confirm_preferences)
+            return self._detail(db, row["id"])
+
+    def create(
+        self, plan: Plan, request_id: str, due_at: float = 0, confirm_preferences: bool = False
+    ) -> dict[str, Any]:
+        with self.transaction() as db:
+            task_id = self._create(
+                db, plan, request_id, due_at, confirm_preferences=confirm_preferences
+            )
         return self.get(task_id)
 
     def _plan(
@@ -202,14 +272,26 @@ class Ledger:
     def _mutation(self, db: sqlite3.Connection, request_id: str, payload: Any) -> bool:
         if not request_id:
             return False  # Internal callers rely on revision and state fencing.
-        encoded = json.dumps(payload, sort_keys=True)
+        encoded = mutation_payload(payload)
         old = db.execute("SELECT payload FROM mutation WHERE id=?", (request_id,)).fetchone()
         if old:
-            if old["payload"] != encoded:
+            if mutation_payload(json.loads(old["payload"])) != encoded:
                 raise Conflict("Mutation request ID already used with different inputs")
             return True
         db.execute("INSERT INTO mutation VALUES(?,?)", (request_id, encoded))
         return False
+
+    def replay_revision(
+        self, task_id: str, expected: int, plan: Plan, reason: str, request_id: str
+    ) -> dict[str, Any] | None:
+        with self.transaction() as db:
+            row = db.execute("SELECT payload FROM mutation WHERE id=?", (request_id,)).fetchone()
+            if row is None:
+                return None
+            wanted = [task_id, "revise", expected, plan.model_dump(), reason]
+            if mutation_payload(json.loads(row["payload"])) != mutation_payload(wanted):
+                raise Conflict("Mutation request ID already used with different inputs")
+            return self._detail(db, task_id)
 
     @staticmethod
     def _expected(task: dict[str, Any], expected: int) -> None:
@@ -243,6 +325,12 @@ class Ledger:
             self._expected(task, expected)
             if task["status"] != "waiting_user":
                 raise Conflict("Task is not waiting for confirmation")
+            current = db.execute(
+                "SELECT spec FROM step WHERE id=? AND task_id=? AND revision=?",
+                (step_id, task_id, expected),
+            ).fetchone()
+            if current is None or json.loads(current["spec"])["adapter"] != "checkpoint":
+                raise Conflict("Only checkpoints accept completion evidence")
             changed = db.execute(
                 "UPDATE step SET status='completed',result=? WHERE id=? "
                 "AND task_id=? AND revision=? AND status='waiting_user'",
@@ -254,6 +342,69 @@ class Ledger:
             self._event(db, task_id, "user_confirmed", {"step_id": step_id, "evidence": evidence})
             self._settle(db, task_id)
         return self.get(task_id)
+
+    def authorize_preference(
+        self, task_id: str, step_id: str, expected: int, request_id: str
+    ) -> dict[str, Any]:
+        """An authenticated user confirms exactly one immutable preference intent."""
+        with self.transaction() as db:
+            if self._mutation(db, request_id, [task_id, "authorize_preference", expected, step_id]):
+                return self._detail(db, task_id)
+            task = self._task(db, task_id)
+            self._expected(task, expected)
+            if task["status"] in {"completed", "cancelled", "cancelling", "paused"}:
+                raise Conflict("Task cannot accept confirmation now")
+            step = db.execute(
+                "SELECT * FROM step WHERE id=? AND task_id=? AND revision=?",
+                (step_id, task_id, expected),
+            ).fetchone()
+            if step is None or json.loads(step["spec"])["adapter"] != "preference":
+                raise Conflict("This is not a current preference step")
+            if step["status"] not in {"pending", "waiting_user"}:
+                raise Conflict("Preference confirmation is no longer available")
+            db.execute(
+                "INSERT OR REPLACE INTO step_approval VALUES(?,?,?)",
+                (step_id, hashlib.sha256(step["spec"].encode()).hexdigest(), self.clock()),
+            )
+            db.execute("UPDATE step SET status='pending' WHERE id=?", (step_id,))
+            if step["status"] == "waiting_user":
+                db.execute("UPDATE task SET status='queued' WHERE id=?", (task_id,))
+            self._event(
+                db, task_id, "preference_confirmed", {"step_id": step_id, "revision": expected}
+            )
+        return self.get(task_id)
+
+    def preference_authorized(self, step_id: str) -> bool:
+        with self.transaction() as db:
+            row = db.execute(
+                "SELECT s.spec,a.payload_hash FROM step s JOIN step_approval a "
+                "ON a.step_id=s.id WHERE s.id=?",
+                (step_id,),
+            ).fetchone()
+            return bool(
+                row and row["payload_hash"] == hashlib.sha256(row["spec"].encode()).hexdigest()
+            )
+
+    def personal_state(self, step_id: str, *, waiting: bool = False) -> bool:
+        with self.transaction() as db:
+            row = db.execute(
+                "SELECT s.*,t.status AS task_status,t.revision AS current_revision "
+                "FROM step s JOIN task t ON t.id=s.task_id WHERE s.id=?",
+                (step_id,),
+            ).fetchone()
+            if (
+                row is None
+                or row["status"] != "bound"
+                or row["revision"] != row["current_revision"]
+            ):
+                return False
+            if row["task_status"] not in {"running", "queued", "waiting_approval"}:
+                return False
+            db.execute(
+                "UPDATE task SET status=? WHERE id=?",
+                ("waiting_approval" if waiting else "running", row["task_id"]),
+            )
+            return True
 
     def claim(self, lease_seconds: float = 30) -> dict[str, Any] | None:
         now = self.clock()
@@ -316,7 +467,7 @@ class Ledger:
     def bound(self) -> list[dict[str, Any]]:
         with self.transaction() as db:
             return [
-                {**dict(r), "result": json.loads(r["result"])}
+                {**dict(r), "result": json.loads(r["result"]), "spec": json.loads(r["spec"])}
                 for r in db.execute(
                     "SELECT s.*,t.status AS task_status FROM step s JOIN task t ON t.id=s.task_id "
                     "WHERE s.status='bound'"
@@ -346,6 +497,8 @@ class Ledger:
                     "AND status NOT IN ('paused','cancelling')",
                     (row["task_id"],),
                 )
+            elif status == "outcome_unknown":
+                db.execute("UPDATE task SET status='needs_attention' WHERE id=?", (row["task_id"],))
             self._settle(db, row["task_id"])
 
     def _settle(self, db: sqlite3.Connection, task_id: str) -> None:
@@ -403,7 +556,8 @@ class Ledger:
     def schedule(
         self, plan: Plan, request_id: str, next_at: float, interval_seconds: int
     ) -> dict[str, Any]:
-        # Only replay-safe research/checkpoint adapters are admitted by Plan.
+        if any(step.adapter not in {"research", "checkpoint"} for step in plan.steps):
+            raise ValueError("Personal changes use one-off tasks; reminders own their repeat rules")
         payload = json.dumps(
             {"plan": plan.model_dump(), "first_at": next_at, "interval_seconds": interval_seconds},
             sort_keys=True,
@@ -411,7 +565,12 @@ class Ledger:
         with self.transaction() as db:
             old = db.execute("SELECT * FROM schedule WHERE request_id=?", (request_id,)).fetchone()
             if old:
-                if old["payload"] != payload:
+                saved = json.loads(old["payload"])
+                if (
+                    request_plan(saved["plan"]) != request_plan(plan)
+                    or saved["first_at"] != next_at
+                    or saved["interval_seconds"] != interval_seconds
+                ):
                     raise Conflict("Schedule request ID already used")
                 schedule_id = old["id"]
             else:
@@ -461,6 +620,8 @@ class Ledger:
 
 
 SCHEMA = [
+    "CREATE TABLE IF NOT EXISTS step_approval(step_id TEXT PRIMARY KEY REFERENCES step(id),"
+    "payload_hash TEXT NOT NULL,confirmed_at REAL NOT NULL)",
     "CREATE TABLE IF NOT EXISTS mutation(id TEXT PRIMARY KEY,payload TEXT NOT NULL)",
     "CREATE TABLE IF NOT EXISTS task(id TEXT PRIMARY KEY,request_id TEXT UNIQUE NOT NULL,"
     "request_payload TEXT NOT NULL,revision INTEGER NOT NULL,status TEXT NOT NULL,"

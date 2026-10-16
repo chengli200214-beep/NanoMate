@@ -10,6 +10,8 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Runtime
 
+- Connected reminder edits, verified local Markdown excerpts and explicitly confirmed personal preferences to versioned tasks, with replay receipts, artifact hash checks and preference removal from memory after deletion or expiry.
+
 - Added a persistent personal-assistant task ledger with versioned plans, fenced execution attempts, research bindings, checkpoint evidence and recurring schedules. The web task view and main chat shared the ledger; existing research, goals and reminder schedulers retained their ownership.
 
 - Added an isolated personal-assistant development entry with chat and research, a single-instance directory lock and an authenticated capability inventory that distinguishes registration from execution verification.

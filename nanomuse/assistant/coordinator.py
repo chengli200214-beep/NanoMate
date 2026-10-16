@@ -17,6 +17,7 @@ class Coordinator:
         self.ledger = ledger
         self.research = research
         self._task: asyncio.Task[None] | None = None
+        self.personal: Any = None
 
     def start(self) -> None:
         if self._task is None:
@@ -30,11 +31,15 @@ class Coordinator:
             except asyncio.CancelledError:
                 pass
             self._task = None
+        if self.personal is not None:
+            await self.personal.stop()
 
     async def _loop(self) -> None:
         while True:
             try:
                 self.tick()
+                if self.personal is not None:
+                    self.personal.pulse()
             except Exception:
                 logger.exception("Assistant coordinator pass failed")
             await asyncio.sleep(1)
@@ -42,6 +47,8 @@ class Coordinator:
     def tick(self) -> None:
         self.ledger.fire_due()
         for step in self.ledger.bound():
+            if step["spec"]["adapter"] != "research":
+                continue
             try:
                 self._sync(step)
             except (KeyError, ValueError):
@@ -59,6 +66,20 @@ class Coordinator:
         spec = step["spec"]
         if spec["adapter"] == "checkpoint":
             self.ledger.finish_claim(step, "waiting_user", {})
+            return
+        if spec["adapter"] != "research":
+            if self.personal is None:
+                self.ledger.finish_claim(
+                    step, "needs_attention", {"error": "Personal runtime unavailable"}
+                )
+            elif spec["adapter"] == "preference" and not self.ledger.preference_authorized(
+                step["id"]
+            ):
+                self.ledger.finish_claim(
+                    step, "waiting_user", {"requires_preference_confirmation": True}
+                )
+            else:
+                self.ledger.finish_claim(step, "bound", {"adapter": spec["adapter"]})
             return
         try:
             # The durable step is the dispatch outbox. Its ID never changes on retry.

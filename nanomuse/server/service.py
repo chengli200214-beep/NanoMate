@@ -1650,33 +1650,54 @@ class MuseService:
             self.bus.publish({"kind": "reminders"})
         return item
 
-    def fire_reminder(self, reminder_id: str) -> Reminder:
-        """Hand a reminder or routine to the agent now, in the chat it was set from."""
+    def fire_reminder(
+        self,
+        reminder_id: str,
+        *,
+        expected_revision: int | None = None,
+        expected_next_at: str | None = None,
+    ) -> Reminder:
+        """Claim a scheduled dispatch and hand it to the chat. Firing is not work completion."""
         item = self.app.reminders.get(reminder_id)
         if item is None:
             raise KeyError(reminder_id)
         if item.status != "active":
             raise ValueError(f"reminder is {item.status}")
+        if expected_revision is not None and item.revision != expected_revision:
+            raise ValueError("reminder changed since this occurrence was scheduled")
+        if expected_next_at is not None and item.next_at != expected_next_at:
+            raise ValueError("reminder time changed since this occurrence was scheduled")
         thread = item.thread if item.thread in self.threads else MAIN_THREAD
+        target = self.threads.get(thread)
+        if target is None:
+            raise KeyError(thread)
+        if target.device and target.busy:
+            raise ValueError(f"{target.device_name or 'the device'} is still busy")
         now = datetime.now().astimezone().strftime("%A, %Y-%m-%d %H:%M")
         template = prompts.REMINDER_PROMPT if item.kind == "remind" else prompts.ROUTINE_PROMPT
         label = ("Reminder: " if item.kind == "remind" else "Routine: ") + _short(item.text)
+        fired = self.app.reminders.mark_fired(
+            item.id, expected_revision=item.revision, expected_next_at=item.next_at
+        )
+        if fired is None:
+            raise ValueError("reminder changed before it could be dispatched")
         self.send(
             thread,
             template.format(now=now, text=item.text, quiet=prompts.QUIET_MARKER),
             source="reminder",
             label=label,
         )
-        fired = self.app.reminders.mark_fired(item.id)
         self.bus.publish({"kind": "reminders"})
-        return fired or item
+        return fired
 
     def _run_due_reminders(self) -> None:
         """A time the user named is kept whatever the proactivity level or the quiet hours;
         the message queues behind a conversation in progress rather than skipping."""
         for item in self.app.reminders.due():
             try:
-                self.fire_reminder(item.id)
+                self.fire_reminder(
+                    item.id, expected_revision=item.revision, expected_next_at=item.next_at
+                )
             except (KeyError, ValueError):  # pragma: no cover - raced with a cancel
                 continue
 

@@ -539,6 +539,12 @@ class WebUI:
         except TimeoutError:
             decision = ApprovalDecision(approved=False, reason="no answer (timed out)")
             self.patch(thread, ev["id"], status="expired")
+        except asyncio.CancelledError:
+            # Existing clients use expired for an unanswered approval closed by stop.
+            if ev.get("status") == "pending":
+                self.patch(thread, ev["id"], status="expired")
+            self.set_status("idle", "", thread)
+            raise
         finally:
             self.pending_approvals.pop(approval_id, None)
         self.set_status("working", "", thread)

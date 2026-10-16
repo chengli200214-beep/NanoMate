@@ -221,6 +221,10 @@ class MemoryIndex:
             self._vectors = self.store.vectors(self.embedder.model)
         return self._vectors
 
+    def invalidate_cache(self) -> None:
+        """Reload persisted vectors after an owned preference changes or is revoked."""
+        self._vectors = None
+
     async def ensure(self, items: list[MemoryItem]) -> bool:
         """Every item embedded with the current model. False when that cannot be done now."""
         if not self.embedder.usable:
