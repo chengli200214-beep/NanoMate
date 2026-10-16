@@ -14,15 +14,22 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from nanomuse.assistant.browser_actions import BrowserSpec
 from nanomuse.assistant.documents import DocumentSpec
 from nanomuse.assistant.errors import Conflict
+from nanomuse.assistant.file_actions import FileSpec
+from nanomuse.assistant.native_actions import NativeSpec
 from nanomuse.assistant.preferences import PreferenceAction
 from nanomuse.assistant.reminders import ReminderAction
+
+EXECUTION_ADAPTERS = {"file", "browser", "native"}
 
 
 class StepSpec(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-    adapter: str = Field(pattern="^(checkpoint|research|reminder|document|preference)$")
+    adapter: str = Field(
+        pattern="^(checkpoint|research|reminder|document|preference|file|browser|native)$"
+    )
     title: str = Field(min_length=1, max_length=500)
     project_id: str = Field(default="", max_length=100)
     kind: str = Field(default="research", pattern="^(research|check)$")
@@ -31,6 +38,9 @@ class StepSpec(BaseModel):
     reminder: ReminderAction | None = None
     document: DocumentSpec | None = None
     preference: PreferenceAction | None = None
+    file: FileSpec | None = None
+    browser: BrowserSpec | None = None
+    native: NativeSpec | None = None
 
     @model_validator(mode="after")
     def project_required(self) -> StepSpec:
@@ -38,7 +48,7 @@ class StepSpec(BaseModel):
             raise ValueError("Research steps require a project")
         if self.adapter != "research" and self.project_id:
             raise ValueError("Only research steps can bind research projects")
-        for adapter in ("reminder", "document", "preference"):
+        for adapter in ("reminder", "document", "preference", "file", "browser", "native"):
             payload = getattr(self, adapter)
             if (self.adapter == adapter) != (payload is not None):
                 raise ValueError(f"Only {adapter} steps require a {adapter} payload")
@@ -64,6 +74,9 @@ def request_plan(plan: Plan | dict[str, Any]) -> dict[str, Any]:
         step.pop("input_version", None)
         if step.get("document"):
             step["document"].pop("source_hashes", None)
+        if step.get("file"):
+            step["file"].pop("source_sha256", None)
+            step["file"].pop("target_absent", None)
     return value
 
 
@@ -79,11 +92,15 @@ class Ledger:
         path.parent.mkdir(parents=True, exist_ok=True)
         self.path = path
         self.clock = clock
+        self.control_hook: Callable[[str, str], None] | None = None
         with self.transaction() as db:
             if db.execute("PRAGMA user_version").fetchone()[0] not in {0, 1}:
                 raise ValueError("Unsupported assistant ledger schema")
             for statement in SCHEMA:
                 db.execute(statement)
+            db.execute(
+                "CREATE TABLE IF NOT EXISTS manual_session (id INTEGER PRIMARY KEY CHECK(id=1), task_id TEXT NOT NULL)"
+            )
             db.execute("PRAGMA user_version=1")
 
     @contextmanager
@@ -263,8 +280,8 @@ class Ledger:
                 (task_id,),
             )
             db.execute(
-                "UPDATE task SET revision=revision+1,title=?,status='queued' WHERE id=?",
-                (plan.title, task_id),
+                "UPDATE task SET revision=revision+1,title=?,status=? WHERE id=?",
+                (plan.title, "paused" if task["status"] == "paused" else "queued", task_id),
             )
             self._plan(db, task_id, expected + 1, plan, reason)
         return self.get(task_id)
@@ -299,21 +316,105 @@ class Ledger:
             raise Conflict("Plan changed; reload before applying this action")
 
     def control(
-        self, task_id: str, expected: int, action: str, request_id: str = ""
+        self,
+        task_id: str,
+        expected: int,
+        action: str,
+        request_id: str = "",
+        *,
+        allow_human_return: bool = False,
     ) -> dict[str, Any]:
         with self.transaction() as db:
             if self._mutation(db, request_id, [task_id, action, expected]):
                 return self._detail(db, task_id)
             task = self._task(db, task_id)
             self._expected(task, expected)
+            owner = db.execute(
+                "SELECT task_id FROM manual_session WHERE task_id=?", (task_id,)
+            ).fetchone()
+            if owner is not None and action in {"resume", "cancel"} and not allow_human_return:
+                raise Conflict("Return manual control in the task screen before automatic work")
             target = {"pause": "paused", "resume": "queued", "cancel": "cancelling"}
             if action not in target or task["status"] in {"completed", "cancelled", "cancelling"}:
                 raise Conflict("Action unavailable")
             if action == "resume" and task["status"] != "paused":
                 raise Conflict("Only paused tasks may resume")
             db.execute("UPDATE task SET status=? WHERE id=?", (target[action], task_id))
+            if action in {"resume", "cancel"}:
+                db.execute("DELETE FROM manual_session WHERE task_id=?", (task_id,))
             self._event(db, task_id, action, {"revision": expected})
+        if self.control_hook is not None:
+            self.control_hook(task_id, action)
         return self.get(task_id)
+
+    def authorize_action(
+        self, task_id: str, step_id: str, expected: int, request_id: str
+    ) -> dict[str, Any]:
+        """User-only approval of the exact immutable execution preview."""
+        with self.transaction() as db:
+            if self._mutation(db, request_id, [task_id, "authorize_action", expected, step_id]):
+                return self._detail(db, task_id)
+            task = self._task(db, task_id)
+            self._expected(task, expected)
+            if task["status"] in {"paused", "cancelling", "cancelled", "completed"}:
+                raise Conflict("Task cannot accept execution approval now")
+            row = db.execute(
+                "SELECT * FROM step WHERE id=? AND task_id=? AND revision=?",
+                (step_id, task_id, expected),
+            ).fetchone()
+            if row is None or json.loads(row["spec"])["adapter"] not in EXECUTION_ADAPTERS:
+                raise Conflict("This is not a current execution step")
+            first = db.execute(
+                "SELECT id FROM step WHERE task_id=? AND revision=? AND status!='completed' "
+                "ORDER BY position LIMIT 1",
+                (task_id, expected),
+            ).fetchone()
+            if row["status"] != "waiting_user" or first is None or first[0] != step_id:
+                raise Conflict("Review the next execution step before approving it")
+            db.execute(
+                "INSERT OR REPLACE INTO step_approval VALUES(?,?,?)",
+                (
+                    step_id,
+                    hashlib.sha256(row["spec"].encode()).hexdigest(),
+                    self.clock(),
+                ),
+            )
+            db.execute("UPDATE step SET status='pending' WHERE id=?", (step_id,))
+            db.execute("UPDATE task SET status='queued' WHERE id=?", (task_id,))
+            self._event(
+                db, task_id, "execution_approved", {"step_id": step_id, "revision": expected}
+            )
+        return self.get(task_id)
+
+    def handoff(self, task_id: str, expected: int, request_id: str) -> dict[str, Any]:
+        with self.transaction() as db:
+            if self._mutation(db, request_id, [task_id, "take_over", expected]):
+                return self._detail(db, task_id)
+            task = self._task(db, task_id)
+            self._expected(task, expected)
+            if task["status"] in {"completed", "cancelled", "cancelling"}:
+                raise Conflict("Task cannot be handed over now")
+            owner = db.execute("SELECT task_id FROM manual_session").fetchone()
+            if owner is not None and owner[0] != task_id:
+                raise Conflict("Another task is under human control; return it first")
+            db.execute("UPDATE task SET status='paused' WHERE id=?", (task_id,))
+            db.execute("INSERT OR REPLACE INTO manual_session VALUES(1,?)", (task_id,))
+            self._event(db, task_id, "human_takeover", {"revision": expected})
+        if self.control_hook is not None:
+            self.control_hook(task_id, "take_over")
+        return self.get(task_id)
+
+    def manual_owner(self) -> str:
+        with self.transaction() as db:
+            row = db.execute("SELECT task_id FROM manual_session").fetchone()
+            return str(row[0]) if row else ""
+
+    def task_status(self, task_id: str) -> str:
+        with sqlite3.connect(self.path, timeout=10) as db:
+            row = db.execute("SELECT status FROM task WHERE id=?", (task_id,)).fetchone()
+            if row is None:
+                raise KeyError(task_id)
+            return str(row[0])
 
     def confirm(
         self, task_id: str, step_id: str, expected: int, evidence: str, request_id: str = ""
@@ -498,7 +599,10 @@ class Ledger:
                     (row["task_id"],),
                 )
             elif status == "outcome_unknown":
-                db.execute("UPDATE task SET status='needs_attention' WHERE id=?", (row["task_id"],))
+                db.execute(
+                    "UPDATE task SET status='needs_attention' WHERE id=? AND status!='paused'",
+                    (row["task_id"],),
+                )
             self._settle(db, row["task_id"])
 
     def _settle(self, db: sqlite3.Connection, task_id: str) -> None:
@@ -518,6 +622,8 @@ class Ledger:
             ).fetchone()
             if first and first["status"] in {"waiting_user", "needs_attention"}:
                 db.execute("UPDATE task SET status=? WHERE id=?", (first["status"], task_id))
+            elif first and first["status"] == "outcome_unknown":
+                db.execute("UPDATE task SET status='needs_attention' WHERE id=?", (task_id,))
 
     def settle(self) -> None:
         with self.transaction() as db:
@@ -537,6 +643,15 @@ class Ledger:
                         "SELECT 1 FROM step WHERE task_id=? AND status='running'", (row["id"],)
                     ).fetchone()
                     if unknown:
+                        continue
+                    if db.execute(
+                        "SELECT 1 FROM step WHERE task_id=? AND status='outcome_unknown'",
+                        (row["id"],),
+                    ).fetchone():
+                        db.execute(
+                            "UPDATE task SET status='needs_attention' WHERE id=?", (row["id"],)
+                        )
+                        self._event(db, row["id"], "cancellation_needs_verification", {})
                         continue
                     db.execute(
                         "UPDATE step SET status='cancelled' WHERE task_id=? AND "

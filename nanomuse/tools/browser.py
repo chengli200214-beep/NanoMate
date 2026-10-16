@@ -187,6 +187,7 @@ class Browser(BaseTool):
     frame_quality: int = 55
     # the holds registry (nanomuse.agent.holds): the tool waits while the user has the page
     holds: Any = None
+    input_fence: Callable[[], str | None] | None = None
     hand_over_timeout: float = HAND_OVER_TIMEOUT_S
 
     _backend: Any = PrivateAttr(default=None)
@@ -371,6 +372,8 @@ class Browser(BaseTool):
         if self.holds is not None and await self.holds.wait(self.holds.thread(), "browser"):
             self._user_actions.append("used the page themselves")
         async with self.lock:
+            if self.input_fence is not None and (blocked := self.input_fence()):
+                return ToolResult.fail(blocked)
             try:
                 backend = self._pick_backend()
             except RuntimeError as exc:
@@ -401,6 +404,8 @@ class Browser(BaseTool):
         seconds: float | None = None,
     ) -> ToolResult:
         await backend.ensure()
+        if self.input_fence is not None and (blocked := self.input_fence()):
+            return ToolResult.fail(blocked)
         if action == "navigate":
             if not url:
                 return ToolResult.fail("`url` is required")
@@ -416,6 +421,8 @@ class Browser(BaseTool):
             if index is None:
                 return ToolResult.fail("`index` is required")
             label = await self._label(backend, int(index))
+            if self.input_fence is not None and (blocked := self.input_fence()):
+                return ToolResult.fail(blocked)
             await backend.click_element(int(index))
             await backend.settle(self.timeout_ms)
             await self._frame(backend, f"Clicked {label}")
@@ -424,8 +431,12 @@ class Browser(BaseTool):
             if index is None or text is None:
                 return ToolResult.fail("`index` and `text` are required")
             label = await self._label(backend, int(index))
+            if self.input_fence is not None and (blocked := self.input_fence()):
+                return ToolResult.fail(blocked)
             await backend.fill_element(int(index), text)
             if submit:
+                if self.input_fence is not None and (blocked := self.input_fence()):
+                    return ToolResult.fail(blocked)
                 await backend.press("Enter")
                 await backend.settle(self.timeout_ms)
             await self._frame(backend, f"Typed into {label}" + (" and submitted" if submit else ""))

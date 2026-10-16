@@ -10,6 +10,8 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Runtime
 
+- Connected previewed workspace file operations, observed browser actions and bounded Windows native actions to the task ledger, with per-step approval, manual takeover and recovery that stopped uncertain input from replaying. Paused workers reconciled existing receipts without repeating operations and retained manual control; returning it required the user's task controls. Cancellation retained unknown outcomes for review.
+
 - Connected reminder edits, verified local Markdown excerpts and explicitly confirmed personal preferences to versioned tasks, with replay receipts, artifact hash checks and preference removal from memory after deletion or expiry.
 
 - Added a persistent personal-assistant task ledger with versioned plans, fenced execution attempts, research bindings, checkpoint evidence and recurring schedules. The web task view and main chat shared the ledger; existing research, goals and reminder schedulers retained their ownership.

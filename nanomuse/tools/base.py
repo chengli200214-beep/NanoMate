@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -105,6 +106,7 @@ class BaseTool(ABC, BaseModel):
     reads_private_data: bool = False
     egress: bool = False
     accepts_secrets: bool = False
+    input_fence: Callable[[], str | None] | None = None
 
     async def __call__(self, **kwargs: Any) -> ToolResult:
         return await self.execute(**kwargs)

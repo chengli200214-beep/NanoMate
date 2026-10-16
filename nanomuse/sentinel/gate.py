@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import time
 import uuid
+from collections.abc import Callable
 from contextvars import ContextVar
 from dataclasses import dataclass
 from pathlib import Path
@@ -71,6 +72,8 @@ class Sentinel:
         # what another conversation read
         self._tainted: set[str] = set()
         self.grants = GrantStore(persistent_approvals_file)
+        self.execution_fence: Callable[[str], str | None] | None = None
+        self.active_tools: dict[str, int] = {}
 
     # ------------------------------------------------------------------ taint
     @staticmethod
@@ -210,6 +213,12 @@ class Sentinel:
 
     # ------------------------------------------------------------------ main entry
     async def guard(self, call: ToolCall, tool: BaseTool) -> ToolResult:
+        if self.execution_fence is not None:
+            tool.input_fence = lambda: (
+                self.execution_fence(tool.name) if self.execution_fence else None
+            )
+        if self.execution_fence is not None and (blocked := self.execution_fence(tool.name)):
+            return ToolResult.fail(blocked)
         args = call.arguments
         if "__raw__" in args:
             # The arguments never parsed (cut off in transit): there is nothing to assess,
@@ -360,7 +369,13 @@ class Sentinel:
                 return result
 
         started = time.perf_counter()
-        result = await safe_execute(tool, exec_args)
+        if self.execution_fence is not None and (blocked := self.execution_fence(tool.name)):
+            return ToolResult.fail(blocked)
+        self.active_tools[tool.name] = self.active_tools.get(tool.name, 0) + 1
+        try:
+            result = await safe_execute(tool, exec_args)
+        finally:
+            self.active_tools[tool.name] -= 1
         duration_ms = int((time.perf_counter() - started) * 1000)
 
         if self.vault is not None:

@@ -29,9 +29,9 @@ def channel_of(tool: str) -> str:
     servers and connectors, ``local`` for everything that stays in the workspace and memory.
     Recorded with every ``tool_call`` so the Activity view can show how much of the work needed
     the screen."""
-    if tool.startswith("phone_"):
+    if tool.startswith("phone_") or tool in {"assistant_native", "assistant_observe_native"}:
         return "gui"
-    if tool.startswith("browser"):
+    if tool.startswith("browser") or tool in {"assistant_browser", "assistant_observe_browser"}:
         return "browser"
     if tool in ("web_fetch", "web_search"):
         return "web"

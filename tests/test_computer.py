@@ -8,6 +8,8 @@ import json
 import platform
 import time
 from collections.abc import Iterator
+from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -305,6 +307,164 @@ def test_pyautogui_without_tk_does_not_take_the_runtime_down(
         hands_mod.PyAutoGUIHands()
     info = hands_mod.describe_availability("auto")
     assert info["available"] is False and "tkinter" in info["reason"]
+
+
+@pytest.fixture
+def unicode_hands(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
+    """No real keyboard, IME or clipboard is accessed by these Windows tests."""
+    calls: list[Any] = []
+    clipboard = {"value": "original private clipboard", "calls": []}
+    state = {"partial": False, "held": False}
+
+    def forbidden_clipboard(*args: Any) -> None:
+        clipboard["calls"].append(args)
+        raise AssertionError("Literal Windows input must leave the clipboard untouched")
+
+    monkeypatch.setitem(
+        hands_mod.sys.modules,
+        "pyperclip",
+        SimpleNamespace(
+            copy=forbidden_clipboard,
+            paste=forbidden_clipboard,
+        ),
+    )
+
+    def send(count: int, values: Any, size: int) -> int:
+        calls.append(
+            (
+                count,
+                size,
+                [
+                    (
+                        value.type,
+                        value.payload.ki.wVk,
+                        value.payload.ki.wScan,
+                        value.payload.ki.dwFlags,
+                    )
+                    for value in values
+                ],
+            )
+        )
+        return count - 1 if state["partial"] else count
+
+    def key_state(key: int) -> int:
+        return 0x8000 if state["held"] and key == 0x11 else 0
+
+    monkeypatch.setattr(
+        hands_mod.ctypes,
+        "WinDLL",
+        lambda *args, **kwargs: SimpleNamespace(
+            SendInput=send,
+            GetAsyncKeyState=key_state,
+        ),
+        raising=False,
+    )
+    gui_calls: list[Any] = []
+    gui = SimpleNamespace(
+        failSafeCheck=lambda: gui_calls.append("failsafe"),
+        write=lambda *args, **kwargs: gui_calls.append(("IME-write", args)),
+        hotkey=lambda *args: gui_calls.append(("clipboard-paste", args)),
+    )
+    monkeypatch.setattr(hands_mod, "_import_pyautogui", lambda: gui)
+    monkeypatch.setattr(hands_mod, "sys", SimpleNamespace(platform="win32"))
+    return SimpleNamespace(
+        hands=hands_mod.PyAutoGUIHands(),
+        calls=calls,
+        gui=gui,
+        gui_calls=gui_calls,
+        clipboard=clipboard,
+        state=state,
+    )
+
+
+@pytest.mark.parametrize("text", [" Saved in Notepad.", "中文 空格\n第二行\t😀"])
+def test_windows_literal_text_preserves_spaces_unicode_and_clipboard(
+    unicode_hands: SimpleNamespace,
+    text: str,
+) -> None:
+    h = unicode_hands
+    h.hands.type(text)
+    assert h.gui_calls == ["failsafe"]
+    assert h.clipboard == {"value": "original private clipboard", "calls": []}
+    assert len(h.calls) == 1
+    count, size, events = h.calls[0]
+    assert count == len(events)
+    assert size == (40 if hands_mod.ctypes.sizeof(hands_mod.ctypes.c_void_p) == 8 else 28)
+    assert all(event[0] == 1 and event[1] == 0 for event in events)
+    assert [event[3] for event in events] == [4, 6] * (len(events) // 2)
+    assert [event[2] for event in events[::2]] == [event[2] for event in events[1::2]]
+    encoded = b"".join(event[2].to_bytes(2, "little") for event in events[::2])
+    assert encoded.decode("utf-16-le") == text.replace("\n", "\r")
+
+
+def test_windows_partial_send_stops_without_repeating_or_falling_back(
+    unicode_hands: SimpleNamespace,
+) -> None:
+    h = unicode_hands
+    h.state["partial"] = True
+    with pytest.raises(hands_mod.HandsUnavailable, match="outcome is uncertain"):
+        h.hands.type(" Save text ")
+    assert len(h.calls) == 1
+    assert h.gui_calls == ["failsafe"]
+    assert h.clipboard["calls"] == []
+
+
+def test_windows_literal_text_refuses_held_modifier_without_changing_it(
+    unicode_hands: SimpleNamespace,
+) -> None:
+    h = unicode_hands
+    h.state["held"] = True
+    with pytest.raises(hands_mod.HandsUnavailable, match="Release keyboard modifiers"):
+        h.hands.type("text")
+    assert h.calls == [] and h.state["held"] is True
+    assert h.clipboard["calls"] == []
+
+
+def test_windows_literal_text_retains_the_physical_failsafe(
+    unicode_hands: SimpleNamespace,
+) -> None:
+    h = unicode_hands
+
+    def physical_stop() -> None:
+        raise RuntimeError("mouse in fail-safe corner")
+
+    h.gui.failSafeCheck = physical_stop
+    with pytest.raises(RuntimeError, match="fail-safe corner"):
+        h.hands.type("must not enter")
+    assert h.calls == [] and h.clipboard["calls"] == []
+
+
+def test_windows_chunk_boundary_keeps_crlf_as_one_editor_line_break(
+    unicode_hands: SimpleNamespace,
+    tmp_path: Path,
+) -> None:
+    h = unicode_hands
+    link = ComputerLink(HandsSettings(enabled=True), shots_dir=tmp_path / "shots", backend=h.hands)
+    link.input_fence = lambda: None
+    text = "1234567\r\nnext line"
+    assert text[7:9] == "\r\n"
+    link._do(h.hands, "type", {"text": text})
+    chunks = [
+        b"".join(event[2].to_bytes(2, "little") for event in events[::2]).decode("utf-16-le")
+        for _, _, events in h.calls
+    ]
+    assert "".join(chunks) == "1234567\rnext line"
+    assert all(len(chunk) <= 8 for chunk in chunks)
+    assert h.gui_calls == ["failsafe"] * len(chunks)
+    assert h.clipboard["calls"] == []
+
+
+@pytest.mark.parametrize("platform_name", ["linux", "darwin"])
+def test_non_windows_ascii_input_keeps_the_existing_backend(
+    monkeypatch: pytest.MonkeyPatch,
+    platform_name: str,
+) -> None:
+    calls: list[Any] = []
+    gui = SimpleNamespace(write=lambda text, **kwargs: calls.append((text, kwargs)))
+    monkeypatch.setattr(hands_mod, "_import_pyautogui", lambda: gui)
+    monkeypatch.setattr(hands_mod, "sys", SimpleNamespace(platform=platform_name))
+    hands_mod.PyAutoGUIHands().type("keep spaces")
+    assert calls == [("keep spaces", {"interval": 0.01})]
 
 
 # ----------------------------------------------------------------------------- the tools

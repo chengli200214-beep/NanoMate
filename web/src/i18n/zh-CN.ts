@@ -1,4 +1,5 @@
 import assistantPersonalZhCN from "./assistant-personal.zh-CN";
+import assistantExecutionZhCN from "./assistant-execution.zh-CN";
 import researchZhCN from "./research.zh-CN";
 
 /**
@@ -7,6 +8,7 @@ import researchZhCN from "./research.zh-CN";
  * Run `npm test` — the i18n test lists the strings that still lack a translation.
  */
 const zhCN: Record<string, string> = {
+  ...assistantExecutionZhCN,
   "View preference source task": "查看偏好来源任务",
   "Result needs verification": "结果需要核对",
   "Preferences are context. Your current request takes priority. Changes and deletion use a versioned task.": "偏好仅作为背景参考，当前请求优先。修改或删除会留下带版本的任务记录。",

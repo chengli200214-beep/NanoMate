@@ -49,6 +49,15 @@ def capabilities(service: MuseService) -> dict[str, Any]:
         "runtime_execution_verified": False,
         "vision_execution_verified": False,
         "unified_task_execution": True,
-        "task_adapters": ["checkpoint", "research", "reminder", "document", "preference"],
+        "task_adapters": [
+            "checkpoint",
+            "research",
+            "reminder",
+            "document",
+            "preference",
+            "file",
+            "browser",
+            "native",
+        ],
         "legacy_schedule_owners": {"goals": "MuseService", "reminders": "MuseService"},
     }

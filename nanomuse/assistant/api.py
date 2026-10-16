@@ -48,6 +48,11 @@ class PreferenceConfirmation(BaseModel):
     expected_revision: int = Field(ge=1)
 
 
+class ObserveBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    surface: str = Field(pattern="^(browser|native)$")
+
+
 class ScheduleBody(CreateBody):
     interval_seconds: int = Field(ge=60, le=31536000)
 
@@ -151,6 +156,27 @@ def install_assistant(app: FastAPI, service: Any, dependencies: list[Any]) -> No
             else []
         )
 
+    @router.get("/tasks/{task_id}/actions")
+    async def action_records(task_id: str) -> list[dict[str, Any]]:
+        ledger.get(task_id)
+        return coordinator.personal.journal.records(task_id) if coordinator.personal else []
+
+    @router.post("/execution/observe")
+    async def observe(body: ObserveBody) -> dict[str, Any]:
+        if coordinator.personal is None:
+            raise ValueError("Execution runtime unavailable")
+        return await coordinator.personal.observe(body.surface)
+
+    @router.post("/tasks/{task_id}/take-over")
+    async def take_over(task_id: str, body: PreferenceConfirmation) -> dict[str, Any]:
+        return ledger.handoff(task_id, body.expected_revision, body.request_id)
+
+    @router.post("/tasks/{task_id}/steps/{step_id}/authorize-action")
+    async def authorize_action(
+        task_id: str, step_id: str, body: PreferenceConfirmation
+    ) -> dict[str, Any]:
+        return ledger.authorize_action(task_id, step_id, body.expected_revision, body.request_id)
+
     @router.post("/tasks/{task_id}/steps/{step_id}/authorize-preference")
     async def authorize(task_id: str, step_id: str, body: PreferenceConfirmation) -> dict[str, Any]:
         return ledger.authorize_preference(
@@ -200,7 +226,9 @@ def install_assistant(app: FastAPI, service: Any, dependencies: list[Any]) -> No
 
     @router.post("/tasks/{task_id}/actions")
     async def control(task_id: str, body: ActionBody) -> dict[str, Any]:
-        return ledger.control(task_id, body.expected_revision, body.action, body.request_id)
+        return ledger.control(
+            task_id, body.expected_revision, body.action, body.request_id, allow_human_return=True
+        )
 
     @router.post("/tasks/{task_id}/steps/{step_id}/confirm")
     async def confirm(task_id: str, step_id: str, body: ConfirmBody) -> dict[str, Any]:

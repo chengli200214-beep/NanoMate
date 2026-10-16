@@ -3,13 +3,14 @@ import { request } from "../api";
 import { useT } from "../i18n";
 import { TabHeader } from "../components/TabHeader";
 import { PersonalTaskComposer } from "../components/PersonalTaskComposer";
+import { ExecutionTaskComposer } from "../components/ExecutionTaskComposer";
 
 type StepSpec = { adapter: string; title: string; project_id?: string; kind?: string; preference?: { action: string; key: string; value?: string; purpose?: string } };
 type Plan = { title: string; success_criteria: string; steps: StepSpec[] };
 type Summary = { id: string; title: string; revision: number; status: string; due_at: number };
 type Task = Summary & {
   plans: { revision: number; reason: string; spec: Plan }[];
-  steps: { id: string; revision: number; status: string; spec: StepSpec; result: { run_id?: string; user_evidence?: string; domain_status?: string; error?: string; reminder?: { id: string; revision: number; status: string }; artifact?: { id: string; path: string }; preference?: { key: string; revision: number; status: string } } }[];
+  steps: { id: string; revision: number; status: string; spec: StepSpec; result: { [key: string]: unknown; run_id?: string; user_evidence?: string; domain_status?: string; error?: string; reminder?: { id: string; revision: number; status: string }; artifact?: { id: string; path: string }; preference?: { key: string; revision: number; status: string } } }[];
 };
 type Artifact = { id: string; path?: string; sha256?: string; hash?: string; verified?: boolean; content?: string; revision: number };
 type Preference = { key: string; value: string; revision: number; status: string; purpose: string; source_task: string };
@@ -95,10 +96,11 @@ export function TasksScreen() {
   return <div className="flex h-full flex-col">
     <TabHeader title={t("Task ledger")} />
     <main className="overflow-auto p-4 space-y-5">
-      <p className="text-sm text-muted">{t("Tasks can update reminders, produce source excerpts, save confirmed preferences or run research. Checkpoints wait for your evidence.")}</p>
+      <p className="text-sm text-muted">{t("Tasks connect personal actions, files, browser and Windows apps. Research remains available as a module.")}</p>
       {error && <p role="alert">{t("The request failed or the plan changed. Refresh and review before retrying.")}</p>}
       <button className={buttonClass} onClick={() => void run(load)} disabled={busy}>{t("Refresh")}</button>
       <PersonalTaskComposer onCreated={load} />
+      <ExecutionTaskComposer selected={detail} onCreated={load} />
       <section className="space-y-3 rounded-2xl border border-line p-4">
         <h2 className="font-medium">{t("Compose a plan")}</h2>
         <label className="block">{t("Task title")}<input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={500} /></label>
@@ -125,8 +127,12 @@ export function TasksScreen() {
         {!terminal && <div className="flex gap-2">
           <button className={buttonClass} disabled={busy} onClick={() => void control(detail.status === "paused" ? "resume" : "pause")}>{t(detail.status === "paused" ? "Resume" : "Pause")}</button>
           <button className={buttonClass} disabled={busy} onClick={() => void control("cancel")}>{t("Cancel")}</button>
+          <button className={buttonClass} disabled={busy} onClick={() => void run(() => post(`/api/assistant/tasks/${selected}/take-over`, { expected_revision: detail.revision }))}>{t("Take over manually")}</button>
         </div>}
         <ol className="list-decimal pl-5 space-y-2">{current.map((step) => <li key={step.id}>{step.spec.title} · {t(statuses[step.status] ?? step.status)}
+          {["file", "browser", "native"].includes(step.spec.adapter) && <details><summary>{t("Action preview and result")}</summary><pre className="overflow-auto whitespace-pre-wrap break-words text-xs">{JSON.stringify({ intent: step.spec, result: step.result }, null, 2)}</pre></details>}
+          {step.status === "waiting_user" && detail.status === "waiting_user" && ["file", "browser", "native"].includes(step.spec.adapter) && <button className={buttonClass} disabled={busy} onClick={() => void run(() => post(`/api/assistant/tasks/${selected}/steps/${step.id}/authorize-action`, { expected_revision: detail.revision }))}>{t("Approve this exact action")}</button>}
+          {step.status === "outcome_unknown" && <p role="status">{t("The input may have reached its target. Take over, observe the current state and revise the remaining plan. Do not repeat the old input.")}</p>}
           {step.result.run_id && <p className="text-sm text-muted">{t("Research run")}: {step.result.run_id}</p>}
           {step.status === "needs_attention" && <p role="status">{t("Review the current inputs and create a revised plan.")}</p>}
           {step.result.user_evidence && <p>{step.result.user_evidence}</p>}

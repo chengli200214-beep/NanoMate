@@ -8,14 +8,32 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
+from nanomuse.assistant.browser_actions import BrowserActions, BrowserSpec
 from nanomuse.assistant.documents import DocumentArtifacts, DocumentSpec, prepare
-from nanomuse.assistant.ledger import Ledger, Plan
+from nanomuse.assistant.execution import ExecutionJournal
+from nanomuse.assistant.file_actions import FileActions, FileSpec
+from nanomuse.assistant.file_actions import prepare as prepare_file
+from nanomuse.assistant.ledger import EXECUTION_ADAPTERS, Ledger, Plan
+from nanomuse.assistant.native_actions import NativeActions, NativeSpec
 from nanomuse.assistant.preferences import PreferenceAction, PreferenceStore
 from nanomuse.assistant.reminders import ReminderAction, ReminderActions
 from nanomuse.schema import Function, RiskLevel, ToolCall, ToolResult
 from nanomuse.tools.base import BaseTool, CallAssessment
+from nanomuse.tools.computer import ComputerAct
 
-PERSONAL_ADAPTERS = {"reminder", "document", "preference"}
+PERSONAL_ADAPTERS = {"reminder", "document", "preference", *EXECUTION_ADAPTERS}
+SURFACE_TOOLS = {"browser", "computer_screen", "computer_act", "computer_task"}
+
+
+class NativeObservationTool(BaseTool):
+    name: str = "assistant_observe_native"
+    description: str = "Observe the Windows desktop for manual task recovery."
+    risk: RiskLevel = RiskLevel.SAFE
+    reads_private_data: bool = True
+    driver: Any
+
+    async def execute(self, **_: Any) -> ToolResult:
+        return ToolResult(output=json.dumps(await self.driver.observe(), ensure_ascii=False))
 
 
 class PersonalTool(BaseTool):
@@ -28,6 +46,13 @@ class PersonalTool(BaseTool):
     step: dict[str, Any]
 
     def assess(self, args: dict[str, Any]) -> CallAssessment:
+        spec = self.step["spec"]
+        if spec["adapter"] == "native":
+            return self.runtime.native.assess(NativeSpec.model_validate(spec["native"]))
+        if spec["adapter"] == "browser":
+            return CallAssessment(
+                risk=RiskLevel.SAFE, reads_private_data=True, summary=spec["title"]
+            )
         return CallAssessment(
             risk=self.risk,
             reads_private_data=True,
@@ -43,7 +68,12 @@ class PersonalTool(BaseTool):
             "adapter"
         ] == "preference" and not self.runtime.ledger.preference_authorized(self.step["id"]):
             return ToolResult.fail("Preference intent needs user confirmation")
-        result = self.runtime.apply(self.step)
+        if self.step["spec"]["adapter"] in EXECUTION_ADAPTERS:
+            if not self.runtime.ledger.preference_authorized(self.step["id"]):
+                return ToolResult.fail("Execution preview needs user approval")
+            result = await self.runtime.apply_execution(self.step)
+        else:
+            result = self.runtime.apply(self.step)
         return ToolResult(output=json.dumps(result, ensure_ascii=False))
 
 
@@ -58,11 +88,55 @@ class PersonalRuntime:
             service.data_dir / "assistant" / "preferences.sqlite3", service.app.memory
         )
         self.reminders = ReminderActions(service.app.reminders)
+        self.files = FileActions(service.data_dir / "assistant", self.workspace)
+        self.browser = BrowserActions(service, self.workspace)
+        self.native = NativeActions(service, self.workspace)
+        self.journal = ExecutionJournal(service.data_dir / "assistant" / "actions.sqlite3")
+        self._surface_owner = ""
+        self._stopping = False
+        self._human_owner = ledger.manual_owner()
+        ledger.control_hook = self.interrupt
+        if getattr(service.app, "sentinel", None) is not None:
+            service.app.sentinel.execution_fence = self.fence
         self._worker: asyncio.Task[None] | None = None
         self._step_id = ""
+        self.browser.can_execute = self.can_execute
+        self.native.can_execute = self.can_execute
+        self.wire_fences()
+
+    def wire_fences(self) -> None:
+        computer = getattr(self.service.app, "computer", None)
+        if computer is not None:
+            computer.input_fence = lambda: self.fence("computer_act")
+        act = self.service.app.tools.get("computer_act")
+        if isinstance(act, ComputerAct):
+            act.input_fence = lambda: self.fence("computer_act")
+        browser = getattr(self.service, "browser", None)
+        if browser is not None:
+            browser.input_fence = lambda: self.fence("browser")
+
+    def can_execute(self) -> bool:
+        return bool(
+            not self._human_owner and self._step_id and self.ledger.personal_state(self._step_id)
+        )
 
     def validate(self, plan: Plan) -> None:
-        for step in plan.steps:
+        for position, step in enumerate(plan.steps):
+            if step.file is not None:
+                reference = step.file.content_from_step
+                browser_source = (
+                    plan.steps[reference].browser
+                    if reference is not None and reference < position
+                    else None
+                )
+                if reference is not None and (
+                    reference >= position
+                    or plan.steps[reference].adapter != "browser"
+                    or browser_source is None
+                    or browser_source.action != "extract"
+                ):
+                    raise ValueError("File content must reference an earlier browser extract step")
+                step.file = prepare_file(step.file, self.workspace)
             if step.document is not None:
                 step.document = prepare(step.document, self.workspace)
             if step.reminder is not None and step.reminder.action != "create":
@@ -77,7 +151,133 @@ class PersonalRuntime:
             if step.preference is not None and self.service.app.memory is None:
                 raise ValueError("Enable memory before creating a personal preference task")
 
+    def fence(self, name: str) -> str | None:
+        if name not in SURFACE_TOOLS and name not in {"assistant_browser", "assistant_native"}:
+            return None
+        from nanomuse.sentinel.gate import current_task
+
+        current = current_task()
+        if self._stopping:
+            return "The assistant executor is stopping. No further input is permitted."
+        if current and current.conversation.startswith("assistant:"):
+            task_id = current.conversation.removeprefix("assistant:")
+            if self.ledger.task_status(task_id) in {
+                "paused",
+                "cancelling",
+                "cancelled",
+                "needs_attention",
+            }:
+                return "Task no longer permits automatic input. Observe before continuing."
+        if self._human_owner:
+            return "User controls this session. Resume its task before automatic input."
+        if self._surface_owner and (
+            current is None or current.conversation != f"assistant:{self._surface_owner}"
+        ):
+            return "A task owns the browser and desktop session. Wait or take over that task."
+        return None
+
+    def interrupt(self, task_id: str, action: str) -> None:
+        if action == "take_over":
+            self._human_owner = task_id
+        if action in {"pause", "cancel", "take_over"}:
+            self.browser.invalidate()
+            self.native.invalidate()
+        if action in {"pause", "cancel", "take_over"} and self._step_id:
+            if self.ledger.get(task_id)["id"] == task_id and self._worker is not None:
+                step = next(
+                    (s for s in self.ledger.get(task_id)["steps"] if s["id"] == self._step_id), None
+                )
+                if step is not None:
+                    self._worker.cancel()
+        if action in {"cancel", "resume"} and self._human_owner == task_id:
+            self._human_owner = ""
+
+    def take_over(self, task_id: str) -> None:
+        self._human_owner = task_id
+        self.interrupt(task_id, "pause")
+
+    async def observe(self, surface: str) -> dict[str, Any]:
+        if self._worker is not None and not self._worker.done():
+            raise ValueError("Pause the active task before observing for manual recovery")
+        token = self.service.app.sentinel.begin_task(purpose="Observe for task recovery")
+        try:
+            if surface == "browser":
+                return dict(await self.browser.observe())
+            tool = NativeObservationTool(driver=self.native)
+            response = await self.service.app.sentinel.guard(
+                ToolCall(function=Function(name=tool.name, arguments="{}")), tool
+            )
+            if response.error:
+                raise ValueError(response.error)
+            result = json.loads(response.output)
+            screenshot = Path(result.pop("screenshot"))
+            result["screenshot_path"] = screenshot.relative_to(self.workspace).as_posix()
+            client = result.pop("client_screenshot", "")
+            if client:
+                result["client_screenshot_path"] = (
+                    Path(client).relative_to(self.workspace).as_posix()
+                )
+            return dict(result)
+        finally:
+            self.service.app.sentinel.end_task(token)
+
+    async def apply_execution(self, step: dict[str, Any]) -> dict[str, Any]:
+        spec, adapter = step["spec"], step["spec"]["adapter"]
+        if adapter == "file":
+            value = FileSpec.model_validate(spec["file"])
+            if value.content_from_step is not None:
+                source = next(
+                    s
+                    for s in self.ledger.get(step["task_id"])["steps"]
+                    if s["revision"] == step["revision"]
+                    and s["position"] == value.content_from_step
+                )
+                content = source["result"].get("text")
+                if source["status"] != "completed" or not isinstance(content, str):
+                    raise ValueError("Browser source has no verified extraction")
+                value = value.model_copy(update={"content": content, "content_from_step": None})
+            row = self.journal.get(step["id"])
+            if row is None:
+                self.journal.start(step, value.model_dump())
+            result = self.files.execute(
+                value, f"assistant:{step['id']}", step["task_id"], step["revision"], step["id"]
+            )
+            recorded = {"adapter": adapter, **result}
+            self.journal.finish(step["id"], recorded)
+            return recorded
+        sentinel = self.service.app.sentinel
+        if any(sentinel.active_tools.get(name, 0) for name in SURFACE_TOOLS):
+            raise ValueError("A chat is using the browser or desktop; wait before retrying")
+        self._surface_owner = step["task_id"]
+        try:
+            previous = self.journal.start(step, spec[adapter])
+            if previous is not None:
+                return previous
+            if adapter == "browser":
+                output = await self.browser.execute(BrowserSpec.model_validate(spec[adapter]))
+            else:
+                output = await self.native.execute(NativeSpec.model_validate(spec[adapter]))
+                if isinstance(output.get("observation"), dict):
+                    observed = dict(output["observation"])
+                    screenshot = observed.pop("screenshot", "")
+                    if screenshot:
+                        observed["screenshot_path"] = (
+                            Path(screenshot).relative_to(self.workspace).as_posix()
+                        )
+                    client = observed.pop("client_screenshot", "")
+                    if client:
+                        observed["client_screenshot_path"] = (
+                            Path(client).relative_to(self.workspace).as_posix()
+                        )
+                    output["observation"] = observed
+            result = {"adapter": adapter, **output}
+            self.journal.finish(step["id"], result)
+            return result
+        finally:
+            self._surface_owner = ""
+
     def pulse(self) -> None:
+        self.wire_fences()
         self.preferences.recover()
         bound = [s for s in self.ledger.bound() if s["spec"]["adapter"] in PERSONAL_ADAPTERS]
         if self._worker is not None and not self._worker.done():
@@ -91,6 +291,12 @@ class PersonalRuntime:
                 self.ledger.reconcile(step["id"], status, evidence)
                 continue
             if step["task_status"] == "paused":
+                if step["spec"]["adapter"] in EXECUTION_ADAPTERS:
+                    status, evidence = self.cancel_evidence(step)
+                    if status == "cancelled":
+                        status = "needs_attention"
+                        evidence = {"paused_before_execution": True, "requires_new_preview": True}
+                    self.ledger.reconcile(step["id"], status, evidence)
                 continue
             self._step_id = step["id"]
             self._worker = asyncio.create_task(self._run(step), name="assistant-personal-action")
@@ -100,6 +306,23 @@ class PersonalRuntime:
         """Observe committed receipts before reporting what cancellation prevented."""
         adapter = step["spec"]["adapter"]
         key = f"assistant:{step['id']}"
+        if adapter == "file":
+            status, evidence = self.files.cancel_evidence(key)
+            if evidence.get("outcome_unknown"):
+                status = "outcome_unknown"
+            elif status == "completed":
+                self.journal.finish(step["id"], {"adapter": adapter, **evidence})
+            return status, evidence
+        if adapter in {"browser", "native"}:
+            row = self.journal.get(step["id"])
+            if row is None:
+                return "cancelled", {"adapter": adapter, "cancelled_before_execution": True}
+            if row["status"] == "completed":
+                return "completed", {**row["result"], "recovered_receipt": True}
+            return "outcome_unknown", {
+                "adapter": adapter,
+                "error": "Input intent exists. Observe and revise; do not repeat it.",
+            }
         path: str | Path
         if adapter == "reminder":
             path, query = (
@@ -144,6 +367,7 @@ class PersonalRuntime:
             }
 
     async def stop(self) -> None:
+        self._stopping = True
         if self._worker is not None:
             self._worker.cancel()
             try:
@@ -153,6 +377,23 @@ class PersonalRuntime:
             self._worker = None
 
     async def _run(self, step: dict[str, Any]) -> None:
+        if step["spec"]["adapter"] in {"browser", "native"}:
+            receipt = self.journal.get(step["id"])
+            if receipt is not None:
+                if receipt["status"] == "completed":
+                    self.ledger.reconcile(
+                        step["id"], "completed", {**receipt["result"], "recovered_receipt": True}
+                    )
+                else:
+                    self.ledger.reconcile(
+                        step["id"],
+                        "outcome_unknown",
+                        {
+                            "action_started": True,
+                            "error": "An input intent remains unresolved. Observe before revising; do not repeat it.",
+                        },
+                    )
+                return
         sentinel = self.service.app.sentinel
         token = sentinel.begin_task(
             purpose=step["spec"]["title"],
@@ -169,10 +410,17 @@ class PersonalRuntime:
                 ToolCall(function=Function(name=tool.name, arguments="{}")), tool
             )
             if result.error:
+                row = self.journal.get(step["id"])
+                unknown = row is not None and row["status"] == "started"
                 self.ledger.reconcile(
                     step["id"],
-                    "needs_attention",
-                    {"error": "Personal action rejected or could not be verified"},
+                    "outcome_unknown" if unknown else "needs_attention",
+                    {
+                        "error": result.error[:500]
+                        if step["spec"]["adapter"] in EXECUTION_ADAPTERS
+                        else "Action could not be verified. Observe current state before revising.",
+                        "action_started": unknown,
+                    },
                 )
             else:
                 self.ledger.reconcile(step["id"], "completed", json.loads(result.output))
@@ -181,11 +429,20 @@ class PersonalRuntime:
         except asyncio.CancelledError:
             raise
         except Exception:
+            row = self.journal.get(step["id"])
             self.ledger.reconcile(
-                step["id"], "needs_attention", {"error": "Personal action could not be verified"}
+                step["id"],
+                "outcome_unknown"
+                if row is not None and row["status"] == "started"
+                else "needs_attention",
+                {"error": "Personal action could not be verified. Observe before revising."},
             )
         finally:
             sentinel.end_task(token)
+            ui = getattr(self.service, "ui", None)
+            main = getattr(self.service, "threads", {}).get("main")
+            if ui is not None and not ui.pending_approvals and not (main and main.busy):
+                ui.set_status("idle", thread="main")
 
     def apply(self, step: dict[str, Any]) -> dict[str, Any]:
         spec = step["spec"]

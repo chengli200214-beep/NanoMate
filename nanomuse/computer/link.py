@@ -37,6 +37,7 @@ import platform
 import socket
 import time
 from collections.abc import Callable
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
 
@@ -66,6 +67,9 @@ ACTIONS = (
 POINTED = ("click", "double_click", "right_click", "middle_click", "move")
 
 Listener = Callable[[dict[str, Any]], None]
+INPUT_CONTEXT_FENCE: ContextVar[Callable[[], str | None] | None] = ContextVar(
+    "computer_input_context_fence", default=None
+)
 
 
 class ComputerLink:
@@ -101,6 +105,7 @@ class ComputerLink:
         self.task_active = False
         self.task_text = ""
         self.last_action: dict[str, Any] | None = None
+        self.input_fence: Callable[[], str | None] | None = None
         w, h = self._initial_size()
         self._device = Device(
             id="this-computer",
@@ -503,7 +508,13 @@ class ComputerLink:
             q["dy"] = round(float(q["dy"]) * self.mapping.scale[1], 2)
         return q
 
+    def _check_input(self) -> None:
+        for fence in (self.input_fence, INPUT_CONTEXT_FENCE.get()):
+            if fence is not None and (blocked := fence()):
+                raise DeviceStopped(blocked)
+
     def _do(self, hands: hands_mod.HandsBackend, action: str, p: dict[str, Any]) -> str:
+        self._check_input()
         p = self._to_hands(hands, p)
         x, y = float(p.get("x") or 0), float(p.get("y") or 0)
         if action == "click":
@@ -524,8 +535,19 @@ class ComputerLink:
             text = str(p.get("text") or "")
             if p.get("clear"):
                 hands.key(["command" if platform.system() == "Darwin" else "ctrl", "a"])
-            hands.type(text)
+            if self.input_fence is None and INPUT_CONTEXT_FENCE.get() is None:
+                hands.type(text)
+            else:
+                offset = 0
+                while offset < len(text):
+                    end = min(offset + 8, len(text))
+                    if end < len(text) and text[end - 1 : end + 1] == "\r\n":
+                        end -= 1
+                    self._check_input()
+                    hands.type(text[offset:end])
+                    offset = end
             if p.get("submit"):
+                self._check_input()
                 hands.key(["enter"])
         elif action == "key":
             keys = [str(k) for k in (p.get("keys") or [])]

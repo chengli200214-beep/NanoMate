@@ -22,6 +22,7 @@ the person keeps the cursor.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from pydantic import ConfigDict
@@ -97,6 +98,7 @@ class ComputerScreen(BaseTool):
 
 
 class ComputerAct(BaseTool):
+    input_fence: Callable[[], str | None] | None = None
     """One action of the mouse or keyboard on this computer."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -345,12 +347,15 @@ class ComputerAct(BaseTool):
             params["app"] = app[:80]
         if action == "wait":
             params["seconds"] = number_arg(kwargs.get("seconds"), 1.0, 0.2, 10.0)
+        if self.input_fence is not None and (blocked := self.input_fence()):
+            return ToolResult.fail(blocked)
         try:
             raw = await self.link.act(
                 params, timeout=self.gui.device_timeout_s + params.get("seconds", 0)
             )
         except DeviceStopped as exc:
-            return ToolResult.fail(f"{exc} ({STOP_MARKER})")
+            reason = exc.device_message or "desktop input was interrupted"
+            return ToolResult.fail(f"Desktop input stopped: {reason} ({STOP_MARKER})")
         except DeviceError as exc:
             return ToolResult.fail(str(exc))
         said = str(raw.get("note") or "")

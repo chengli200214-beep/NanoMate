@@ -29,6 +29,7 @@ the words under the cursor to the Sentinel first, exactly like the phone's ``pho
 
 from __future__ import annotations
 
+import ctypes
 import os
 import shutil
 import subprocess
@@ -91,6 +92,75 @@ _PYAUTO_KEYS = {
 
 class HandsUnavailable(RuntimeError):
     """No way to move the mouse or type on this session (and why)."""
+
+
+class _KeyboardInput(ctypes.Structure):
+    _fields_ = [
+        ("wVk", ctypes.c_uint16),
+        ("wScan", ctypes.c_uint16),
+        ("dwFlags", ctypes.c_uint32),
+        ("time", ctypes.c_uint32),
+        ("dwExtraInfo", ctypes.c_size_t),
+    ]
+
+
+class _MouseInput(ctypes.Structure):
+    _fields_ = [
+        ("dx", ctypes.c_int32),
+        ("dy", ctypes.c_int32),
+        ("mouseData", ctypes.c_uint32),
+        ("dwFlags", ctypes.c_uint32),
+        ("time", ctypes.c_uint32),
+        ("dwExtraInfo", ctypes.c_size_t),
+    ]
+
+
+class _InputPayload(ctypes.Union):
+    # Include MOUSEINPUT so INPUT has the Windows ABI's full size and alignment.
+    _fields_ = [("ki", _KeyboardInput), ("mi", _MouseInput)]
+
+
+class _WindowsInput(ctypes.Structure):
+    _fields_ = [("type", ctypes.c_uint32), ("payload", _InputPayload)]
+
+
+def _windows_unicode_text(text: str) -> None:
+    """Queue literal UTF-16 packets, leaving the IME and clipboard untouched.
+
+    SendInput accepts an entire down/up sequence in order. A partial insertion
+    is an uncertain effect and must never fall back to another input method.
+    """
+    if not text:
+        return
+    # A Windows edit control receives a line break as WM_CHAR(CR). Normalise a
+    # requested CRLF/LF to one edit operation rather than inserting two breaks.
+    text = text.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\r")
+    try:
+        encoded = text.encode("utf-16-le")
+    except UnicodeEncodeError as exc:
+        raise HandsUnavailable("Text contains an unpaired Unicode surrogate") from exc
+    units = [int.from_bytes(encoded[i : i + 2], "little") for i in range(0, len(encoded), 2)]
+    values = (_WindowsInput * (2 * len(units)))()
+    for index, unit in enumerate(units):
+        for key_up in (0, 1):
+            value = values[2 * index + key_up]
+            value.type = 1  # INPUT_KEYBOARD
+            value.payload.ki = _KeyboardInput(0, unit, 0x0004 | (0x0002 if key_up else 0), 0, 0)
+    user32 = ctypes.WinDLL("user32", use_last_error=True)  # type: ignore[attr-defined]
+    send = user32.SendInput
+    send.argtypes = [ctypes.c_uint32, ctypes.POINTER(_WindowsInput), ctypes.c_int]
+    send.restype = ctypes.c_uint32
+    key_state = user32.GetAsyncKeyState
+    key_state.argtypes = [ctypes.c_int]
+    key_state.restype = ctypes.c_int16
+    if any(key_state(key) & 0x8000 for key in (0x10, 0x11, 0x12, 0x5B, 0x5C)):
+        raise HandsUnavailable("Release keyboard modifiers before entering literal text")
+    inserted = send(len(values), values, ctypes.sizeof(_WindowsInput))
+    if inserted != len(values):
+        raise HandsUnavailable(
+            f"Windows inserted {inserted} of {len(values)} text events. "
+            "Input outcome is uncertain; inspect the document before retrying."
+        )
 
 
 class HandsBackend(Protocol):
@@ -177,6 +247,12 @@ class PyAutoGUIHands:
         self._gui.scroll(-clicks if dy > 0 else clicks, x=x, y=y)
 
     def type(self, text: str) -> None:
+        if _platform() == "win32":
+            # Physical key codes pass through the current IME, which can consume
+            # spaces or compose different text even for an ASCII-only request.
+            self._gui.failSafeCheck()
+            _windows_unicode_text(text)
+            return
         if text.isascii():
             self._gui.write(text, interval=0.01)
             return

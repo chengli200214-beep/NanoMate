@@ -6,7 +6,7 @@ import asyncio
 import logging
 from typing import Any
 
-from nanomuse.assistant.ledger import Ledger
+from nanomuse.assistant.ledger import EXECUTION_ADAPTERS, Ledger
 from nanomuse.research.orchestrator import ResearchOrchestrator
 
 logger = logging.getLogger(__name__)
@@ -77,6 +77,12 @@ class Coordinator:
             ):
                 self.ledger.finish_claim(
                     step, "waiting_user", {"requires_preference_confirmation": True}
+                )
+            elif spec["adapter"] in EXECUTION_ADAPTERS and not self.ledger.preference_authorized(
+                step["id"]
+            ):
+                self.ledger.finish_claim(
+                    step, "waiting_user", {"requires_execution_confirmation": True}
                 )
             else:
                 self.ledger.finish_claim(step, "bound", {"adapter": spec["adapter"]})
