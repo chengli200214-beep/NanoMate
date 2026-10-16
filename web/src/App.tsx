@@ -29,6 +29,7 @@ const GoalsScreen = lazy(() => import("./screens/GoalsScreen").then((m) => ({ de
 const IdeasScreen = lazy(() => import("./screens/IdeasScreen").then((m) => ({ default: m.IdeasScreen })));
 const LibraryScreen = lazy(() => import("./screens/LibraryScreen").then((m) => ({ default: m.LibraryScreen })));
 const MemoryScreen = lazy(() => import("./screens/MemoryScreen").then((m) => ({ default: m.MemoryScreen })));
+const TasksScreen = lazy(() => import("./screens/TasksScreen").then((m) => ({ default: m.TasksScreen })));
 const ResearchScreen = lazy(() => import("./screens/ResearchScreen").then((m) => ({ default: m.ResearchScreen })));
 const Onboarding = lazy(() => import("./screens/Onboarding").then((m) => ({ default: m.Onboarding })));
 const SettingsScreen = lazy(() => import("./screens/SettingsScreen").then((m) => ({ default: m.SettingsScreen })));
@@ -49,6 +50,7 @@ const TABS: Array<{ id: Tab; label: string; icon: (active: boolean) => ReactNode
   { id: "feed", label: "Feed", icon: (a) => <Newspaper {...glyph(a)} /> },
   { id: "ideas", label: "Ideas", icon: (a) => <Lightbulb {...glyph(a)} /> },
   { id: "goals", label: "Goals", icon: (a) => <SquareCheckBig {...glyph(a)} /> },
+  { id: "tasks", label: "Task ledger", icon: (a) => <SquareCheckBig {...glyph(a)} /> },
   { id: "research", label: "Research", icon: (a) => <FlaskConical {...glyph(a)} /> },
   { id: "library", label: "Library", icon: (a) => <LayoutGrid {...glyph(a)} /> },
 ];
@@ -151,6 +153,7 @@ export default function App() {
             {state.tab === "feed" && <FeedScreen />}
             {state.tab === "ideas" && <IdeasScreen />}
             {state.tab === "goals" && <GoalsScreen />}
+            {state.tab === "tasks" && <TasksScreen />}
             {state.tab === "research" && <ResearchScreen />}
             {state.tab === "library" && <LibraryScreen />}
             {state.tab === "memory" && <MemoryScreen />}

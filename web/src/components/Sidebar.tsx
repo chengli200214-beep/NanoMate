@@ -59,6 +59,7 @@ export function Sidebar() {
     { id: "feed", label: "Feed", icon: <Newspaper size={21} />, badge: feedUnseen },
     { id: "ideas", label: "Ideas", icon: <Lightbulb size={21} /> },
     { id: "goals", label: "Goals", icon: <SquareCheckBig size={21} />, badge: proposals },
+    { id: "tasks", label: "Task ledger", icon: <SquareCheckBig size={21} /> },
     { id: "research", label: "Research", icon: <FlaskConical size={21} /> },
     { id: "library", label: "Library", icon: <LayoutGrid size={21} /> },
     { id: "devices", label: "Devices", icon: <MonitorSmartphone size={21} />, dot: online > 0 },

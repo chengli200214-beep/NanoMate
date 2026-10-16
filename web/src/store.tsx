@@ -37,7 +37,7 @@ import type {
 } from "./types";
 
 /** Tab bar: chat · feed · ideas · goals · research · library. Memory, devices, connections and settings live behind the avatar. */
-export type Tab = "chat" | "feed" | "ideas" | "goals" | "research" | "library" | "memory" | "devices" | "connections" | "channels" | "skills" | "you" | "account" | "coding" | "avatar";
+export type Tab = "chat" | "feed" | "ideas" | "goals" | "tasks" | "research" | "library" | "memory" | "devices" | "connections" | "channels" | "skills" | "you" | "account" | "coding" | "avatar";
 /**
  * The page this app is framed in (the showcase's simulated phone), when it can be named: the
  * ancestor's origin where the browser exposes it, else the referrer's. A message to the parent
@@ -62,7 +62,7 @@ function tellParent(message: { type: string; [k: string]: unknown }): void {
   if (origin) window.parent.postMessage(message, origin);
 }
 
-const TAB_NAMES: Tab[] = ["chat", "feed", "ideas", "goals", "research", "library", "memory", "devices", "connections", "channels", "skills", "you", "account", "coding", "avatar"];
+const TAB_NAMES: Tab[] = ["chat", "feed", "ideas", "goals", "tasks", "research", "library", "memory", "devices", "connections", "channels", "skills", "you", "account", "coding", "avatar"];
 
 /** A coding run being followed live: the run itself and the steps that arrived so far. */
 export interface CodingLive {

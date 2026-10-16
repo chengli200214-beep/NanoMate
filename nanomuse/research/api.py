@@ -197,6 +197,14 @@ def install_research(app: FastAPI, service: Any, dependencies: list[Any]) -> Res
 
     @router.put("/projects/{project_id}/tracking")
     async def tracking(project_id: str, body: TrackingBody) -> dict[str, Any]:
+        assistant = getattr(app.state, "assistant", None)
+        if body.enabled and assistant is not None:
+            for schedule in assistant.ledger.schedules():
+                if schedule["enabled"] and any(
+                    step.get("project_id") == project_id
+                    for step in schedule["payload"]["plan"]["steps"]
+                ):
+                    raise HTTPException(409, "An assistant schedule already owns this project")
         values = body.model_dump()
         values["next_check_at"] = next_check(store.clock.now(), values)
         with store.transaction():

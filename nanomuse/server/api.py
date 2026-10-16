@@ -480,12 +480,14 @@ def create_app(settings: Settings, service: MuseService | None = None) -> FastAP
         starting = asyncio.create_task(svc.start(), name="services-start")
         await asyncio.wait({starting}, timeout=settings.server.start_grace)
         app.state.research.start()
+        app.state.assistant.start()
         on_ready = getattr(app.state, "on_ready", None)
         if callable(on_ready):
             on_ready()
         try:
             yield
         finally:
+            await app.state.assistant.stop()
             await app.state.research.stop()
             if not starting.done():
                 starting.cancel()
@@ -542,6 +544,9 @@ def create_app(settings: Settings, service: MuseService | None = None) -> FastAP
     from nanomuse.research.api import install_research
 
     install_research(app, svc, dep)
+    from nanomuse.assistant.api import install_assistant
+
+    install_assistant(app, svc, dep)
 
     @app.get("/api/assistant/capabilities", dependencies=dep)
     def assistant_capabilities() -> dict[str, Any]:

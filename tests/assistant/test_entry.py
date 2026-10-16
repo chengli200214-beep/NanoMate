@@ -100,6 +100,8 @@ def test_chat_tools_research_and_authenticated_inventory_coexist(settings: Setti
     app = create_app(settings, service)
     with TestClient(app) as client:
         assert client.get("/api/assistant/capabilities").status_code == 401
+        assert client.get("/api/assistant/tasks").status_code == 401
+        assert client.post("/api/assistant/tasks", json={}).status_code == 401
         client.headers["Authorization"] = "Bearer test-assistant-session"
         inventory = client.get("/api/assistant/capabilities").json()
         assert inventory["mode"] == "offline"
@@ -113,5 +115,8 @@ def test_chat_tools_research_and_authenticated_inventory_coexist(settings: Setti
         wait_idle(service)
         assert (settings.agent.workspace / "notes.md").read_text("utf-8") == "Notes"
         assert len(service.app.reminders.list()) == 1
+        bindings = client.get("/api/assistant/module-bindings").json()
+        assert len(bindings) == 1 and bindings[0]["owner"] == "MuseService"
+        assert bindings[0]["module"] == "reminders"
         assert len(llm.calls) == 3
         assert app.state.research.store.list("project") == []

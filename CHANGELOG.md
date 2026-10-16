@@ -10,6 +10,8 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Runtime
 
+- Added a persistent personal-assistant task ledger with versioned plans, fenced execution attempts, research bindings, checkpoint evidence and recurring schedules. The web task view and main chat shared the ledger; existing research, goals and reminder schedulers retained their ownership.
+
 - Added an isolated personal-assistant development entry with chat and research, a single-instance directory lock and an authenticated capability inventory that distinguishes registration from execution verification.
 
 - Research re-extracted unchanged snapshots after requirement revisions, rejected inconsistent hard-condition verdicts, and retained qualifying paragraphs around short evidence fragments. A controlled-clock process probe covered cross-day and daylight-saving recovery without waiting overnight.

@@ -48,5 +48,7 @@ def capabilities(service: MuseService) -> dict[str, Any]:
         # Never claim a connected model, working Chromium, or an interactive desktop here.
         "runtime_execution_verified": False,
         "vision_execution_verified": False,
-        "unified_task_execution": False,
+        "unified_task_execution": True,
+        "task_adapters": ["checkpoint", "research"],
+        "legacy_schedule_owners": {"goals": "MuseService", "reminders": "MuseService"},
     }
