@@ -141,7 +141,7 @@ $env:NO_PROXY = '127.0.0.1,localhost,::1,' + $env:NO_PROXY
 ```
 
 Live DeepSeek research, real-source network access, overnight scheduling, next-day
-checks, reviewed scenario labels and human trials are separate acceptance items.
+checks and reviewed scenario labels are separate acceptance items. The owner waived human trials.
 See the [product and demonstration guide](research-showcase.md) for scope, diagrams and
 the project walkthrough.
 
@@ -170,7 +170,8 @@ waits until the next local date at the chosen daily time and requires six real h
 The computer and timer must remain running. Runtime changes during the interval reject
 the probe. Its database is separate from the workbench's projects; the timer itself
 does not run a research worker. Only a completed overnight summary establishes that
-acceptance item. Labels and human trials still require actual reviewers and users.
+acceptance item. A human-review claim requires an actual human reviewer. The owner waived
+three-person trials and delegated the remaining review to the assistant; see the checkpoint.
 The [implementation checkpoint](research-status.md) records measured results and open gates.
 See [contracts](research-contracts.md), [reasoning](research-reasoning.md),
 [source adapters](research-sources.md) and [evaluation](research-evaluation.md).
@@ -182,3 +183,6 @@ separate worktrees. Integration defined the shared contracts, durable state and
 orchestration, reviewed the modules, and added consistency and process-recovery checks.
 This attribution describes the implementation process. It does not assert that the
 project owner has independently reviewed the generated code or completed user trials.
+
+Editing requirements preserves disabled sources for candidates that remain in the project.
+Removing a candidate disables its sources; adding that candidate back reactivates them.

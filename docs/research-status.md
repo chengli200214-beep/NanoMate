@@ -3,7 +3,9 @@
 The review repairs are implemented on `research-assistant`. The main repair is `c67f3c9`,
 dependency-scoped muting and safe diagnostic refinements are `c78fe0c`, and the shared
 hard-condition aggregate verdict is `d45ccad`. The earlier conflict-reminder fix was
-integrated as `ef5601e`. Semantic scoring, owner code review and three human trials remain open.
+integrated as `ef5601e`. The owner subsequently delegated the remaining review to the assistant
+and waived the three-person trial requirement. Assistant review is complete; it is not
+independent human validation, and the retained outputs do not meet every quality gate.
 
 ## Review repairs
 
@@ -78,7 +80,8 @@ because the stated requirement rejects documentation as a substitute for runtime
 A separate assistant-authored source correction expanded three incomplete quotations,
 qualified the experimental local-Claude desktop route and made the optional own-key,
 no-server path explicit. Its Markdown and metadata identify it as `agent_editorial_correction`,
-with zero new model requests and owner review pending. The raw model report remains in
+with zero new model requests and owner review pending at that checkpoint. The owner later
+delegated the review to the assistant. The raw model report remains in
 history and is the one used for model-quality review.
 
 The current renderer re-rendered 22 retained reports without modifying model results.
@@ -94,17 +97,31 @@ input and 8 CNY per million output tokens were rechecked on 2026-10-16 against
 [DeepSeek pricing](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/).
 Earlier pilots, workbench requests before approval and coding-assistant usage are excluded.
 
-The original 38 compound claim groups remain available. The repaired five raw model reports
-contain 31 review groups. Neither set has owner verdicts; group sizes differ, so they do not
-establish a before/after accuracy gain. The editorial version does not replace model outputs.
+The assistant reviewed all 31 current and 38 historical compound claim groups against the
+fixed sources. Current outputs have 26 supported groups and 5 partially supported groups;
+historical outputs have 29 supported and 9 partially supported groups. Missing bindings,
+truncated quotations and claims broader than their cited text count as partial support even
+when the full document contains additional relevant facts. These are assistant judgments,
+not independent human labels or comparable before/after accuracy measurements.
 
-1. Review the raw claims and current source correction, then apply the approved scenario
-   scoring. Semantic quality and stale-fact misuse remain unscored.
-2. Complete owner review of store.py, orchestrator.py, context.py and the design tradeoffs.
-3. Complete three real human trials. Templates are prepared; none is recorded as completed.
+Review of the twelve full first-round scenarios found nine meeting their core requirements,
+two partial cases and one extraction failure. B1 retains a dimension mismatch after a new
+hard condition; B2 incorrectly attaches an unrelated Windows uncertainty to the Linux
+condition. Core scenario success does not imply every incidental claim is supported.
+The original all-claims-supported and ten-complete-scenarios gates are not established.
+
+The code review found that editing requirements reactivated disabled sources for retained
+candidates. This is fixed and covered by regression tests. Earlier evaluation artifacts retain
+the extra source-failure notices; they were not rewritten or paid-rerun for this review.
+The three-person trials are waived, not passed. Independent owner review is not claimed.
+The current runtime still lacks a new overnight observation. No additional paid model
+requests were made for this review. The editorial version does not replace model outputs.
 
 The [sanitized repair record](../evals/research/results/2026-10-16-review-repair.json),
 [original matrix](../evals/research/results/2026-10-16-live-matrix.json) and
 [earlier isolated repair](../evals/research/results/2026-10-16-conflict-repair.json) retain
 separate populations. Raw logs, frozen inputs, databases and review forms remain local.
 Video, presentation slides and screen recordings remain outside delivery scope.
+
+The delegated review and source-selection fix passed 407 related checks, Ruff, formatting,
+mypy and the documentation build. See the [review summary](../evals/research/results/2026-10-16-delegated-review.json).

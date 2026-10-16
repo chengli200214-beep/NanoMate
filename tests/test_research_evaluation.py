@@ -191,6 +191,12 @@ async def test_revision_ablation_really_exposes_previous_decisions_to_comparison
     assert changed["comparison_inputs"][-1]["evidence_ids"]
     assert complete["setup_usage"]["model_calls"] > 0
     assert complete["usage"]["model_calls"] < len(complete["all_calls"])
+    for item in (full, ablation):
+        state = json.loads(
+            (tmp_path / "executions" / item["execution_id"] / "state.json").read_text("utf-8")
+        )
+        assert not any(source.get("error") for source in state["source"])
+        assert all(source["enabled"] == (source["kind"] == "manual") for source in state["source"])
 
 
 async def test_impact_intervention_is_separate_from_the_original_model_judgment() -> None:

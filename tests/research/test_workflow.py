@@ -213,6 +213,26 @@ async def test_old_conditions_cannot_publish(store: ResearchStore, repeat: int) 
     assert store.project(p["id"])["current_report"]["spec_id"] == revision["id"]
 
 
+def test_requirement_revision_preserves_disabled_sources(store: ResearchStore) -> None:
+    project = store.create_project(spec())
+    source = store.list("source", project["id"])[0]
+    source["enabled"] = False
+    store._put("source", source)
+    store.revise(project["id"], spec(goal="Updated requirement"))
+    assert store.get("source", source["id"])["enabled"] is False
+    run = store.run(store.runs(project["id"])[0]["id"])
+    assert source["id"] not in {step["source_id"] for step in run["steps"]}
+
+
+def test_readded_candidate_restores_its_sources(store: ResearchStore) -> None:
+    project = store.create_project(spec())
+    source = next(s for s in store.list("source", project["id"]) if s["candidate"] == REPOS[1])
+    store.revise(project["id"], spec(candidates=[REPOS[0], "https://example.com/third"]))
+    assert store.get("source", source["id"])["enabled"] is False
+    store.revise(project["id"], spec())
+    assert store.get("source", source["id"])["enabled"] is True
+
+
 @pytest.mark.parametrize("repeat", range(3))
 async def test_correction_keeps_source_quote_and_uncertainty(
     store: ResearchStore, repeat: int

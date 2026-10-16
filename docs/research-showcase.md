@@ -27,8 +27,8 @@ See the [user guide](research.md) for setup and reproduction.
 nanoMuse provides the runtime, model adapters, authentication, Sentinel and React shell. The
 extension adds research state, versioned evidence and impact tracking. Open Dots is a design
 reference. The fixed upstream revision and GPL-3.0-or-later route are in
-[UPSTREAM.md](../UPSTREAM.md). AI coding agents implemented modules; owner review remains
-pending. Upstream features and unreviewed generated code must not be presented as independent
+[UPSTREAM.md](../UPSTREAM.md). AI coding agents implemented modules; delegated assistant review
+does not establish personal authorship. Upstream features and generated code must not be presented as independent
 handwritten work.
 
 ```mermaid
@@ -125,7 +125,7 @@ scripted model responses when showing them.
 | 5 | Inspect the research tests, earlier 36 offline workflows, live acceptance, failure cases and added modules | Checkpoint, sanitized summary and attribution |
 
 The live two-repository comparison and process recovery are recorded in the
-[checkpoint](research-status.md). Three human trials remain open.
+[checkpoint](research-status.md). The owner waived the three human trials.
 Saved history must not be presented as a just-performed action. Scripted responses do not
 demonstrate autonomous semantic detection.
 
@@ -145,7 +145,9 @@ the owner has read the code or that every model claim is correct.
 Before presenting personal engineering ownership, the owner should review `store.py`,
 `orchestrator.py` and `context.py`, explain a stale-worker failure and its regression test,
 trace one recommendation to its evidence, and record which design choices they accepted
-or changed. This owner review and the three human trials remain open.
+or changed. The owner delegated the remaining review to the assistant and waived the three
+human trials. The checkpoint reports assistant findings without claiming owner authorship
+or independent human validation.
 
 ## Interview evidence
 
@@ -159,4 +161,4 @@ Counts are traceable in the [checkpoint](research-status.md) and
 counts and earlier 36 offline workflows are not live-model task counts or accuracy measurements.
 Keep the fixture's missed conflicts and meaningful changes visible. Cost, useful-reminder
 rates and maintenance improvements require live runs and reviewed scoring. Human recruitment
-and trials remain pending.
+and trials were waived by the owner, not completed.

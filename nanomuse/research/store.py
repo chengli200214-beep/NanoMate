@@ -199,9 +199,13 @@ class ResearchStore:
             project.update(spec_id=revision["id"], current_spec_id=revision["id"], title=spec.title)
             self._put("project", project)
             for source in self.list("source", project_id):
-                source["enabled"] = (
-                    not source["candidate"] or source["candidate"] in spec.candidates
-                )
+                candidate = source["candidate"]
+                if candidate and candidate not in spec.candidates:
+                    source["enabled"] = False
+                elif candidate and candidate not in previous["candidates"]:
+                    source["enabled"] = True
+                # Retained candidates keep their source selection. Revising a requirement
+                # must not reactivate a source deliberately excluded from this project.
                 self._put("source", source)
             known = {s["candidate"] for s in self.list("source", project_id)}
             for candidate in spec.candidates:

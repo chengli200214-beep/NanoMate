@@ -1,0 +1,43 @@
+{
+  "reviewer_type": "assistant",
+  "human_review_completed": false,
+  "trials_status": "waived_by_user_not_passed",
+  "unit": "compound_claim_group",
+  "paid_model_calls": 0,
+  "authorization": "Owner waived three-person trials and delegated the remaining review.",
+  "claim_group_counts": {
+    "current": {
+      "groups": 31,
+      "counts": {
+        "supported": 26,
+        "partial": 5
+      }
+    },
+    "historical": {
+      "groups": 38,
+      "counts": {
+        "supported": 29,
+        "partial": 9
+      }
+    }
+  },
+  "scenario_core_requirements": {
+    "met": 9,
+    "partial": 2,
+    "execution_failed": 1,
+    "population": "twelve full first-round runs; rerun excluded",
+    "not_a_claim_of_all_report_facts_supported": true
+  },
+  "original_quality_gate_met": false,
+  "new_code_finding": "Requirement revision reactivated disabled sources for retained candidates; fixed with regression coverage.",
+  "paid_rerun_performed": false,
+  "owner_independent_review_claimed": false,
+  "current_runtime_overnight": "not_rerun",
+  "verification": {
+    "related_tests_passed": 407,
+    "ruff": "passed",
+    "format": "passed",
+    "mypy_source_files": 161,
+    "docs_build": "passed"
+  }
+}
