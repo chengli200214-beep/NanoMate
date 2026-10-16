@@ -29,3 +29,22 @@ it("refreshes after connection changes and does not display stale success on fai
   expect(text).not.toContain("Model configured");
   expect(text).not.toContain("private error details");
 });
+
+it("shows unresolved model reservations separately from known cost estimates", async () => {
+  vi.mocked(request).mockResolvedValue({ mode: "offline", checks: [{ id: "usage_limits", status: "needs_budget_configuration" }], usage_limits: { configuration_required: true, charged_upper_cny: 0.25, unsettled_reserved_cny: 2.12992, unknown_requests: 1 } });
+  await act(async () => { screen = create(createElement(AssistantCapabilities, { revision: 0 })); });
+  const text = JSON.stringify(screen.toJSON());
+  expect(text).toContain("Local model limits");
+  expect(text).toContain("0.250000");
+  expect(text).toContain("2.129920");
+  expect(text).toContain("Requests needing reconciliation");
+  expect(text).toContain("do not verify the provider bill");
+});
+
+it("does not describe a configured allowance as a verified model connection", async () => {
+  vi.mocked(request).mockResolvedValue({ mode: "live", checks: [{ id: "usage_limits", status: "limits_configured" }] });
+  await act(async () => { screen = create(createElement(AssistantCapabilities, { revision: 0 })); });
+  const text = JSON.stringify(screen.toJSON());
+  expect(text).toContain("Local limits configured");
+  expect(text).not.toContain("Model configured");
+});

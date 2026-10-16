@@ -19,6 +19,7 @@ from collections.abc import Coroutine
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta
 from datetime import time as time_of_day
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -34,7 +35,7 @@ from nanomuse.config import LLMSettings, Settings
 from nanomuse.goals import Goal
 from nanomuse.hub.service import HubService
 from nanomuse.llm import BaseLLM
-from nanomuse.llm.factory import create_llm, llm_ready
+from nanomuse.llm.factory import llm_ready
 from nanomuse.logger import logger
 from nanomuse.memory.consolidate import TidyReport, tidy
 from nanomuse.nudges import NudgesPolicy
@@ -1022,6 +1023,9 @@ class MuseService:
     def stop_thread(self, thread_id: str) -> bool:
         """The stop button: end the run in progress and drop what was queued behind it.
         The conversation stays; a pending approval or question closes unanswered."""
+        continuations = getattr(self, "assistant_continuations", None)
+        if continuations is not None:
+            continuations.block_thread(thread_id)
         thread = self.threads.get(thread_id)
         if thread is not None and thread.device and thread.busy:
             spawn(self.hub.stop_remote(thread), "stopping the remote run")
@@ -1144,6 +1148,7 @@ class MuseService:
             # attached to the request is the reference the candidates are drawn from
             if (
                 source == "user"
+                and not self.settings.agent.task_ledger_only
                 and all(a.kind == "image" for a in attachments)
                 and self.avatar.intercept(thread_id, text, [a.path for a in attachments])
             ):
@@ -1163,14 +1168,35 @@ class MuseService:
             )
             if label:
                 thread.purposes[text] = label
-        if once is not None:
-            thread.inbox.put_nowait(Incoming(text, attachments, language, once[0], once[1]))
-        else:
-            thread.inbox.put_nowait(
-                Incoming(text, attachments, language) if attachments or language else text
+        thread.inbox.put_nowait(
+            Incoming(
+                text,
+                attachments,
+                language,
+                once[0] if once else None,
+                once[1] if once else "",
+                origin_event_id=event["id"] if source in {"user", "device"} else "",
+                source=source,
             )
+        )
         self._ensure_worker(thread)
         return event
+
+    def queue_task_continuation(self, item: dict[str, Any]) -> None:
+        """Queue an internal result trigger without emitting a fabricated user turn."""
+        origin = {**item["origin"], "parent_event_id": item["id"]}
+        thread = self.threads.get(origin["thread"])
+        if thread is None:
+            continuation_store: Any = getattr(self, "assistant_continuations", None)
+            if continuation_store is not None:
+                continuation_store.finished(item["id"], "origin_thread_unavailable")
+            return
+        thread.inbox.put_nowait(
+            Incoming(
+                origin["goal"], source="assistant_continuation", origin=origin, runtime_event=item
+            )
+        )
+        self._ensure_worker(thread)
 
     def cloud_once(self) -> tuple[BaseLLM | None, str]:
         """The client for *Use nanoMuse Cloud this time* (the own-key models contract, §4)
@@ -1197,7 +1223,20 @@ class MuseService:
             max_tokens=llm.max_tokens,
             timeout=llm.timeout,
         )
-        return create_llm(merged, data_dir=self.settings.data_dir), model
+        return self.app.make_slot_llm(merged), model
+
+    def _background_llm(self, role: str) -> BaseLLM:
+        from nanomuse.assistant.usage_limits import UsageGuardLLM, UsageOwner
+
+        client = self.app.llm
+        if isinstance(client, UsageGuardLLM):
+            return client.with_owner(
+                UsageOwner(
+                    turn_id=f"background:{role}:{uuid.uuid4().hex}",
+                    background=True,
+                )
+            )
+        return client
 
     # ------------------------------------------------------------------ attachments
     def attachment(self, rel: str) -> Attachment:
@@ -1245,6 +1284,14 @@ class MuseService:
             while not thread.inbox.empty():
                 item = thread.inbox.get_nowait()
                 incoming = item if isinstance(item, Incoming) else Incoming(item)
+                continuation_store: Any = getattr(self, "assistant_continuations", None)
+                if incoming.runtime_event is not None:
+                    reason = continuation_store.rejection(
+                        incoming.runtime_event, self, claimed=True
+                    )
+                    if reason:
+                        continuation_store.finished(incoming.runtime_event["id"], reason)
+                        continue
                 text = incoming.text
                 thread.busy = True
                 thread.agent.inbox = thread.inbox
@@ -1258,6 +1305,21 @@ class MuseService:
                 self.ui.set_status("working", "", thread.id)
                 try:
                     purpose = thread.purposes.pop(text, None)
+                    origin = incoming.origin
+                    if (
+                        origin is None
+                        and incoming.origin_event_id
+                        and self.settings.agent.task_ledger_only
+                    ):
+                        from nanomuse.assistant.continuations import make_origin
+
+                        origin = make_origin(
+                            thread.id,
+                            incoming.origin_event_id,
+                            text,
+                            thread.agent.llm,
+                            self.settings,
+                        )
                     # the first conversation speaks to the person's turns in its own chat;
                     # a background run (a goal pass, a routine) never hears it
                     thread.agent.prompt_addendum = (
@@ -1265,17 +1327,37 @@ class MuseService:
                     )
                     self.ui.begin_run(thread.id, background=purpose, model_used=incoming.model)
                     final = await thread.agent.run(
-                        text, purpose=purpose, files=incoming.files, language=incoming.language
+                        text,
+                        purpose=purpose,
+                        files=incoming.files,
+                        language=incoming.language,
+                        origin=origin,
+                        runtime_event=incoming.runtime_event,
+                        runtime_validator=partial(
+                            continuation_store.rejection, incoming.runtime_event, self, claimed=True
+                        )
+                        if incoming.runtime_event
+                        else None,
                     )
                     quiet, final = (
                         prompts.split_quiet(final or "") if purpose else (False, final or "")
                     )
                     self._finish_run(thread, purpose, final.strip(), quiet)
+                    if incoming.runtime_event is not None:
+                        continuation_store.finished(incoming.runtime_event["id"])
                 except asyncio.CancelledError:
+                    if incoming.runtime_event is not None:
+                        continuation_store.finished(
+                            incoming.runtime_event["id"], "interrupted_planning"
+                        )
                     if thread.stopping:
                         self._settle_stopped(thread)
                     raise
                 except Exception as exc:  # noqa: BLE001
+                    if incoming.runtime_event is not None:
+                        continuation_store.finished(
+                            incoming.runtime_event["id"], getattr(exc, "reason", "planning_failed")
+                        )
                     logger.exception("thread {} failed", thread.id)
                     notice = failure_notice(exc, thread.id)
                     if incoming.model:
@@ -2080,7 +2162,7 @@ class MuseService:
             raise ValueError("a tidy-up is already running")
         self._tidying = True
         try:
-            report = await tidy(store, self.app.llm, dry_run=dry_run)
+            report = await tidy(store, self._background_llm("memory-tidy"), dry_run=dry_run)
         finally:
             self._tidying = False
         if dry_run:
@@ -2164,7 +2246,9 @@ class MuseService:
             if language in ("", "auto")
             else language,
         )
-        response = await self.app.llm.ask_complete([Message.user(prompt)], tools=None)
+        response = await self._background_llm("ideas").ask_complete(
+            [Message.user(prompt)], tools=None
+        )
         ideas = _parse_ideas(response.content or "")
         data = {
             "generated_at": now_iso(),
@@ -2355,7 +2439,9 @@ class MuseService:
                 context="\n".join(self._feed_context()),
                 language=self.feed_language(),
             )
-            response = await self.app.llm.ask_complete([Message.user(prompt)], tools=None)
+            response = await self._background_llm("feed").ask_complete(
+                [Message.user(prompt)], tools=None
+            )
             posts = _parse_posts(response.content or "")
             now = now_iso()
             for p in posts:

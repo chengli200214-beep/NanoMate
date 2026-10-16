@@ -17,6 +17,7 @@ from nanomuse.assistant.ledger import EXECUTION_ADAPTERS, Ledger, Plan
 from nanomuse.assistant.native_actions import NativeActions, NativeSpec
 from nanomuse.assistant.preferences import PreferenceAction, PreferenceStore
 from nanomuse.assistant.reminders import ReminderAction, ReminderActions
+from nanomuse.assistant.usage_limits import UsageStopped
 from nanomuse.schema import Function, RiskLevel, ToolCall, ToolResult
 from nanomuse.tools.base import BaseTool, CallAssessment
 from nanomuse.tools.computer import ComputerAct
@@ -93,6 +94,7 @@ class PersonalRuntime:
         self.native = NativeActions(service, self.workspace)
         self.journal = ExecutionJournal(service.data_dir / "assistant" / "actions.sqlite3")
         self._surface_owner = ""
+        self._gui_budget_root = ""
         self._stopping = False
         self._human_owner = ledger.manual_owner()
         ledger.control_hook = self.interrupt
@@ -116,9 +118,20 @@ class PersonalRuntime:
             browser.input_fence = lambda: self.fence("browser")
 
     def can_execute(self) -> bool:
-        return bool(
+        active = bool(
             not self._human_owner and self._step_id and self.ledger.personal_state(self._step_id)
         )
+        limits = getattr(self.service.app, "assistant_usage", None)
+        if active and limits is not None and self._gui_budget_root:
+            try:
+                limits.check_gui(self._gui_budget_root)
+            except UsageStopped:
+                return False
+        return active
+
+    def _gui_root(self, task_id: str) -> str:
+        continuations = getattr(self.service, "assistant_continuations", None)
+        return continuations.request_root(task_id) if continuations is not None else task_id
 
     def validate(self, plan: Plan) -> None:
         planned_directories: set[str] = set()
@@ -261,7 +274,11 @@ class PersonalRuntime:
         if any(sentinel.active_tools.get(name, 0) for name in SURFACE_TOOLS):
             raise ValueError("A chat is using the browser or desktop; wait before retrying")
         self._surface_owner = step["task_id"]
+        self._gui_budget_root = self._gui_root(step["task_id"])
         try:
+            limits = getattr(self.service.app, "assistant_usage", None)
+            if limits is not None:
+                limits.reserve_gui(self._gui_budget_root, step["id"])
             previous = self.journal.start(step, spec[adapter])
             if previous is not None:
                 return previous
@@ -297,6 +314,7 @@ class PersonalRuntime:
             return result
         finally:
             self._surface_owner = ""
+            self._gui_budget_root = ""
 
     def pulse(self) -> None:
         self.wire_fences()

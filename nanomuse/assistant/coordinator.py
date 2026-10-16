@@ -6,6 +6,7 @@ import asyncio
 import logging
 from typing import Any
 
+from nanomuse.assistant.continuations import Continuations
 from nanomuse.assistant.ledger import EXECUTION_ADAPTERS, Ledger
 from nanomuse.assistant.research_link import ResearchLink
 from nanomuse.research.orchestrator import ResearchOrchestrator
@@ -21,6 +22,7 @@ class Coordinator:
         self.personal: Any = None
         self.research_link: ResearchLink | None = None
         self.service: Any = None
+        self.continuations: Continuations | None = None
 
     def start(self) -> None:
         if self._task is None:
@@ -43,6 +45,31 @@ class Coordinator:
                 self.tick()
                 if self.personal is not None:
                     self.personal.pulse()
+                if self.continuations is not None and self.service is not None:
+                    from nanomuse.assistant.delivery import deliver_task
+
+                    self.continuations.project()
+                    for item in self.continuations.pending_notices():
+                        thread = self.service.threads.get(item["origin"]["thread"])
+                        if thread is None:
+                            self.continuations.noticed(item["id"])
+                            self.continuations.finished(item["id"], "origin_thread_unavailable")
+                            self.continuations.block_noticed(item["id"] + ":blocked")
+                            continue
+                        if thread.busy:
+                            continue
+                        await deliver_task(self.service, item)
+                        self.continuations.noticed(item["id"])
+                    for item in self.continuations.pending():
+                        if self.continuations.claim(item, self.service):
+                            self.service.queue_task_continuation(item)
+                            break
+                    for item in self.continuations.pending_blocks():
+                        if item["origin"]["thread"] not in self.service.threads:
+                            self.continuations.block_noticed(item["id"])
+                            continue
+                        await deliver_task(self.service, item)
+                        self.continuations.block_noticed(item["id"])
                 if self.research_link is not None and self.service is not None:
                     from nanomuse.assistant.delivery import deliver_research
 

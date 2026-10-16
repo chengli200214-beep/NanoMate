@@ -231,6 +231,26 @@ class AgentSettings(BaseModel):
     # The isolated personal assistant keeps computer effects in approved ledger steps.
     # Other runtime/desktop profiles retain their existing tool availability.
     task_ledger_only: bool = False
+    max_task_continuations: int = Field(default=8, ge=0, le=32)
+    task_continuation_seconds: float = Field(default=900, ge=1, le=3600)
+
+
+class AssistantUsageSettings(BaseModel):
+    """Opt-in limits for the isolated assistant, with no implicit paid allowance."""
+
+    enabled: bool = False
+    price_policy: str = ""
+    daily_cny: float = Field(default=0, ge=0, le=10000, allow_inf_nan=False)
+    task_cny: float = Field(default=0, ge=0, le=1000, allow_inf_nan=False)
+    daily_requests: int = Field(default=64, ge=1, le=10000)
+    task_requests: int = Field(default=16, ge=1, le=1000)
+    daily_tokens: int = Field(default=80_000_000, ge=1, le=10_000_000_000)
+    task_tokens: int = Field(default=20_000_000, ge=1, le=1_000_000_000)
+    request_output_tokens: int = Field(default=4096, ge=1, le=32768)
+    request_seconds: float = Field(default=180, ge=1, le=900)
+    day_timezone: Literal["UTC"] = "UTC"
+    gui_actions: int = Field(default=60, ge=1, le=1000)
+    gui_seconds: float = Field(default=300, ge=1, le=3600)
 
 
 class SentinelRule(BaseModel):
@@ -624,6 +644,7 @@ class Settings(BaseModel):
     log_level: str = "INFO"
     llm: LLMSettings = Field(default_factory=LLMSettings)
     agent: AgentSettings = Field(default_factory=AgentSettings)
+    assistant_usage: AssistantUsageSettings = Field(default_factory=AssistantUsageSettings)
     sentinel: SentinelSettings = Field(default_factory=SentinelSettings)
     memory: MemorySettings = Field(default_factory=MemorySettings)
     connectors: ConnectorSettings = Field(default_factory=ConnectorSettings)

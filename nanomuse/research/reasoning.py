@@ -353,6 +353,9 @@ class ResearchReasoner:
             entry["status"], entry["error_type"] = "succeeded", None
             return response
         except Exception as exc:
+            if getattr(exc, "code", "") == "assistant_usage_stopped":
+                entry["status"], entry["error_type"] = "failed", "assistant_usage_stopped"
+                raise
             status_code = getattr(exc, "status_code", None)
             error = ResearchModelError(
                 f"Provider request failed ({type(exc).__name__})",

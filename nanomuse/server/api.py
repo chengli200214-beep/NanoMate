@@ -547,6 +547,9 @@ def create_app(settings: Settings, service: MuseService | None = None) -> FastAP
     from nanomuse.assistant.api import install_assistant
 
     install_assistant(app, svc, dep)
+    from nanomuse.assistant.usage_boundary import install_usage_boundary
+
+    install_usage_boundary(app, svc, auth)
 
     @app.get("/api/assistant/capabilities", dependencies=dep)
     def assistant_capabilities() -> dict[str, Any]:

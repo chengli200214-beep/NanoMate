@@ -496,7 +496,6 @@ def test_use_cloud_this_time_runs_one_turn_on_the_account(server, settings: Sett
     chat model under the Cloud key, the configured model back for the next; `[llm]`, the
     Cloud switch and the thread stay as they were. Signed out it is a 401."""
     from nanomuse.cloud import CLOUD_KEY
-    from nanomuse.server import service as service_module
 
     client, service, llm = server
     settings.cloud.models = False  # the explicit retry is what spends while the models are off
@@ -515,7 +514,7 @@ def test_use_cloud_this_time_runs_one_turn_on_the_account(server, settings: Sett
         built.append(merged)
         return cloud_llm
 
-    monkeypatch.setattr(service_module, "create_llm", fake_create_llm)
+    monkeypatch.setattr("nanomuse.app.create_llm", fake_create_llm)
     before = (settings.llm.model, settings.llm.base_url, settings.llm.api_key)
     r = client.post("/api/threads/main/send", json={"text": "again", "via": "cloud"})
     assert r.status_code == 200 and r.json()["event"]["model_used"] == "relay-chat-model"

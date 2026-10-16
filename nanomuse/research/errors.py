@@ -16,6 +16,10 @@ _MESSAGES = {
         "Model call limit reached. Review the limit before retrying. / "
         "模型调用次数达到上限，请核对限额后重试。"
     ),
+    "assistant_usage_stopped": (
+        "The assistant model allowance stopped. Review usage, unresolved requests and limits. / "
+        "助手模型额度已停止，请检查用量、未结算请求和限额。"
+    ),
     "context_budget": (
         "The required context is too large. Reduce the project scope or review the sources. / "
         "必要上下文超出容量，请缩小项目范围或检查来源。"

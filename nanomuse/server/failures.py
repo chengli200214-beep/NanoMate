@@ -169,6 +169,16 @@ def allowance_detail(exc: BaseException) -> dict[str, Any] | None:
 def describe_failure(exc: BaseException) -> tuple[str, str]:
     """``(code, sentence)`` for a run that ended in ``exc``."""
     code = _relay_code(exc)
+    if code == "assistant_usage_stopped":
+        return (
+            code,
+            "Local model usage is stopped. Check the runtime limits and unresolved requests before continuing.",
+        )
+    if code == "assistant_continuation_stopped":
+        return (
+            code,
+            "Automatic planning has stopped. Review the task state before continuing.",
+        )
     if code == "allowance_exhausted" and _relay_error(exc).get("paused") is True:
         return _ALLOWANCE_PAUSED
     if code in _RELAY:

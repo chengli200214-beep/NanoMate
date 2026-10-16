@@ -150,6 +150,9 @@ class ResearchLink:
                         and old["task_id"]
                     ],
                 }
+                from nanomuse.assistant.continuations import current_origin
+
+                record["origin"] = current_origin()
                 self.store.db.execute(
                     "INSERT INTO assistant_research_request VALUES(?,?,?)",
                     (key, payload, json.dumps(record, ensure_ascii=False)),
@@ -157,7 +160,9 @@ class ResearchLink:
         return self._link(record)
 
     def _link(self, record: dict[str, Any]) -> dict[str, Any]:
-        task = self.ledger.create(Plan.model_validate(record["plan"]), record["request_id"])
+        task = self.ledger.create(
+            Plan.model_validate(record["plan"]), record["request_id"], origin=record.get("origin")
+        )
         record.update(task_id=task["id"], step_id=task["steps"][0]["id"])
         with self.store.transaction():
             self.store.db.execute(
@@ -208,6 +213,33 @@ class ResearchLink:
                     raise Conflict("Research run does not match the immutable task inputs")
                 return run
         return None
+
+    def usage_owner_for_run(self, run_id: str) -> Any:
+        from nanomuse.assistant.continuations import SCHEMA
+        from nanomuse.assistant.usage_limits import UsageOwner
+
+        with self.store.lock:
+            rows = self.store.db.execute("SELECT data FROM assistant_research_request").fetchall()
+        for row in rows:
+            record = json.loads(row[0])
+            if record["run_id"] == run_id and record["task_id"]:
+                # Do not reconstruct Continuations: its startup recovery marks
+                # outstanding planning attempts unknown. Only read the root link.
+                with self.ledger.transaction() as db:
+                    for statement in SCHEMA:
+                        db.execute(statement)
+                    origin = db.execute(
+                        "SELECT scope_id FROM task_origin WHERE task_id=?", (record["task_id"],)
+                    ).fetchone()
+                root = str(origin["scope_id"]) if origin else record["task_id"]
+                return UsageOwner(
+                    turn_id=root,
+                    task_id=record["task_id"],
+                    run_id=run_id,
+                    background=True,
+                    root_id=root,
+                )
+        return UsageOwner(turn_id=f"research:{run_id}", run_id=run_id, background=True)
 
     def projects(self) -> list[dict[str, Any]]:
         """Read existing projects without adopting or re-creating them."""

@@ -16,7 +16,9 @@ if TYPE_CHECKING:
 def capabilities(service: MuseService) -> dict[str, Any]:
     settings = service.settings
     tools = service.app.tools
-    offline = isinstance(service.app.llm, MockLLM)
+    offline = isinstance(service.app.llm, MockLLM) or isinstance(
+        getattr(service.app.llm, "delegate", None), MockLLM
+    )
     model_configured = research_model_ready(settings)
     browser_installed = importlib.util.find_spec("playwright") is not None
 
@@ -26,10 +28,13 @@ def capabilities(service: MuseService) -> dict[str, Any]:
     browser = registered("browser")
     if browser == "registered" and settings.browser.backend != "device" and not browser_installed:
         browser = "missing_dependency"
+    limits = getattr(service.app, "assistant_usage", None)
+    usage = limits.status() if limits is not None else None
     return {
         "contract": "assistant-capabilities-v1",
         "mode": "offline" if offline else "live",
         "platform": platform.system(),
+        "usage_limits": usage,
         "checks": [
             {
                 "id": "chat",
@@ -44,6 +49,12 @@ def capabilities(service: MuseService) -> dict[str, Any]:
             {"id": "browser", "status": browser},
             {"id": "computer", "status": registered("computer_task")},
             {"id": "research", "status": "registered"},
+            {
+                "id": "usage_limits",
+                "status": "needs_budget_configuration"
+                if usage and usage["configuration_required"]
+                else ("limits_configured" if usage else "disabled"),
+            },
         ],
         # Never claim a connected model, working Chromium, or an interactive desktop here.
         "runtime_execution_verified": False,

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -20,19 +21,54 @@ from evals.assistant.freeze import (
     matrix,
     verify,
 )
-from evals.assistant.guard import EvaluationGuard, wire_isolated_service
+from evals.assistant.guard import REQUESTS_PER_EXECUTION, EvaluationGuard, wire_isolated_service
 from nanomuse.config import LLMSettings, Settings
 from nanomuse.llm.base import BaseLLM
 from nanomuse.llm.mock import MockLLM
 from nanomuse.server import create_app
 from nanomuse.server.service import MuseService
 
+SHUTDOWN_SECONDS = 5.0
+CANCEL_SECONDS = 2.0
+
+
+async def _bounded_task(task: asyncio.Task[Any], seconds: float, label: str) -> list[str]:
+    done, _ = await asyncio.wait({task}, timeout=seconds)
+    if not done:
+        task.cancel()
+        done, _ = await asyncio.wait({task}, timeout=CANCEL_SECONDS)
+        if not done:
+            # Cancellation may be ignored by a broken driver. Preserve evidence and
+            # leave admission sealed rather than pretending the host was closed.
+            return [f"{label}_timeout", f"{label}_cancellation_unresolved"]
+        try:
+            task.result()
+        except BaseException:
+            pass
+        return [f"{label}_timeout"]
+    try:
+        task.result()
+    except asyncio.CancelledError:
+        return [f"{label}_cancelled"]
+    except Exception as exc:
+        return [f"{label}_{type(exc).__name__}"]
+    return []
+
 
 def _write(path: Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("x", encoding="utf-8") as stream:
-        json.dump(value, stream, ensure_ascii=False, indent=2)
-        stream.write("\n")
+    temporary = path.with_name(f".{path.name}-{uuid.uuid4().hex}.tmp")
+    try:
+        with temporary.open("x", encoding="utf-8") as stream:
+            json.dump(value, stream, ensure_ascii=False, indent=2)
+            stream.write("\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+        # Publish the complete file atomically without overwriting an earlier
+        # result, including on Windows. Both paths are on the same filesystem.
+        os.link(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _replace(path: Path, value: Any) -> None:
@@ -261,26 +297,73 @@ def retire_unapproved_case(directory: Path, execution_id: str) -> dict[str, Any]
 
 @asynccontextmanager
 async def _running(app: Any, *, serve: bool, port: int):
-    if not serve:
-        async with app.router.lifespan_context(app):
-            yield
-        return
-    import uvicorn
+    outcome: dict[str, Any] = {"status": "pending", "issues": []}
+    loop = asyncio.get_running_loop()
+    previous = loop.get_exception_handler()
 
-    server = uvicorn.Server(
-        uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning", access_log=False)
-    )
-    worker = asyncio.create_task(server.serve())
+    def callback_failure(current: Any, context: dict[str, Any]) -> None:
+        exception = context.get("exception")
+        outcome["issues"].append(
+            f"event_loop_callback_{type(exception).__name__ if exception else 'error'}"
+        )
+        if previous is not None:
+            previous(current, context)
+        else:
+            current.default_exception_handler(context)
+
+    loop.set_exception_handler(callback_failure)
+    server, worker, lifespan = None, None, None
     try:
-        until = time.monotonic() + 30
-        while not server.started:
-            if worker.done() or time.monotonic() >= until:
-                raise RuntimeError("The isolated approval interface did not start")
-            await asyncio.sleep(0.05)
-        yield
+        if not serve:
+            lifespan = app.router.lifespan_context(app)
+            await lifespan.__aenter__()
+        else:
+            import uvicorn
+
+            server = uvicorn.Server(
+                uvicorn.Config(
+                    app,
+                    host="127.0.0.1",
+                    port=port,
+                    log_level="warning",
+                    access_log=False,
+                    timeout_graceful_shutdown=max(1, int(SHUTDOWN_SECONDS)),
+                )
+            )
+            worker = asyncio.create_task(server.serve())
+            until = time.monotonic() + 30
+            while not server.started:
+                if worker.done() or time.monotonic() >= until:
+                    raise RuntimeError("The isolated approval interface did not start")
+                await asyncio.sleep(0.05)
+        yield outcome
     finally:
-        server.should_exit = True
-        await worker
+        try:
+            if server is not None and worker is not None:
+                server.should_exit = True
+                outcome["issues"] += await _bounded_task(
+                    worker, SHUTDOWN_SECONDS, "uvicorn_shutdown"
+                )
+                # A stuck Windows Server.wait_closed happens before Uvicorn sends
+                # the lifespan shutdown event. Cancel that waiter, then still close
+                # the application's independent lifespan task explicitly.
+                host = getattr(server, "lifespan", None)
+                ended = getattr(host, "shutdown_event", None)
+                if host is not None and (ended is None or not ended.is_set()):
+                    outcome["issues"] += await _bounded_task(
+                        asyncio.create_task(host.shutdown()), SHUTDOWN_SECONDS, "lifespan_shutdown"
+                    )
+            elif lifespan is not None:
+                outcome["issues"] += await _bounded_task(
+                    asyncio.create_task(lifespan.__aexit__(None, None, None)),
+                    SHUTDOWN_SECONDS,
+                    "lifespan_shutdown",
+                )
+        except Exception as exc:
+            outcome["issues"].append(f"shutdown_{type(exc).__name__}")
+        finally:
+            outcome["status"] = "failed" if outcome["issues"] else "completed"
+            loop.set_exception_handler(previous)
 
 
 def assertions(
@@ -433,6 +516,47 @@ def assertions(
     return rows
 
 
+def _execution_errors(
+    case_id: str,
+    fixture: dict[str, Any],
+    after: dict[str, Any],
+    guard: EvaluationGuard,
+    execution_id: str,
+) -> list[str]:
+    problems = []
+    budget = guard.budget.summary()
+    if budget["stopped"]:
+        count = guard.budget.db.execute(
+            "SELECT COUNT(*) FROM request WHERE execution_id=?", (execution_id,)
+        ).fetchone()[0]
+        problems.append(
+            "execution_request_limit_reached"
+            if count >= REQUESTS_PER_EXECUTION
+            else "batch_budget_stopped"
+        )
+    if budget["unsettled_requests"]:
+        problems.append("unsettled_provider_usage")
+    incomplete = [
+        item
+        for item in after["tasks"]
+        if item["status"] not in {"completed", "cancelled", "superseded"}
+    ]
+    # A study plan or unconfirmed preference is intentionally pending. Action
+    # cases must not hide an unfinished domain operation behind error=null.
+    if incomplete and case_id not in {"B1", "B3", "B4", "B5", "B6", "A6"}:
+        problems.append("domain_tasks_incomplete")
+    if any(item["status"] in {"failed", "needs_attention", "paused"} for item in after["runs"]):
+        problems.append("research_not_completed")
+    expected = fixture.get("expected", {})
+    if case_id == "C5" and after["files"].get(expected.get("output_path"), {}).get(
+        "sha256"
+    ) != expected.get("sha256"):
+        problems.append("required_native_saved_file_not_verified")
+    if case_id == "B2" and expected.get("output_name") not in after["files"]:
+        problems.append("required_document_missing")
+    return problems
+
+
 async def run_case(
     directory: Path,
     execution_id: str,
@@ -473,158 +597,217 @@ async def run_case(
         guard.close()
         raise ValueError("Case results are append-only; do not overwrite or replay an execution")
     fixture = fixture_record["fixture"]
-    guard.begin(execution_id)
     app, service = _host(case_dir / "runtime", guard.frozen, delegate, port)
-    wire_isolated_service(service, app.state.research, guard)
     before = snapshot(service, app)
     if digest(before) != digest(fixture_record["before"]):
         await service.app.close()
         app.state.research.store.close()
         guard.close()
         raise ValueError("Prepared case state changed before execution")
-    error = None
-    duplicate_probe = None
-    after, timeline = before, []
+    guard.begin(execution_id)
+    wire_isolated_service(service, app.state.research, guard, assistant=app.state.assistant)
+    errors: list[str] = []
+    error: str | None = None
+    duplicate_probe: dict[str, Any] | None = None
+    after: dict[str, Any] = before
+    timeline: list[Any] = []
+    cleanup: dict[str, Any] = {"status": "not_started", "issues": []}
     research_start = app.state.research.start
     if row["case_id"] == "D1":
-        # Do not let a source fetch race fixture registration after chat creation.
         app.state.research.start = lambda: None
-    try:
-        async with _running(app, serve=serve, port=port):
-            research = app.state.research
-            setup = fixture.get("research_setup", {})
-            if setup.get("baseline_required"):
-                run = enqueue_research_baseline(research.store, fixture)
-                research.wake()
-                until = time.monotonic() + min(wait_seconds, guard.remaining_seconds(execution_id))
-                while research.store.run(run["id"])["status"] not in {
-                    "succeeded",
-                    "failed",
-                    "needs_attention",
-                    "cancelled",
-                }:
-                    if time.monotonic() >= until or guard.budget.stopped:
-                        raise TimeoutError("The counted baseline did not finish")
-                    await asyncio.sleep(0.05)
-                if research.store.run(run["id"])["status"] != "succeeded":
-                    raise RuntimeError(
-                        "The counted baseline failed; target scenario was not executed"
+
+    def collect() -> dict[str, Any]:
+        try:
+            criteria = assertions(row["case_id"], before, after, fixture)
+        except Exception as exc:
+            code = f"assertions_{type(exc).__name__}"
+            if code not in errors:
+                errors.append(code)
+            criteria = []
+        report = {
+            "schema": "assistant-case-result-v1",
+            "execution_id": execution_id,
+            "case_id": row["case_id"],
+            "freeze_sha256": guard.frozen["freeze_sha256"],
+            "manifest_sha256": guard.frozen["manifest_sha256"],
+            "scoring_sha256": guard.frozen["scoring_sha256"],
+            "offline_mock": allow_mock,
+            "input": fixture["input"],
+            "turns": fixture.get("turns", [fixture["input"]]),
+            "before": before,
+            "after": after,
+            "timeline": timeline,
+            "assertions": criteria,
+            "manual_requirements": fixture.get("manual_requirements", []),
+            "error": errors[0] if errors else None,
+            "errors": list(errors),
+            "cleanup": dict(cleanup),
+            "unfinished_tasks": [
+                {"id": task["id"], "status": task["status"]}
+                for task in after["tasks"]
+                if task["status"] not in {"completed", "cancelled", "superseded"}
+            ],
+            "snapshot_phase": "before_cleanup",
+            "technical": guard.summary(),
+            "requests": [
+                dict(item)
+                for item in guard.budget.db.execute(
+                    "SELECT * FROM request WHERE execution_id=? ORDER BY rowid", (execution_id,)
+                )
+            ],
+            "request_metadata": guard.request_metadata,
+            "duplicate_probe": duplicate_probe,
+            "verdict": "pending_review",
+        }
+        if row["case_id"] == "D5" and duplicate_probe is not None:
+            if duplicate_probe["status"] in {"observed", "failed"}:
+                for criterion in report["assertions"]:
+                    criterion.update(
+                        status="pass" if duplicate_probe["status"] == "observed" else "fail",
+                        evidence=duplicate_probe,
                     )
-                apply_research_changes(research.store, fixture)
-            turns = fixture.get("turns", [fixture["input"]])
-            turn_index = 0
-            service.send("main", turns[turn_index])
+        return report
+
+    async def execute() -> None:
+        nonlocal after, timeline, duplicate_probe, error
+        research = app.state.research
+        setup = fixture.get("research_setup", {})
+        if setup.get("baseline_required"):
+            run = enqueue_research_baseline(research.store, fixture)
+            research.wake()
             until = time.monotonic() + min(wait_seconds, guard.remaining_seconds(execution_id))
-            idle_since = None
-            installed = False
-            while time.monotonic() < until:
-                if row["case_id"] == "D1" and not installed:
-                    projects = research.store.list("project")
-                    if projects:
-                        install_research_sources(research.store, projects[0]["id"])
-                        app.state.research.start = research_start
-                        research_start()
-                        installed = True
-                thread = service.threads["main"]
-                detail = snapshot(service, app)
-                after = detail
-                timeline = list(service.threads["main"].timeline.events)
-                active_runs = any(run["status"] in {"queued", "running"} for run in detail["runs"])
-                active_tasks = any(
-                    task["status"] in {"queued", "running", "waiting_approval"}
-                    for task in detail["tasks"]
-                )
-                human_wait = bool(service.ui.pending_approvals) or any(
-                    task["status"] == "waiting_user"
-                    and any(
-                        step["spec"]["adapter"] != "checkpoint"
-                        for step in task["steps"]
-                        if step["status"] == "waiting_user"
-                    )
-                    for task in detail["tasks"]
-                )
-                idle = (
-                    not thread.busy
-                    and thread.inbox.empty()
-                    and not active_runs
-                    and not active_tasks
-                )
-                idle_since = (idle_since or time.monotonic()) if idle else None
-                if guard.budget.stopped or (
-                    idle_since is not None
-                    and time.monotonic() - idle_since > 0.5
-                    and (not serve or not human_wait)
-                ):
-                    if (
-                        not guard.budget.stopped
-                        and not human_wait
-                        and row["case_id"] == "D5"
-                        and duplicate_probe is None
-                    ):
-                        try:
-                            duplicate_probe = await repeat_research_event_and_delivery(
-                                service, app.state.assistant.research_link, fixture
-                            )
-                        except ValueError as exc:
-                            duplicate_probe = {"status": "pending", "reason": str(exc)}
-                            if str(exc).startswith("Duplicate D5"):
-                                duplicate_probe["status"] = "failed"
-                                error = "duplicate_replay_integrity_failed"
-                    if not guard.budget.stopped and not human_wait and turn_index + 1 < len(turns):
-                        turn_index += 1
-                        service.send("main", turns[turn_index])
-                        idle_since = None
-                        continue
-                    break
+            while research.store.run(run["id"])["status"] not in {
+                "succeeded",
+                "failed",
+                "needs_attention",
+                "cancelled",
+            }:
+                if time.monotonic() >= until or guard.budget.stopped:
+                    raise TimeoutError("The counted baseline did not finish")
                 await asyncio.sleep(0.05)
-            after = snapshot(service, app)
+            if research.store.run(run["id"])["status"] != "succeeded":
+                raise RuntimeError("The counted baseline failed; target scenario was not executed")
+            apply_research_changes(research.store, fixture)
+        turns = fixture.get("turns", [fixture["input"]])
+        turn_index = 0
+        service.send("main", turns[turn_index])
+        until = time.monotonic() + min(wait_seconds, guard.remaining_seconds(execution_id))
+        idle_since = None
+        installed = False
+        while time.monotonic() < until:
+            if row["case_id"] == "D1" and not installed:
+                projects = research.store.list("project")
+                if projects:
+                    install_research_sources(research.store, projects[0]["id"])
+                    app.state.research.start = research_start
+                    research_start()
+                    installed = True
+            thread = service.threads["main"]
+            detail = snapshot(service, app)
+            after = detail
             timeline = list(service.threads["main"].timeline.events)
+            active_runs = any(run["status"] in {"queued", "running"} for run in detail["runs"])
+            active_tasks = any(
+                task["status"] in {"queued", "running", "waiting_approval"}
+                for task in detail["tasks"]
+            )
+            human_wait = bool(service.ui.pending_approvals) or any(
+                task["status"] == "waiting_user"
+                and any(
+                    step["spec"]["adapter"] != "checkpoint"
+                    for step in task["steps"]
+                    if step["status"] == "waiting_user"
+                )
+                for task in detail["tasks"]
+            )
+            idle = not thread.busy and thread.inbox.empty() and not active_runs and not active_tasks
+            idle_since = (idle_since or time.monotonic()) if idle else None
+            if guard.budget.stopped or (
+                idle_since is not None
+                and time.monotonic() - idle_since > 0.5
+                and (not serve or not human_wait)
+            ):
+                if (
+                    not guard.budget.stopped
+                    and not human_wait
+                    and row["case_id"] == "D5"
+                    and duplicate_probe is None
+                ):
+                    try:
+                        duplicate_probe = await repeat_research_event_and_delivery(
+                            service, app.state.assistant.research_link, fixture
+                        )
+                    except ValueError as exc:
+                        duplicate_probe = {"status": "pending", "reason": str(exc)}
+                        if str(exc).startswith("Duplicate D5"):
+                            duplicate_probe["status"] = "failed"
+                            error = "duplicate_replay_integrity_failed"
+                if not guard.budget.stopped and not human_wait and turn_index + 1 < len(turns):
+                    turn_index += 1
+                    service.send("main", turns[turn_index])
+                    idle_since = None
+                    continue
+                break
+            await asyncio.sleep(0.05)
+        after = snapshot(service, app)
+        timeline = list(service.threads["main"].timeline.events)
+
+    try:
+        async with _running(app, serve=serve, port=port) as cleanup:
             try:
-                guard.finish(execution_id)
-            except (RuntimeError, ValueError):
-                error = "execution_not_quiescent"
+                await execute()
+            except Exception as exc:
+                errors.append(type(exc).__name__)
+            finally:
+                try:
+                    after = snapshot(service, app)
+                except Exception as exc:
+                    errors.append(f"snapshot_{type(exc).__name__}")
+                timeline = list(service.threads["main"].timeline.events)
+                if any(
+                    thread.busy or not thread.inbox.empty() for thread in service.threads.values()
+                ):
+                    errors.append("chat_work_incomplete")
+                if error:
+                    errors.append(error)
+                errors.extend(
+                    _execution_errors(row["case_id"], fixture, after, guard, execution_id)
+                )
+                guard.seal(execution_id)
+                # This immutable checkpoint survives even if transport shutdown or
+                # process cleanup cannot finish. It is evidence, never a verdict.
+                _write(case_dir / "execution-evidence.json", collect())
     except Exception as exc:
-        error = type(exc).__name__
+        errors.append(type(exc).__name__)
     finally:
         if not service._started:
-            await service.app.close()
-        app.state.research.store.close()
-    report = {
-        "schema": "assistant-case-result-v1",
-        "execution_id": execution_id,
-        "case_id": row["case_id"],
-        "freeze_sha256": guard.frozen["freeze_sha256"],
-        "manifest_sha256": guard.frozen["manifest_sha256"],
-        "scoring_sha256": guard.frozen["scoring_sha256"],
-        "offline_mock": allow_mock,
-        "input": fixture["input"],
-        "turns": fixture.get("turns", [fixture["input"]]),
-        "before": before,
-        "after": after,
-        "timeline": timeline,
-        "assertions": assertions(row["case_id"], before, after, fixture),
-        "manual_requirements": fixture.get("manual_requirements", []),
-        "error": error,
-        "technical": guard.summary(),
-        "requests": [
-            dict(item)
-            for item in guard.budget.db.execute(
-                "SELECT * FROM request WHERE execution_id=? ORDER BY rowid", (execution_id,)
+            cleanup["issues"] += await _bounded_task(
+                asyncio.create_task(service.app.close()), SHUTDOWN_SECONDS, "app_close"
             )
-        ],
-        "request_metadata": guard.request_metadata,
-        "duplicate_probe": duplicate_probe,
-        "verdict": "pending_review",
-    }
-    if row["case_id"] == "D5" and duplicate_probe is not None:
-        if duplicate_probe["status"] in {"observed", "failed"}:
-            for criterion in report["assertions"]:
-                criterion.update(
-                    status="pass" if duplicate_probe["status"] == "observed" else "fail",
-                    evidence=duplicate_probe,
-                )
+        if cleanup["issues"]:
+            cleanup["status"] = "failed"
+            errors.append("cleanup_failed")
+        try:
+            guard.finish(execution_id)
+        except Exception:
+            errors.append("execution_not_quiescent")
+        try:
+            app.state.research.store.close()
+        except Exception as exc:
+            errors.append(f"research_store_close_{type(exc).__name__}")
+    errors[:] = list(dict.fromkeys(errors))
+    report = collect()
+    report["execution_evidence_sha256"] = (
+        file_hash(case_dir / "execution-evidence.json")
+        if (case_dir / "execution-evidence.json").exists()
+        else None
+    )
+    try:
+        guard.close()
+    except RuntimeError:
+        errors.append("budget_close_inflight")
+        report["error"], report["errors"] = errors[0], list(errors)
     _write(case_dir / "result.json", report)
-    guard.close()
     return report
 
 

@@ -10,6 +10,12 @@ from pathlib import Path
 from nanomuse import prompts
 from nanomuse.agent import MuseAgent
 from nanomuse.agent.holds import Holds
+from nanomuse.assistant.usage_limits import (
+    BlockedUsageLLM,
+    UsageLimits,
+    guard_llm,
+    make_guarded_llm,
+)
 from nanomuse.background import spawn
 from nanomuse.calendar import CalendarFeeds
 from nanomuse.cloud import CLOUD_KEY, DEFAULT_GUI_MODEL, model_url
@@ -104,7 +110,16 @@ class NanoMuseApp:
             vault=self.vault,
             persistent_approvals_file=settings.data_dir / "approvals.json",
         )
-        self.llm = llm or self.make_llm()
+        self.assistant_usage = (
+            UsageLimits(settings.data_dir / "assistant" / "usage.sqlite3", settings.assistant_usage)
+            if settings.assistant_usage.enabled
+            else None
+        )
+        self.llm = (
+            guard_llm(llm, settings.llm, self.assistant_usage)
+            if llm is not None and self.assistant_usage is not None
+            else llm or self.make_llm()
+        )
         # Holds: the person takes the browser, the screen or the phone over for a while and
         # the tools wait (docs/browser.md). The server routes the cards; the CLI has none.
         self.holds = Holds(emit=getattr(ui, "on_hold", None))
@@ -157,7 +172,11 @@ class NanoMuseApp:
         free."""
         old = self.embedder
         self.embedder = None
-        if self.memory is not None and self.settings.memory.embeddings != "off":
+        if (
+            self.memory is not None
+            and self.settings.memory.embeddings != "off"
+            and not self.settings.assistant_usage.enabled
+        ):
             self.embedder = Embedder(
                 self.settings.memory, self.settings.llm, api_key=self._embedding_key()
             )
@@ -185,7 +204,15 @@ class NanoMuseApp:
         """The model client. ``llm.api_key`` may be a ``{{vault:NAME}}`` reference (that is
         how a key entered in the app is stored); it is resolved here, for the HTTP client
         only — the model itself never sees it."""
-        llm_settings = self.settings.llm
+        return self.make_slot_llm(self.settings.llm)
+
+    def make_slot_llm(self, slot: LLMSettings) -> BaseLLM:
+        """Use the same durable limits for initial clients and later replacements."""
+        if self.assistant_usage is not None:
+            return make_guarded_llm(slot, self.assistant_usage, self._make_slot_client)
+        return self._make_slot_client(slot)
+
+    def _make_slot_client(self, llm_settings: LLMSettings) -> BaseLLM:
         if self.vault.has_placeholders(llm_settings.api_key):
             key = self.vault.resolve(llm_settings.api_key, strict=False)
             if self.vault.has_placeholders(key):
@@ -261,6 +288,12 @@ class NanoMuseApp:
         for the rest — so one provider and one key can serve both. Without a ``[gui]``
         model the hands follow :meth:`hands_choice`: the relay's hands model under the
         account key when that is the answer, even while the chat model is elsewhere."""
+        if self.assistant_usage is not None:
+            return BlockedUsageLLM(
+                self.settings.llm,
+                "visual models need a separate reviewed price policy; "
+                "the deterministic Windows adapter remains available",
+            )
         gui, llm = self.settings.gui, self.settings.llm
         where, model = self.hands_choice()
         if where == "cloud" and not self.llm_is_cloud():

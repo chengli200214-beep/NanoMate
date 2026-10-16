@@ -420,7 +420,8 @@ consent and checkpoint evidence.
 | --- | --- |
 | `GET /api/assistant/tasks` | Recent task summaries, newest first, up to 500 |
 | `POST /api/assistant/tasks` | `request_id`, `plan`, optional `due_at`, optional `confirm_preferences` (default false) |
-| `GET /api/assistant/tasks/{id}` | Task, immutable plans, all steps and events |
+| `GET /api/assistant/tasks/{id}` | Task, immutable plans, all steps and events, plus snapshot approval state and request scope when available |
+| `GET /api/assistant/continuations` | Durable result-delivery and planning states, including blocked reasons |
 | `POST /api/assistant/tasks/{id}/plan-revisions` | `request_id`, `expected_revision`, `plan`, `reason` |
 | `POST /api/assistant/tasks/{id}/actions` | User controls: `request_id`, `expected_revision`, `action`: pause, resume, cancel; resume/cancel also returns manual session control |
 | `POST /api/assistant/tasks/{id}/steps/{step}/confirm` | `request_id`, `expected_revision`, user `evidence` |
@@ -479,6 +480,72 @@ The underlying drivers remain available to the deterministic executor. Other run
 profiles default to their existing tools; the research executor keeps its separate subset.
 Forwarded research source text is excluded from the ideas and feed's recent assistant context.
 
+## Task results and further planning
+
+Main-chat tasks retain the originating conversation, user event and request scope. After a
+task completes, a durable, deduplicated notice links to its current ledger record. Delivery
+waits for the running chat turn to finish and makes no model request. A creation receipt is
+a snapshot: a queued receipt does not prove that the task is still queued or needs approval.
+Reminder and document steps may already have completed when the chat reply arrives.
+
+For an observation phase, the model can set `continue_after_result=true` on
+`assistant_tasks.create`. A completed phase with an observation then queues an internal
+planning event for the original request. It does not add a user message or grant action
+approval. The planner reads the retained task result and can create a linked follow-up task;
+it cannot revise a completed phase. Input and save steps still require their exact previews
+and Sentinel checks. Result text remains untrusted source data.
+
+Further planning defaults to at most eight turns within 900 seconds of the original request.
+The count and deadline persist across phases and restarts. A newer user request, deleted
+conversation, model change, manual takeover, closed execution or exhausted allowance stops
+the old continuation. A planning attempt interrupted while running is blocked on restart,
+not retried. The stop button also stops existing request scopes. In this profile, a new user
+message waits for its own turn and budget scope instead of being folded into an old turn.
+
+## Local runtime usage limits
+
+The isolated assistant enables `[assistant_usage]`; other profiles leave it disabled by
+default. Its currency allowances start at zero, so saving a provider key does not authorize
+paid requests. MockLLM remains available. The Connections capability inventory shows whether
+configuration is required, known usage priced at the reviewed peak rates, outstanding
+reservations and unknown requests. Those figures are local estimates, not a provider bill.
+
+The startup TOML accepts these settings. Set currency limits only after deciding the actual
+allowance, then restart this isolated instance. The following values deliberately permit no
+paid use:
+
+```toml
+[assistant_usage]
+enabled = true
+price_policy = "deepseek-2026-10-16"
+daily_cny = 0
+task_cny = 0
+```
+
+The reviewed policy currently covers the configured native DeepSeek text adapters only.
+Configuration is checked before constructing a client. Each request reserves the full
+documented 1,048,576-token context plus its output limit, using peak uncached prices,
+before sending a request.
+Valid returned usage settles that reservation. Defaults also limit the UTC day to 64
+requests and 80 million tokens, and the original request to 16 requests and 20 million tokens.
+Output is capped at 4,096 tokens per request and each provider call at 180 seconds. A currency
+limit must cover the conservative reservation, even when the actual prompt is short.
+
+Main chat, linked phases, research, connection probes and background generation share the
+same persistent usage database. Research clients retain their task and run owner. Revisions,
+model replacements, a new day and a restart do not erase unknown usage or existing task
+charges. Unknown usage stops further paid requests until reconciled. SDK retries and
+alternate model fallbacks are disabled. Vision, embeddings, avatar generation, Cloud model
+switching and coding-agent routes require separate policies and are unavailable in this
+profile. The deterministic Windows adapter remains usable without a visual model.
+
+Browser and native execution additionally share a default allowance of 60 bounded ledger
+actions and 300 seconds per original request, beginning at the first approved GUI action.
+The wall-clock deadline includes subsequent approval waits. Follow-up tasks, plan revisions
+and restarts retain that allowance. Input chunks check the deadline before proceeding;
+an interrupted or uncertain input retains its action receipt and cannot be replayed.
+These limits supplement the existing pause, takeover and observation checks.
+
 ## Acceptance preparation
 
 The public `evals/assistant/manifest.json` and `scoring.json` describe 24 cases and the
@@ -487,5 +554,6 @@ review bundle through `python -m evals.assistant` makes no provider call or appr
 Code, inputs, model and dependency configuration must be frozen before a new paid batch.
 The evaluation guard shares durable reservations across main chat and research, stops on
 unknown usage and refuses old research approval receipts. Execution and manual-review
-limits are documented in `evals/assistant/README.md`. This guard does not establish a
-production-wide daily spending allowance.
+limits are documented in `evals/assistant/README.md`. Evaluation approval remains separate
+from local runtime allowances; it does not grant an ongoing daily budget. Offline regression
+cannot replace real-model retesting or overnight recovery of the changed architecture.

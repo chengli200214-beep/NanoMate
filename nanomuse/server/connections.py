@@ -13,10 +13,13 @@ import asyncio
 import imaplib
 import re
 import smtplib
+import uuid
+from contextlib import nullcontext
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlsplit
 
+from nanomuse.assistant.usage_limits import UsageOwner, usage_owner
 from nanomuse.background import keep_task
 from nanomuse.cloud import DEFAULT_CHAT_MODEL as DEFAULT_CLOUD_MODEL
 from nanomuse.cloud import DEFAULT_GUI_MODEL as DEFAULT_CLOUD_GUI_MODEL
@@ -877,8 +880,11 @@ class Connections:
         return await provider.probe()
 
     def set_embeddings(self, body: dict[str, Any]) -> dict[str, Any]:
-        """Recall by meaning: the mode, and where the vectors come from — the model's own
-        endpoint (the default) or another one, Ollama next to DeepSeek for one."""
+        """Set semantic recall's mode and endpoint."""
+        if self.settings.assistant_usage.enabled and body.get("mode") != "off":
+            raise ValueError(
+                "Embeddings need a separate reviewed usage policy. / 嵌入模型需单独审定用量政策。"
+            )
         emb = dict(self.data.get("embeddings") or {})
         if body.get("mode") is not None:
             if body["mode"] not in ("auto", "on", "off"):
@@ -905,6 +911,12 @@ class Connections:
 
     async def test_embeddings(self) -> dict[str, Any]:
         """One embeddings call; on success every memory is indexed right away."""
+        if self.settings.assistant_usage.enabled:
+            return {
+                "ok": False,
+                "error": "Embeddings need a separate reviewed usage policy. / "
+                "嵌入模型需单独审定用量政策。",
+            }
         app_ = self.svc.app
         emb = app_.embedder
         if app_.memory is None:
@@ -1028,10 +1040,18 @@ class Connections:
         loop = asyncio.get_running_loop()
         started = loop.time()
         try:
-            response = await asyncio.wait_for(
-                self.svc.app.llm.ask([Message.user("Reply with the single word OK.")], tools=None),
-                timeout=45,
+            scope = (
+                usage_owner(UsageOwner("connection-test:" + uuid.uuid4().hex))
+                if self.settings.assistant_usage.enabled
+                else nullcontext()
             )
+            with scope:
+                response = await asyncio.wait_for(
+                    self.svc.app.llm.ask(
+                        [Message.user("Reply with the single word OK.")], tools=None
+                    ),
+                    timeout=45,
+                )
         except Exception as exc:  # noqa: BLE001
             return _test_failed(exc)
         return {

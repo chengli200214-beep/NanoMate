@@ -48,6 +48,7 @@ class ResearchOrchestrator:
         self.task: asyncio.Task[None] | None = None
         self._reasoners: dict[str, Reasoner] = {}
         self._wake = asyncio.Event()
+        self.usage_owner_for_run: Callable[[str], Any] | None = None
 
     def start(self) -> None:
         if self.task is None or self.task.done():
@@ -184,6 +185,7 @@ class ResearchOrchestrator:
                 "authentication",
                 "model_budget",
                 "context_budget",
+                "assistant_usage_stopped",
             }
             self.store.fail(
                 step,
@@ -233,7 +235,19 @@ class ResearchOrchestrator:
             if project["mode"] == "fixture":
                 self._reasoners[run_id] = FixtureReasoner(sentinel=self.sentinel)
             elif self.llm:
-                self._reasoners[run_id] = ResearchReasoner(self.llm(), sentinel=self.sentinel)
+                client = self.llm()
+                from nanomuse.assistant.usage_limits import UsageGuardLLM, UsageOwner
+
+                if isinstance(client, UsageGuardLLM):
+                    usage_owner = (
+                        self.usage_owner_for_run(run_id)
+                        if self.usage_owner_for_run
+                        else UsageOwner(
+                            turn_id=f"research:{run_id}", run_id=run_id, background=True
+                        )
+                    )
+                    client = client.with_owner(usage_owner)
+                self._reasoners[run_id] = ResearchReasoner(client, sentinel=self.sentinel)
             else:
                 raise NeedsAttention("Configure a model in Settings, or create a fixture project.")
         return self._reasoners[run_id]

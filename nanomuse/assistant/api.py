@@ -79,9 +79,15 @@ class TaskRoute(APIRoute):
 def install_assistant(app: FastAPI, service: Any, dependencies: list[Any]) -> None:
     ledger = Ledger(service.data_dir / "assistant" / "tasks.sqlite3")
     coordinator = Coordinator(ledger, app.state.research)
+    from nanomuse.assistant.continuations import Continuations
+
+    continuation_store = Continuations(ledger)
+    coordinator.continuations = continuation_store
+    service.assistant_continuations = continuation_store
     research_store = getattr(app.state.research, "store", None)
     if isinstance(research_store, ResearchStore):
         coordinator.research_link = ResearchLink(ledger, research_store)
+        coordinator.research.usage_owner_for_run = coordinator.research_link.usage_owner_for_run
     coordinator.service = service
     app.state.assistant = coordinator
     router = APIRouter(prefix="/api/assistant", dependencies=dependencies, route_class=TaskRoute)
@@ -113,7 +119,11 @@ def install_assistant(app: FastAPI, service: Any, dependencies: list[Any]) -> No
     if host is not None:
         host.tools.add(
             AssistantTasks(
-                ledger=ledger, validate_plan=validate, research=coordinator.research_link
+                ledger=ledger,
+                validate_plan=validate,
+                research=coordinator.research_link,
+                continuations=coordinator.continuations,
+                origin_validator=lambda: continuation_store.validate_current(service),
             )
         )
         from nanomuse.assistant.tool_boundary import install_boundary
@@ -136,7 +146,11 @@ def install_assistant(app: FastAPI, service: Any, dependencies: list[Any]) -> No
 
     @router.get("/tasks/{task_id}")
     async def task(task_id: str) -> dict[str, Any]:
-        return ledger.get(task_id)
+        return continuation_store.describe(ledger.get(task_id))
+
+    @router.get("/continuations")
+    async def continuations() -> list[dict[str, Any]]:
+        return continuation_store.records()
 
     @router.get("/tasks/{task_id}/artifacts")
     async def artifacts(task_id: str) -> list[dict[str, Any]]:

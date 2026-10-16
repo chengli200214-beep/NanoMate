@@ -192,22 +192,44 @@ class Ledger:
             raise Conflict("Request ID already used with different inputs")
 
     def replay_creation(
-        self, plan: Plan, request_id: str, due_at: float = 0, confirm_preferences: bool = False
+        self,
+        plan: Plan,
+        request_id: str,
+        due_at: float = 0,
+        confirm_preferences: bool = False,
+        *,
+        continue_after_result: bool | None = None,
     ) -> dict[str, Any] | None:
         with self.transaction() as db:
             row = db.execute("SELECT * FROM task WHERE request_id=?", (request_id,)).fetchone()
             if row is None:
                 return None
             self._creation_matches(row["request_payload"], plan, due_at, "", confirm_preferences)
+            if continue_after_result is not None:
+                from nanomuse.assistant.continuations import check_replay
+
+                if not check_replay(db, row["id"], continue_after_result) and continue_after_result:
+                    raise Conflict("Request ID already used without a continuation choice")
             return self._detail(db, row["id"])
 
     def create(
-        self, plan: Plan, request_id: str, due_at: float = 0, confirm_preferences: bool = False
+        self,
+        plan: Plan,
+        request_id: str,
+        due_at: float = 0,
+        confirm_preferences: bool = False,
+        *,
+        origin: dict[str, Any] | None = None,
+        continue_after_result: bool = False,
     ) -> dict[str, Any]:
         with self.transaction() as db:
             task_id = self._create(
                 db, plan, request_id, due_at, confirm_preferences=confirm_preferences
             )
+            if origin is not None:
+                from nanomuse.assistant.continuations import record_origin
+
+                record_origin(db, task_id, origin, continue_after_result)
         return self.get(task_id)
 
     def _plan(

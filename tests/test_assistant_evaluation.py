@@ -345,7 +345,7 @@ async def test_real_service_chat_and_research_factory_share_wrapper_without_load
     service = MuseService(settings, llm=delegate)
     app = create_app(settings, service)
     research = app.state.research
-    wrapped = wire_isolated_service(service, research, guard)
+    wrapped = wire_isolated_service(service, research, guard, assistant=app.state.assistant)
     assert service.app.agent.llm is service.threads["main"].agent.llm is wrapped
     guard.begin("D2-r1")
     reasoner = research._get_reasoner({"mode": "live"}, "synthetic-run")
@@ -354,6 +354,14 @@ async def test_real_service_chat_and_research_factory_share_wrapper_without_load
     await service.threads["main"].agent.run("Give a short plain answer without tools.")
     await reasoner.llm.ask([Message.user("Synthetic research request")])
     assert len(delegate.calls) == 2 and guard.budget.summary()["settled_requests"] == 2
+    blocked = asyncio.create_task(asyncio.Event().wait())
+    app.state.assistant.personal._worker = blocked
+    with pytest.raises(BatchBudgetStopped, match="outstanding"):
+        guard.finish("D2-r1")
+    blocked.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await blocked
+    app.state.assistant.personal._worker = None
     guard.finish("D2-r1")
     assert guard.summary()["domain_acceptance"] == "not_scored_by_technical_guard"
     await service.app.close()
@@ -526,13 +534,13 @@ async def test_new_phase_approval_keeps_pilot_charges_and_ids_in_one_ledger(
     directory, _ = bundle
     guard = EvaluationGuard(directory, allow_mock=True)
     delegate = mock([response() for _ in PILOTS])
-    wrapped = guard.wrap(delegate)
     for case in PILOTS:
         guard.begin(f"{case}-r1")
-        await wrapped.ask([Message.user("Synthetic pilot request")])
+        await guard.wrap(delegate).ask([Message.user("Synthetic pilot request")])
         guard.finish(f"{case}-r1")
     earlier = [dict(row) for row in guard.budget.db.execute("SELECT * FROM request ORDER BY rowid")]
     guard.close()
+
     receipt = json.loads((directory / "approval.json").read_text("utf-8"))
     receipt["phase"] = "complete"
     receipt["budget_policy"]["limit_cny"] = "20"
@@ -549,6 +557,53 @@ async def test_new_phase_approval_keeps_pilot_charges_and_ids_in_one_ledger(
     with pytest.raises(BatchBudgetStopped, match="replayed"):
         continued.begin("A4-r1")
     continued.close()
+
+
+async def test_late_main_host_and_continuation_cannot_charge_the_next_window(
+    bundle: tuple[Path, dict[str, Any]],
+) -> None:
+    directory, _ = bundle
+    guard = EvaluationGuard(directory, allow_mock=True)
+    delegate = mock([response(), response()])
+    old = guard.wrap(delegate)
+    guard.begin("A4-r1")
+    owner = old.continuation_owner()
+    assert owner == "A4-r1" and old.continuation_allowed(owner)
+    await old.ask([Message.user("First host's bounded request")])
+    guard.seal("A4-r1")
+    assert not old.continuation_allowed(owner)
+    guard.finish("A4-r1")
+    guard.begin("B2-r1")
+    assert not old.continuation_allowed(owner)
+    with pytest.raises(BatchBudgetStopped, match="previous execution"):
+        old.bind_current()
+    with pytest.raises(BatchBudgetStopped, match="previous execution"):
+        await old.ask([Message.user("Late old host must not borrow B2")])
+    fresh = guard.wrap(delegate)
+    await fresh.ask([Message.user("B2's newly owned request")])
+    assert len(delegate.calls) == 2
+    assert [
+        row[0] for row in guard.budget.db.execute("SELECT execution_id FROM request ORDER BY rowid")
+    ] == ["A4-r1", "B2-r1"]
+    guard.finish("B2-r1")
+    guard.close()
+    assert not old.continuation_allowed(owner)
+
+
+def test_interrupted_closing_window_stays_stopped_without_resetting_its_identity(
+    bundle: tuple[Path, dict[str, Any]],
+) -> None:
+    directory, _ = bundle
+    guard = EvaluationGuard(directory, allow_mock=True)
+    guard.begin("A4-r1")
+    guard.seal("A4-r1")
+    guard.close()
+    resumed = EvaluationGuard(directory, allow_mock=True)
+    assert resumed.budget.stopped
+    assert resumed.summary()["executions"][0]["status"] == "closing"
+    with pytest.raises(BatchBudgetStopped):
+        resumed.begin("B2-r1")
+    resumed.close()
 
 
 async def test_amendment_publication_crash_repairs_receipt_without_resetting_history(

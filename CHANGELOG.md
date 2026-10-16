@@ -10,6 +10,8 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Runtime
 
+- Added durable task-completion notices and bounded planning continuations that retained the original request and per-action approvals. Clarified missing mutation IDs, bounded acceptance shutdown and saved evidence before cleanup. The isolated assistant gained shared model and GUI usage limits with zero paid allowance by default and an inspectable usage summary.
+
 - Connected main-chat research creation and condition updates to recoverable task links and deduplicated local result notices. Added verified public-link downloads, blocked unsolicited ledger attachments, and allowed file plans to create destination folders before classification. Scoped confirmed preferences by purpose, handled missing and repeated civil times, and added a hash-locked Windows assistant environment. Research reports disclosed pending semantic review and checked explicit evidence locations.
 
 - Restricted the personal assistant's model tools so file, browser, desktop, reminder and preference changes used their task or consent flows. Added isolated acceptance fixtures, shared evaluation spending reservations and evidence-bound manual verdicts. Local channel commands bypassed environment proxies when contacting the loopback service.

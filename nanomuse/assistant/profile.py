@@ -65,6 +65,7 @@ def assistant_settings(directory: Path, port: int, config: Path | None = None) -
     settings.agent.workspace = directory / "workspace"
     settings.agent.extra_roots = []
     settings.agent.task_ledger_only = True
+    settings.assistant_usage.enabled = True
     settings.server.host, settings.server.port = "127.0.0.1", port
     settings.server.auth, settings.server.update_check = True, False
     settings.cloud.required = settings.cloud.models = settings.cloud.sync = False

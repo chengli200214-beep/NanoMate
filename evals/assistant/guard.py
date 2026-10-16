@@ -6,6 +6,7 @@ import asyncio
 import hashlib
 import json
 import re
+import sqlite3
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -92,11 +93,12 @@ class EvaluationGuard:
         self.max_payload_bytes = 0
         self.request_metadata: list[dict[str, Any]] = []
         self._delegate: BaseLLM | None = None
+        self._wrappers: list[GuardedLLM] = []
         self.quiescent: Callable[[], bool] | None = None
         self._monotonic_deadline: tuple[str, float] | None = None
         with self.budget.transaction():
             if self.budget.db.execute(
-                "SELECT 1 FROM assistant_execution WHERE status='running'"
+                "SELECT 1 FROM assistant_execution WHERE status IN ('running','closing')"
             ).fetchone():
                 self.budget.db.execute(
                     "INSERT INTO stop VALUES ('assistant_interrupted_execution')"
@@ -119,7 +121,7 @@ class EvaluationGuard:
             if (
                 self.budget.stopped
                 or self.budget.db.execute(
-                    "SELECT 1 FROM assistant_execution WHERE status='running'"
+                    "SELECT 1 FROM assistant_execution WHERE status IN ('running','closing')"
                 ).fetchone()
             ):
                 raise BatchBudgetStopped("The batch is stopped or another execution is active")
@@ -137,6 +139,18 @@ class EvaluationGuard:
                 (execution_id, now, now + EXECUTION_SECONDS),
             )
         self._monotonic_deadline = (execution_id, time.monotonic() + EXECUTION_SECONDS)
+        for wrapper in self._wrappers:
+            wrapper._bind_once(execution_id)
+
+    def seal(self, execution_id: str) -> None:
+        """Close model admission before cleanup, retaining all spending and domain evidence."""
+        with self.budget.transaction():
+            changed = self.budget.db.execute(
+                "UPDATE assistant_execution SET status='closing' WHERE id=? AND status='running'",
+                (execution_id,),
+            )
+            if changed.rowcount != 1:
+                raise ValueError("Only the current execution can be sealed")
 
     def verify_current(self) -> None:
         verify(self.frozen)
@@ -151,7 +165,7 @@ class EvaluationGuard:
             )
         with self.budget.transaction():
             changed = self.budget.db.execute(
-                "UPDATE assistant_execution SET status='finished',finished=? WHERE id=? AND status='running'",
+                "UPDATE assistant_execution SET status='finished',finished=? WHERE id=? AND status IN ('running','closing')",
                 (time.time(), execution_id),
             )
             if changed.rowcount != 1:
@@ -226,11 +240,47 @@ class EvaluationGuard:
 class GuardedLLM(BaseLLM):
     """One counted attempt, with no implicit completion repair or vision fallback."""
 
-    def __init__(self, guard: EvaluationGuard, delegate: BaseLLM, owner: str | None = None) -> None:
+    def __init__(
+        self,
+        guard: EvaluationGuard,
+        delegate: BaseLLM,
+        owner: str | None = None,
+        *,
+        role: str = "main_or_background",
+    ) -> None:
         self.guard, self.delegate = guard, delegate
-        self.owner = owner
+        self._owner, self.role = owner, role
+        if self._owner is None:
+            try:
+                self._owner = guard.active()
+            except BatchBudgetStopped:
+                pass
+        guard._wrappers.append(self)
         self.settings = delegate.settings  # type: ignore[attr-defined]
         self.name = delegate.name
+
+    @property
+    def owner(self) -> str | None:
+        return self._owner
+
+    def _bind_once(self, execution_id: str) -> None:
+        if self._owner is None:
+            self._owner = execution_id
+
+    def continuation_owner(self) -> str | None:
+        return self._owner
+
+    def continuation_allowed(self, owner: str | None) -> bool:
+        try:
+            self.guard.verify_current()
+            return (
+                owner is not None
+                and owner == self._owner == self.guard.active()
+                and not self.guard.budget.stopped
+                and self.guard.remaining_seconds(owner) > 0
+            )
+        except (RuntimeError, ValueError, OSError, sqlite3.Error):
+            return False
 
     async def ask(
         self,
@@ -267,10 +317,8 @@ class GuardedLLM(BaseLLM):
         if self.guard._in_flight:
             raise BatchBudgetStopped("Model requests must be serial across chat and research")
         execution_id = self.guard.active()
-        if self.owner is not None and self.owner != execution_id:
-            raise BatchBudgetStopped(
-                "A previous execution's reasoner cannot charge the current case"
-            )
+        if self.owner is None or self.owner != execution_id:
+            raise BatchBudgetStopped("A previous execution's client cannot charge the current case")
         timeout = min(
             REQUEST_SECONDS, self.settings.timeout, self.guard.remaining_seconds(execution_id)
         )
@@ -307,7 +355,7 @@ class GuardedLLM(BaseLLM):
                     {
                         "request_id": request["id"],
                         "execution_id": execution_id,
-                        "role": "research" if self.owner else "main_or_background",
+                        "role": self.role,
                         "payload_bytes": payload_bytes,
                         "elapsed_seconds": time.monotonic() - started,
                         "system_sha256": hashlib.sha256(
@@ -337,13 +385,17 @@ class GuardedLLM(BaseLLM):
         return await self.ask(messages, **kwargs)
 
     def bind_current(self) -> GuardedLLM:
-        return GuardedLLM(self.guard, self.delegate, self.guard.active())
+        if self.owner is None or self.owner != self.guard.active():
+            raise BatchBudgetStopped("A previous execution's factory cannot borrow another window")
+        return GuardedLLM(self.guard, self.delegate, self.owner, role="research")
 
     async def close(self) -> None:
         await self.delegate.close()
 
 
-def wire_isolated_service(service: Any, research: Any, guard: EvaluationGuard) -> GuardedLLM:
+def wire_isolated_service(
+    service: Any, research: Any, guard: EvaluationGuard, *, assistant: Any = None
+) -> GuardedLLM:
     """Wire a newly constructed isolated service before any worker is started.
 
     This deliberately does not launch scenarios, access a saved key, enable GUI,
@@ -390,14 +442,34 @@ def wire_isolated_service(service: Any, research: Any, guard: EvaluationGuard) -
     for thread in service.threads.values():
         thread.agent.llm = wrapped
     research.llm = wrapped.bind_current
-    guard.quiescent = lambda: (
-        not any(thread.busy for thread in service.threads.values())
-        and not any(
+
+    def quiescent() -> bool:
+        personal = getattr(assistant, "personal", None)
+        worker = getattr(personal, "_worker", None)
+        if any(thread.busy for thread in service.threads.values()) or (
+            worker is not None and not worker.done()
+        ):
+            return False
+        if (
+            not service._started
+            and research.task is None
+            and (assistant is None or getattr(assistant, "_task", None) is None)
+        ):
+            return True
+        if any(not thread.inbox.empty() for thread in service.threads.values()):
+            return False
+        if assistant is not None and any(
+            task["status"] in {"queued", "running", "waiting_approval"}
+            for task in assistant.ledger.tasks()
+        ):
+            return False
+        return not any(
             run["status"] in {"queued", "running"}
             for project in research.store.list("project")
             for run in research.store.runs(project["id"])
         )
-    )
+
+    guard.quiescent = quiescent
     service.profile.proactivity = "off"
     # Operator/media/coding tools can construct uncounted provider clients. Keep
     # only the deterministic personal adapters and their existing underlying hands.

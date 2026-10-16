@@ -5,11 +5,18 @@ import { useT } from "../i18n";
 type Inventory = {
   mode: "offline" | "live";
   checks: Array<{ id: string; status: string }>;
+  usage_limits?: {
+    configuration_required: boolean;
+    charged_upper_cny: number;
+    unsettled_reserved_cny: number;
+    unknown_requests: number;
+  } | null;
 };
 
 const labels: Record<string, string> = {
   chat: "Chat", goals: "Goals", reminders: "Reminders", memory: "Memory",
   files: "Files", browser: "Browser", computer: "Computer control", research: "Research",
+  usage_limits: "Local model limits",
 };
 const statuses: Record<string, string> = {
   registered: "Tool registered; execution not verified",
@@ -17,6 +24,8 @@ const statuses: Record<string, string> = {
   needs_configuration: "Needs model configuration",
   missing_dependency: "Browser dependency missing",
   disabled: "Disabled", offline: "Offline scripted responses",
+  needs_budget_configuration: "Set a local allowance before live model requests",
+  limits_configured: "Local limits configured",
 };
 
 export function AssistantCapabilities({ revision }: { revision: number }) {
@@ -43,6 +52,12 @@ export function AssistantCapabilities({ revision }: { revision: number }) {
               <dd className="text-muted">{t(statuses[check.status] ?? check.status)}</dd>
             </div>)}
           </dl>
+          {inventory.usage_limits && <div className="mt-3 border-t border-line pt-3 text-sm">
+            <p>{t("Known cost upper bound (CNY)")}: {inventory.usage_limits.charged_upper_cny.toFixed(6)}</p>
+            <p>{t("Unresolved reservations (CNY)")}: {inventory.usage_limits.unsettled_reserved_cny.toFixed(6)}</p>
+            <p>{t("Requests needing reconciliation")}: {inventory.usage_limits.unknown_requests}</p>
+            <p className="mt-1 text-muted">{t("These estimates do not verify the provider bill. Limits are configured in the local startup file.")}</p>
+          </div>}
         </>}
     </section>
   );
