@@ -424,7 +424,9 @@ class ResearchOrchestrator:
                 from nanomuse.research.impact import evaluated_event
 
                 events.append(
-                    evaluated_event(event, judgment, comparison, spec, context["evidence"])
+                    evaluated_event(
+                        event, judgment, comparison, spec, context["evidence"], context["decisions"]
+                    )
                 )
             decisions = [d["id"] for d in context["decisions"] if d.get("run_id") == run["id"]]
             return {

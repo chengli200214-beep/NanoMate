@@ -61,7 +61,7 @@ export interface ResearchChange {
   id: string; source_id?: string; created_at?: string; status?: string; action?: string;
   summary?: string; change_summary?: string; impact_level?: string; recommended_action?: string;
   judgment?: Record<string, unknown>; [key: string]: unknown;
-  spec_id?: string; affected_constraints?: string[]; change_type?: string; feedback?: string;
+  spec_id?: string; affected_constraints?: string[]; affected_constraint_refs?: string[]; change_type?: string; feedback?: string;
   notification_policy?: { constraint_refs?: string[] };
 }
 export interface ResearchNotification {
@@ -73,7 +73,7 @@ export interface ResearchMuteRule {
   [key: string]: unknown;
 }
 export function muteMatches(rule: ResearchMuteRule, event: ResearchChange): boolean {
-  const refs = [...new Set([...(event.affected_constraints ?? []), ...(event.notification_policy?.constraint_refs ?? [])])].sort();
+  const refs = [...new Set([...(event.affected_constraints ?? []), ...(event.affected_constraint_refs ?? []), ...(event.notification_policy?.constraint_refs ?? [])])].sort();
   return rule.enabled !== false && !!rule.scope && rule.source_id === event.source_id
     && rule.impact_level === event.impact_level && rule.scope.spec_id === event.spec_id
     && rule.scope.change_type === (event.change_type ?? "content")

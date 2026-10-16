@@ -248,6 +248,7 @@ class ResearchReasoner:
                 if response.tool_calls:
                     if len(response.tool_calls) > 8:
                         raise ResearchFormatError(
+                            f"Received {len(response.tool_calls)} tool calls. "
                             "Request at most eight research tool calls in one response"
                         )
                     messages.append(response.to_message())
@@ -273,6 +274,19 @@ class ResearchReasoner:
                 )
                 self.calls[-1]["status"] = "invalid_output"
                 self.calls[-1]["error_type"] = error.code
+                self.calls[-1]["failure_category"] = (
+                    "truncated_response"
+                    if response.finish_reason == "length"
+                    else "oversized_tool_batch"
+                    if len(response.tool_calls) > 8
+                    else "invalid_json"
+                    if isinstance(exc, json.JSONDecodeError)
+                    else "schema_validation"
+                    if isinstance(exc, ValidationError)
+                    else "evidence_validation"
+                )
+                self.calls[-1]["tool_call_count"] = len(response.tool_calls)
+                self.calls[-1]["finish_reason"] = response.finish_reason
                 if repairs >= self.max_repairs:
                     raise error from exc
                 repairs += 1

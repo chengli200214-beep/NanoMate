@@ -456,7 +456,7 @@ def build_context(
     order = {
         "extract": ("snapshots", "evidence", "changes", "conflicts"),
         "compare": ("conflicts", "evidence", "snapshots", "decisions"),
-        "impact": ("changes", "conflicts", "decisions", "evidence", "snapshots"),
+        "impact": ("changes", "conflicts", "evidence", "decisions", "snapshots"),
     }.get(stage)
     if order is None:
         raise ValueError(f"Unknown research stage: {stage}")

@@ -15,6 +15,7 @@ def mute_scope(event: dict[str, Any]) -> dict[str, Any]:
         "change_type": event.get("change_type", "content"),
         "constraint_refs": sorted(
             set(event.get("affected_constraints", []))
+            | set(event.get("affected_constraint_refs", []))
             | set(event.get("notification_policy", {}).get("constraint_refs", []))
         ),
     }
@@ -26,6 +27,7 @@ def evaluated_event(
     comparison: Comparison,
     spec: dict[str, Any],
     evidence: list[dict[str, Any]],
+    decisions: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """An unresolved hard-requirement conflict needs attention after its source changes.
 
@@ -34,6 +36,15 @@ def evaluated_event(
     muting and event deduplication continue to apply.
     """
     result = {**event, **judgment.model_dump(), "status": "evaluated"}
+    result["affected_constraint_refs"] = sorted(
+        set(judgment.affected_constraints)
+        | {
+            ref
+            for row in decisions or []
+            if row["id"] in judgment.affected_decisions
+            for ref in row.get("constraint_refs", [])
+        }
+    )
     if judgment.impact_level != "uncertain":
         return result
     by_id = {row["id"]: row for row in evidence if row.get("status") == "active"}

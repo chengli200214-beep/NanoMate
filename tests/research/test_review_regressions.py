@@ -17,8 +17,9 @@ from nanomuse.llm.mock import MockLLM
 from nanomuse.research.api import install_research
 from nanomuse.research.clock import FakeClock
 from nanomuse.research.context import ResearchValidationError, build_context, validate_comparison
-from nanomuse.research.contracts import Comparison, ProjectSpec
+from nanomuse.research.contracts import Comparison, ImpactJudgment, ProjectSpec
 from nanomuse.research.errors import safe_error
+from nanomuse.research.impact import evaluated_event, mute_scope
 from nanomuse.research.orchestrator import ResearchOrchestrator
 from nanomuse.research.reasoning import ResearchFormatError, ResearchReasoner, ResearchToolError
 from nanomuse.research.reports import render_report
@@ -139,6 +140,59 @@ def test_context_keeps_hard_evidence_ahead_of_large_unrelated_facts() -> None:
     selected = build_context("compare", context, budget_chars=2400)
     assert {"e0", "e1"} <= {row["id"] for row in selected["evidence"]}
     assert "large-unrelated" not in {row["id"] for row in selected["evidence"]}
+
+
+def test_impact_context_keeps_hard_evidence_before_large_decision_history() -> None:
+    context, _ = inputs()
+    context["decisions"] = [{"id": "large-prior-decision", "conclusion": "x" * 3000}]
+    selected = build_context("impact", context, budget_chars=4000)
+    assert {row["id"] for row in selected["evidence"]} == {"e0", "e1"}
+    assert selected["decisions"] == []
+
+
+def test_mute_conditions_are_derived_even_when_model_only_names_decision_ids() -> None:
+    context, comparison = inputs()
+    event = {"source_id": "source", "spec_id": "v1", "after_snapshot": "s0"}
+    decisions = [
+        {"id": "windows-decision", "constraint_refs": ["windows"]},
+        {"id": "offline-decision", "constraint_refs": ["offline"]},
+    ]
+    judgment = ImpactJudgment(
+        change_summary="Requirement affected",
+        impact_level="recommendation",
+        affected_decisions=["windows-decision"],
+        evidence_refs=["e0"],
+    )
+    first = evaluated_event(
+        event, judgment, comparison, context["spec"], context["evidence"], decisions
+    )
+    second = evaluated_event(
+        event,
+        judgment.model_copy(update={"affected_decisions": ["offline-decision"]}),
+        comparison,
+        context["spec"],
+        context["evidence"],
+        decisions,
+    )
+    assert first["affected_constraint_refs"] == ["windows"]
+    assert mute_scope(first) != mute_scope(second)
+
+
+async def test_invalid_batch_diagnostics_are_structured_and_do_not_store_response_text() -> None:
+    context, _ = inputs()
+    calls = [
+        ToolCall(id=f"call-{index}", function=Function(name="read_source", arguments="{}"))
+        for index in range(9)
+    ]
+    reasoner = ResearchReasoner(
+        MockLLM([LLMResponse(content="untrusted response text", tool_calls=calls)]), max_repairs=0
+    )
+    with pytest.raises(ResearchFormatError, match="Received 9"):
+        await reasoner.extract(context)
+    record = reasoner.calls[-1]
+    assert record["failure_category"] == "oversized_tool_batch"
+    assert record["tool_call_count"] == 9
+    assert "untrusted response text" not in json.dumps(record)
 
 
 def test_every_omitted_hard_evidence_is_named_after_ten_ordinary_gaps() -> None:

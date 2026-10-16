@@ -78,7 +78,8 @@ invalidation hints, not state patches. Clients fetch the current snapshot after 
 reconnection. The workspace also polls every two seconds during runs and every five seconds
 while idle. Project detail adds optional `tracking_blocked` for paused or attention runs.
 
-Mute rules match source, impact level, condition version, change type and sorted affected
+Events add optional `affected_constraint_refs`, including condition dependencies derived
+from validated affected-decision IDs. Mute rules match source, impact level, condition version, change type and sorted affected
 condition IDs. Previous broad rules and rules for previous conditions no longer suppress
 new reminders. The changes API returns expired rules as disabled. Existing action paths
 remain valid. Blank optional correction quotes are sent as null by the web client.
