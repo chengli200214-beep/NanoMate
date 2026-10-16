@@ -13,9 +13,25 @@
 python scripts/assistant_dev.py --offline
 ```
 
+Windows Python 3.13 可使用 `requirements-assistant-windows.txt` 中带哈希锁定的运行时、开发、
+浏览器和电脑操作依赖，安装到独立环境：
+
+```powershell
+uv venv .venv-assistant --python 3.13
+uv pip sync requirements-assistant-windows.txt --python .venv-assistant/Scripts/python.exe --require-hashes --default-index https://pypi.org/simple --no-config
+uv pip install --python .venv-assistant/Scripts/python.exe --no-deps -e . --default-index https://pypi.org/simple --no-config
+.venv-assistant/Scripts/python.exe -m playwright install chromium
+.venv-assistant/Scripts/python.exe scripts/assistant_dev.py --offline
+```
+
+该锁定文件仅适用于 Windows。环境应与正在等待恢复观察的环境分开，不启用系统 site packages。
+Chromium 需单独安装。
+
 默认地址为 `http://127.0.0.1:8788/?tab=chat`。打开私有快捷方式
 `.local/assistant-dev/open-assistant.url` 配对浏览器。快捷方式包含本地令牌，请勿分享。
 认证保持开启，原调研启动器与默认 8787 端口不变。
+
+本地渠道 CLI 命令直接连接回环服务，不经过环境代理，本地授权令牌仅用于该连接。
 
 启动器拒绝采用不属于此助手配置的已有非空目录，并通过操作系统文件锁防止两个助手启动器
 使用相同数据目录。进程退出后锁会释放。其他启动器不得使用此目录。
@@ -97,8 +113,13 @@ MockLLM 集成测试覆盖认证聊天、实际文件生成、提醒持久化和
 
 文件适配器支持在所选工作区内 `write`、`copy`、`move` 和 `mkdir`。预览会固定复制或移动的来源哈希，
 并要求目标不存在。目标与父目录必须是普通工作区路径；拒绝绝对路径、路径穿越、符号链接、目录
-联接和 Windows 设备名。父目录必须已存在，不覆盖已有文件或目录。遇到重名、文件被占用或来源
+联接和 Windows 设备名。父目录必须已存在，或由更早的 `mkdir` 步骤创建，不覆盖已有文件或目录。
+遇到重名、文件被占用或来源
 变化时，需要检查错误并审阅新计划，不会强制写入。
+
+同一计划可以先创建目录，再把已有文件复制或移动进去。验证会固定来源哈希，检查尚未创建的目标路径，
+但不实际创建目录。每步仍需确认具体预览，执行前会再检查真实父目录。目录被文件、符号链接或目录联接
+替换时停止发布，同一文件计划中重复的目标路径会被拒绝。
 
 文本写入最多接受 1 MiB 的 UTF-8 内容，复制与移动的来源文件最大为 16 MiB。发布使用暂存文件和
 不覆盖目标的文件链接，再核验目标身份与字节哈希；移动还会核验原来源已经不存在。恢复只确认
@@ -113,10 +134,22 @@ MockLLM 集成测试覆盖认证聊天、实际文件生成、提醒持久化和
 
 先启用已有浏览器工具并配置后端。Playwright 还需安装 Chromium 内核；后端显示已配置不等于已经
 成功启动。适配器复用已有浏览器、登录配置、实时画面与 Sentinel，支持 `navigate`、`extract`、
-普通文本草稿字段的 `fill`，以及普通 HTTP(S) 链接的 `click`。跟随链接会导航到已观察到的 URL，
+普通文本草稿字段的 `fill`、普通 HTTP(S) 链接的 `click`，以及已观察公开链接的 `download`。
+跟随链接会导航到已观察到的 URL，
 避免触发页面的点击处理器。按钮、表单提交、凭证、验证码、付款和破坏性控件需用户操作。
-账本适配器不提供任意按键、下载或浏览器 fetch。网页可能在字段变化时立即保存草稿，因此填写仍按
+账本适配器不提供任意按键或通用浏览器 fetch。网页可能在字段变化时立即保存草稿，因此填写仍按
 敏感操作评估。
+
+下载需新的链接观察和相对于工作区的目标 `path`，目标必须不存在。下载发送公开 HTTP(S) GET，
+不携带浏览器 cookies 或登录凭证，拒绝私有主机、压缩响应和跨来源重定向。大小上限为 16 MiB，
+总时限采用浏览器超时，最长 120 秒。完成回执记录来源及最终 URL、字节数和 SHA-256，不会打开或
+运行文件。中断请求不会自动重新下载；恢复只核对已记录的文件身份和字节，已发布文件缺失或改变时
+需人工检查。账本页面操作还会取消网页自行触发的附件，包括延迟下载，避免绕过已审阅的目标路径。
+
+下载复用已有公网传输层，校验每个 DNS 返回地址，并把连接固定到通过校验的地址，HTTPS 仍使用原始
+主机名。默认使用系统 DNS，网络返回合成私有地址时会拒绝下载。运维者可明确设置
+`NANOMUSE_ASSISTANT_DNS=cloudflare`，把下载主机名发给 Cloudflare 的固定 HTTPS 解析服务。
+该设置独立于调研 DNS，不会继承或自动启用；私网返回仍会被拒绝，也不修改系统 DNS。
 
 填写或跟随链接前，先点击「观察当前状态」。观察结果包含 URL、标题、正文哈希、元素序号、焦点
 与视口；`observation_hash` 在 300 秒（五分钟）后失效，且只可使用一次。适配器持有浏览器锁，在 Sentinel
@@ -231,6 +264,35 @@ Windows 文本通过 `SendInput` 的 `KEYEVENTF_UNICODE` 发送字面 UTF-16 事
 不声称多个数据库使用同一个原子事务。对外部操作不承诺恰好执行一次。调研继续使用自己的工具子集、
 Sentinel 和模型限额，个人领域适配器不会启动另一个自主模型循环。
 
+## 从主聊天发起调研 {#research-from-the-main-chat}
+
+主智能体的 `assistant_tasks` 工具支持 `research_list`、`research_get`、`research_create`
+和 `research_revise`。创建时需明确选择 fixture 或 live 模式，并提供原有调研规格。
+普通个人任务无需填写仓库候选。真实调研继续沿用来源权限、Sentinel、工具子集和限额。
+
+创建操作用稳定请求标识关联一个项目、一次运行和一个任务。运行在协调器完成绑定前保持暂停。
+相同输入重试，或在两个数据库提交之间崩溃，都会复用原记录。修改条件需当前的
+`expected_spec_id`；保留项目 ID、来源设置和报告历史，为新条件创建后续任务，原任务仍可查看。
+
+报告和重要变化通知会带项目链接回到主聊天。通知使用稳定 ID，先持久化再确认模块待投递记录，
+重复投递不会增加第二条已存储消息。这种本地回流不启动模型轮次，也不发送邮件。报告内容仍是
+不可信来源材料。原有反馈和静音规则继续生效。为旧项目增加关联元数据前先备份，历史通知不会
+重新灌入主聊天。
+
+证据检查会拒绝互相矛盾的具体文件路径和明确的快照文本行号范围，不把规范化 HTML 的行号当作
+原始文件行号。报告增加 `semantic_review` 元数据和审阅提示：主张是否由证据推出、比较是否覆盖
+双方证据，以及“能力不存在”等断言，仍需语义复核。这些标记不能证明主张正确，旧报告仍可读取。
+
+## 偏好用途与本地时间 {#preference-scope-and-civil-time}
+
+已确认且 `purpose` 非空的偏好，只有当前文本与用途或偏好标识共享有效词项时才进入提示上下文。
+用途为空时仍为全局偏好。这是确定性的词项筛选，不承诺语义隔离，普通记忆保留原有检索行为。
+已删除、过期或元数据异常的偏好不会被异步索引的旧结果重新带回。
+
+提醒按操作系统的本地日历时间重复。时钟切换导致本地时刻不存在时跳过该次，重复时刻只取第一次。
+未来日期按该日的本地偏移计算，显式接收带时区时间的调度函数保留所提供时区。本次没有新增逐条提醒
+的 IANA 时区选择器。账本按经过时间重复的调度保留原有间隔语义。
+
 ## HTTP 契约：assistant-tasks-v1 {#http-contract-assistant-tasks-v1}
 
 以下接口都使用主服务的 Bearer 认证。账本调度和偏好失效时间使用有限的 UTC Unix 秒数，提醒
@@ -273,7 +335,7 @@ Sentinel 和模型限额，个人领域适配器不会启动另一个自主模�
 | `document` | `document`：`source_paths`、可选 `output_name`，默认 `digest.md`，以及 `notes`；服务端准备 `source_hashes` |
 | `preference` | `preference`：`action` 为 set 或 delete，填写 `key`、`expected_revision`；保存时需 `value`，可附 `purpose` 和 UTC Unix `expires_at` |
 | `file` | `file`：`action` 为 write、copy、move 或 mkdir，填写 `path`；复制、移动需 `source_path`；写入接受 `content` 或 `content_from_step`；服务端固定 `source_sha256` 与 `target_absent` |
-| `browser` | `browser`：`action` 为 navigate、extract、fill 或 click；导航需 `url`；交互需 `index`、`expected_url`、`observation_hash`，填写还需 `text` |
+| `browser` | `browser`：`action` 为 navigate、extract、fill、click 或 download；导航需 `url`；交互需 `index`、`expected_url`、`observation_hash`，填写还需 `text`；下载需 `path`，服务端固定 `target_absent` |
 | `native` | `native`：`action`、`app` 为 notepad 或 explorer，以及对应操作字段；输入和保存核验需 `expected_observation`，observe 与 open_app 无需此字段；打开接受 `path`，explorer 必填，输入接受 `text`，按键接受 `keys`，点击接受 `x`、`y`、`label`，保存核验接受 `saved_file`、`expected_sha256` |
 
 新的偏好标识使用 `expected_revision: 0`，删除参数不带内容、用途或失效时间。
@@ -287,3 +349,20 @@ Sentinel 和模型限额，个人领域适配器不会启动另一个自主模�
 浏览器和原生操作记录区分观察状态、输入派发与已核验的保存字节。存在 `started` 意图却没有完成
 结果时，状态仍不确定；客户端不能把它当成幂等外部命令再次执行。任务暂停期间或旧计划版本不能
 接受新的操作批准。
+
+## 模型工具边界 {#model-tool-boundary}
+
+隔离的个人助手配置启用 `agent.task_ledger_only`。模型看到经过筛选的工具视图：工作区文件只读，
+提醒只可列出，不能直接使用 shell、Python、浏览器或桌面输入，也不能直接改写记忆。文件、浏览器和
+原生应用改动必须使用 `assistant_tasks` 计划并由用户批准具体预览，提醒改动使用账本步骤，偏好使用
+确认流程。结果不明时需观察并修改计划，不能改用原始工具重试。确定性执行器仍可使用底层驱动。
+其他运行配置默认保留原工具，调研执行器保留独立工具子集。回流的调研来源文字不会作为近期助手发言
+注入点子和动态的上下文。
+
+## 验收准备 {#acceptance-preparation}
+
+公开的 `evals/assistant/manifest.json` 和 `scoring.json` 描述 24 项场景及指定重复轮次，属于验收输入，
+不代表已经通过。使用 `python -m evals.assistant` 准备审阅包不会请求模型或批准评测。新的付费批次
+需先冻结代码、输入、模型及依赖配置。评测门禁让主聊天和调研共享持久费用预留，未知用量时停止，
+并拒绝沿用旧调研的审定回执。执行与人工复核范围见 `evals/assistant/README.md`。
+该门禁不代表产品已经具备全局每日费用限额。

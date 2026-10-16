@@ -53,6 +53,7 @@ def test_confirmed_preference_retrieval_isolation_and_provenance(
     assert "current request takes priority" in projected.content
     assert json.loads(projected.source.removeprefix("assistant_preference:")) == {
         "key": "reply_style",
+        "purpose": "Routine explanations",
         "revision": 1,
         "source_task": "task",
         "source_plan": 1,

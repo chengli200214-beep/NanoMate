@@ -401,7 +401,7 @@ class ResearchOrchestrator:
             return {"comparison": comparison.model_dump()}
         if step["stage"] == "publish":
             from nanomuse.research.contracts import Comparison
-            from nanomuse.research.reports import render_report
+            from nanomuse.research.reports import render_report, semantic_review_status
 
             compared = next(s for s in run["steps"] if s["stage"] == "compare")
             comparison = Comparison.model_validate(compared["output"]["comparison"])
@@ -450,6 +450,7 @@ class ResearchOrchestrator:
                     "created_at": iso(self.store.clock.now()),
                     "stale": False,
                     "mode": spec["mode"],
+                    "semantic_review": semantic_review_status(context["evidence"]),
                 },
                 "events": events,
             }

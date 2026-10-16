@@ -10,6 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from nanomuse.assistant.coordinator import Coordinator
 from nanomuse.assistant.ledger import Conflict, Ledger, Plan
+from nanomuse.assistant.research_link import ResearchLink
+from nanomuse.research.store import ResearchStore
 
 
 class CreateBody(BaseModel):
@@ -77,6 +79,10 @@ class TaskRoute(APIRoute):
 def install_assistant(app: FastAPI, service: Any, dependencies: list[Any]) -> None:
     ledger = Ledger(service.data_dir / "assistant" / "tasks.sqlite3")
     coordinator = Coordinator(ledger, app.state.research)
+    research_store = getattr(app.state.research, "store", None)
+    if isinstance(research_store, ResearchStore):
+        coordinator.research_link = ResearchLink(ledger, research_store)
+    coordinator.service = service
     app.state.assistant = coordinator
     router = APIRouter(prefix="/api/assistant", dependencies=dependencies, route_class=TaskRoute)
     host = getattr(service, "app", None)
@@ -90,6 +96,8 @@ def install_assistant(app: FastAPI, service: Any, dependencies: list[Any]) -> No
             coordinator.personal.validate(plan)
         for step in plan.steps:
             if step.adapter == "research":
+                if coordinator.research_link is None:
+                    raise ValueError("The research module is unavailable")
                 project = app.state.research.store.project(step.project_id)
                 if (step.spec_id and step.spec_id != project["spec_id"]) or (
                     step.input_version and step.input_version != project["input_version"]
@@ -103,7 +111,14 @@ def install_assistant(app: FastAPI, service: Any, dependencies: list[Any]) -> No
     from nanomuse.assistant.tool import AssistantTasks
 
     if host is not None:
-        host.tools.add(AssistantTasks(ledger=ledger, validate_plan=validate))
+        host.tools.add(
+            AssistantTasks(
+                ledger=ledger, validate_plan=validate, research=coordinator.research_link
+            )
+        )
+        from nanomuse.assistant.tool_boundary import install_boundary
+
+        install_boundary(service)
 
     @router.get("/tasks")
     async def tasks() -> list[dict[str, Any]]:

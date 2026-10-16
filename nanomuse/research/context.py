@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Mapping
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from pydantic import BaseModel
 
@@ -96,6 +97,94 @@ def source_observation(snapshot: dict[str, Any]) -> bool:
     return snapshot.get("kind") == "source" or path.endswith(_SOURCE_EXTENSIONS)
 
 
+_LINE_LOCATOR = re.compile(r"(?:L|lines?\s+)?(\d+)(?:\s*-\s*L?(\d+))?", re.IGNORECASE)
+_FILE_LOCATOR = re.compile(r"[\w./ -]+\.[A-Za-z0-9]{1,12}")
+
+
+def _snapshot_path(snapshot: dict[str, Any]) -> str:
+    """Return a concrete bound file path, not a repository or arbitrary page title."""
+    parsed = urlsplit(str(snapshot.get("url", "")))
+    pieces = unquote(parsed.path).strip("/").split("/")
+    if parsed.hostname == "github.com":
+        if len(pieces) > 4 and pieces[2] == "blob":
+            return "/".join(pieces[4:])
+        return ""
+    if parsed.hostname == "raw.githubusercontent.com" and len(pieces) > 3:
+        return "/".join(pieces[3:])
+    path = unquote(parsed.path).strip("/")
+    return path if _FILE_LOCATOR.fullmatch(path) else ""
+
+
+def locator_status(locator: str, snapshot: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Parse only explicit file/line syntax; headings and prose remain reviewable.
+
+    Line numbers refer to the saved snapshot text, not unobserved raw HTML. A file
+    assertion is checked only when the snapshot actually names a concrete file.
+    """
+    text = locator.strip()
+    if not text:
+        return {"kind": "missing", "review_required": True}
+    path, lines = "", ""
+    if text.startswith(("http://", "https://")):
+        parsed = urlsplit(text)
+        path = _snapshot_path({"url": text})
+        if snapshot is not None:
+            expected_url = urlsplit(str(snapshot.get("url", "")))
+            if parsed._replace(fragment="").geturl() != expected_url._replace(fragment="").geturl():
+                raise ResearchValidationError(
+                    "Evidence locator URL differs from its bound snapshot"
+                )
+        if (
+            parsed.hostname in {"github.com", "raw.githubusercontent.com"}
+            and path
+            and parsed.fragment
+            and _LINE_LOCATOR.fullmatch(parsed.fragment)
+        ):
+            lines = parsed.fragment
+    else:
+        direct = text.removeprefix("#")
+        if _LINE_LOCATOR.fullmatch(direct):
+            lines = direct
+        elif (match := re.fullmatch(r"(.+?)(?::|#)(L?\d+(?:-L?\d+)?)", text)) and (
+            _FILE_LOCATOR.fullmatch(match[1])
+        ):
+            path, lines = match.groups()
+        elif _FILE_LOCATOR.fullmatch(text):
+            path = text
+        else:
+            return {"kind": "free_form", "review_required": True}
+    result: dict[str, Any] = {"kind": "structured", "review_required": snapshot is None}
+    if path:
+        path = path.replace("\\", "/").removeprefix("./").strip("/")
+        result["path"] = path
+        expected_path = _snapshot_path(snapshot) if snapshot is not None else ""
+        if expected_path:
+            expected = expected_path if "/" in path else expected_path.rsplit("/", 1)[-1]
+            if path != expected:
+                raise ResearchValidationError(
+                    "Evidence locator path differs from its bound snapshot"
+                )
+        else:
+            result["review_required"] = True
+    if lines:
+        match = _LINE_LOCATOR.fullmatch(lines)
+        assert match is not None
+        if any(value and len(value) > 9 for value in match.groups()):
+            raise ResearchValidationError("Evidence locator line number is outside the snapshot")
+        start, end = int(match[1]), int(match[2] or match[1])
+        if start < 1 or end < start:
+            raise ResearchValidationError(
+                "Evidence locator requires an increasing positive line range"
+            )
+        result.update(start_line=start, end_line=end)
+        result["line_basis"] = "snapshot_text"
+        if snapshot is not None and end > len(str(snapshot.get("content", "")).splitlines()):
+            raise ResearchValidationError("Evidence locator line number is outside the snapshot")
+    elif text.startswith(("http://", "https://")) and urlsplit(text).fragment:
+        result["review_required"] = True
+    return result
+
+
 def validate_evidence(draft: EvidenceDraft, context: dict[str, Any]) -> EvidenceDraft:
     snapshots = {str(item["id"]): item for item in context.get("snapshots", [])}
     snapshot = snapshots.get(draft.snapshot_id)
@@ -120,6 +209,13 @@ def validate_evidence(draft: EvidenceDraft, context: dict[str, Any]) -> Evidence
         raise ResearchValidationError("Evidence quote is not present in the bound snapshot")
     if draft.verification == "source" and not source_observation(snapshot):
         raise ResearchValidationError("A documentation snapshot is not a source-code observation")
+    location = locator_status(draft.locator, snapshot)
+    if "start_line" in location:
+        selected = content.splitlines(keepends=True)[
+            location["start_line"] - 1 : location["end_line"]
+        ]
+        if draft.quote not in "".join(selected):
+            raise ResearchValidationError("Evidence quote is outside its claimed locator lines")
     return draft
 
 
@@ -140,7 +236,12 @@ def complete_evidence_quote(draft: EvidenceDraft, context: dict[str, Any]) -> Ev
     right = content.find("\n\n", end)
     paragraph = content[left + 2 if left >= 0 else 0 : right if right >= 0 else len(content)]
     if len(paragraph) <= 2000:
-        return draft.model_copy(update={"quote": paragraph})
+        expanded = draft.model_copy(update={"quote": paragraph})
+        try:
+            return validate_evidence(expanded, context)
+        except ResearchValidationError:
+            # Keep a valid explicitly bounded quote rather than inventing new line claims.
+            return draft
     return draft
 
 
@@ -558,6 +659,7 @@ __all__ = [
     "constraint_verdict",
     "conflict_affects_decision",
     "evidence_is_current",
+    "locator_status",
     "normalize_context",
     "source_observation",
     "require_unknown_for_conflicts",

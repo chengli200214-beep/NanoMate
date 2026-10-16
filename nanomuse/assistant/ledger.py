@@ -77,6 +77,8 @@ def request_plan(plan: Plan | dict[str, Any]) -> dict[str, Any]:
         if step.get("file"):
             step["file"].pop("source_sha256", None)
             step["file"].pop("target_absent", None)
+        if step.get("browser"):
+            step["browser"].pop("target_absent", None)
     return value
 
 

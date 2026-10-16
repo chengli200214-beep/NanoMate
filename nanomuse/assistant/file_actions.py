@@ -169,11 +169,46 @@ def _missing(root: Path, relative: str) -> Path:
     return path
 
 
-def prepare(spec: FileSpec | dict[str, Any], workspace: Path) -> FileSpec:
+def _preview_target(root: Path, relative: str, planned_directories: set[str]) -> None:
+    """Check future parents without creating directories during plan validation."""
+    current = root
+    parts = _relative(relative).split("/")
+    if len(parts) > 65:
+        raise ValueError("File path is too deeply nested")
+    for index, part in enumerate(parts):
+        current /= part
+        try:
+            if _redirect(current):
+                raise ValueError("File paths cannot contain symbolic links or junctions")
+            if index == len(parts) - 1:
+                raise ValueError("File target already exists; review a different target")
+            if not current.is_dir():
+                raise ValueError("File parent must be an ordinary directory")
+        except FileNotFoundError:
+            if (
+                index < len(parts) - 1
+                and "/".join(parts[: index + 1]).casefold() not in planned_directories
+            ):
+                raise ValueError(
+                    "File parent must exist or be created by an earlier mkdir step"
+                ) from None
+    if not current.resolve().is_relative_to(root):
+        raise ValueError("File path is outside the workspace")
+
+
+def prepare(
+    spec: FileSpec | dict[str, Any],
+    workspace: Path,
+    *,
+    planned_directories: set[str] | None = None,
+) -> FileSpec:
     """Validate the preview and freeze source bytes without changing files."""
     parsed = FileSpec.model_validate(spec)
     root = _root(workspace)
-    _missing(root, parsed.path)
+    if planned_directories is None:
+        _missing(root, parsed.path)
+    else:
+        _preview_target(root, parsed.path, planned_directories)
     source_hash = ""
     if parsed.source_path:
         data, _ = _read(root, parsed.source_path)

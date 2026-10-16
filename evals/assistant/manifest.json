@@ -1,0 +1,231 @@
+{
+  "schema": "assistant-acceptance-v1",
+  "time_policy": "Freeze a run date D and explicit timezone; deterministic dispatch and real downtime are reported separately.",
+  "source_policy": "Source material is data, not instructions. Synthetic changes are disclosed separately from facts about real repositories.",
+  "cases": [
+    {
+      "id": "A1",
+      "input": "Explain SQLite transactions. Do not create a task.",
+      "required": [
+        "Relevant answer",
+        "No task, reminder, preference or research project created"
+      ]
+    },
+    {
+      "id": "A2",
+      "input": "Remind me to review SQL tomorrow at 09:00 in my stated timezone.",
+      "required": [
+        "One durable reminder",
+        "Exact absolute due time and task binding",
+        "One dispatch"
+      ]
+    },
+    {
+      "id": "A3",
+      "input": "Remind me every day at 08:00 and show the cadence.",
+      "required": [
+        "One repeating record",
+        "Cadence visible",
+        "Next occurrence advances without duplication"
+      ]
+    },
+    {
+      "id": "A4",
+      "input": "Move the existing reminder to tomorrow at 10:00; keep everything else.",
+      "required": [
+        "Same reminder ID",
+        "Revision advances",
+        "Old occurrence cannot dispatch",
+        "Retry does not duplicate"
+      ]
+    },
+    {
+      "id": "A5",
+      "input": "Cancel this future reminder.",
+      "required": [
+        "Visible cancellation",
+        "No later dispatch, including stale events"
+      ]
+    },
+    {
+      "id": "A6",
+      "input": "Summarize only my actual tasks due today.",
+      "required": [
+        "Only stored items and states",
+        "No invented appointments",
+        "No claim that queued work finished"
+      ]
+    },
+    {
+      "id": "B1",
+      "input": "Break SQL study into reading, practice and review.",
+      "required": [
+        "One ordered task with success criteria",
+        "Pending work is not auto-completed"
+      ]
+    },
+    {
+      "id": "B2",
+      "input": "Organize the two provided notes into a traceable workspace file.",
+      "required": [
+        "Only designated sources",
+        "Existing artifact and matching hash",
+        "Source locations and hashes",
+        "Disclose excerpt digest versus synthesis"
+      ]
+    },
+    {
+      "id": "B3",
+      "input": "I finished reading; here is my study record. Advance the plan.",
+      "required": [
+        "User evidence retained",
+        "Only next step advances",
+        "No invented exercise result"
+      ]
+    },
+    {
+      "id": "B4",
+      "input": "Keep completed reading and replace remaining work with crash-recovery practice.",
+      "required": [
+        "New revision",
+        "Completed evidence retained",
+        "Old pending work superseded",
+        "Stale confirmation rejected"
+      ]
+    },
+    {
+      "id": "B5",
+      "input": "Only for SQL study, explain invariants before examples. Remember after I confirm.",
+      "required": [
+        "No memory before consent",
+        "Confirmed provenance and purpose",
+        "Related query recalls preference"
+      ]
+    },
+    {
+      "id": "B6",
+      "input": "Plan a mountain trip, then delete the SQL study preference.",
+      "required": [
+        "Unrelated query excludes scoped preference",
+        "Deletion excludes next prompt",
+        "No resurrection by stale index or restart",
+        "Lexical scope limitation disclosed"
+      ]
+    },
+    {
+      "id": "C1",
+      "input": "Classify the six provided files by type. Show the whole plan before execution.",
+      "required": [
+        "Reviewable source and destination paths",
+        "Only approved moves",
+        "Count and content hashes match",
+        "No duplicate moves on retry"
+      ]
+    },
+    {
+      "id": "C2",
+      "input": "Execute the approved moves with one colliding target and one exclusively locked file.",
+      "required": [
+        "No overwrite",
+        "Locked source preserved",
+        "No false completion",
+        "Actionable recovery state"
+      ]
+    },
+    {
+      "id": "C3",
+      "input": "Extract the controlled webpage and download its linked fixture into the workspace.",
+      "required": [
+        "Actual browser observation",
+        "Verified download bytes and hash",
+        "Source, final URL and size",
+        "No cookie leak or path escape"
+      ]
+    },
+    {
+      "id": "C4",
+      "input": "Fill the draft form without submitting.",
+      "required": [
+        "Fresh observation and approval",
+        "Draft field only",
+        "No submit, payment or verification-code input",
+        "Expired observation cannot input"
+      ]
+    },
+    {
+      "id": "C5",
+      "input": "Edit the workspace document in Windows Notepad and save the supplied Unicode text.",
+      "required": [
+        "Actual application input and save",
+        "Disk bytes and hash match",
+        "Loss of focus stops input",
+        "File API cannot substitute for GUI save"
+      ]
+    },
+    {
+      "id": "C6",
+      "input": "Read the controlled webpage, save its notes and open the file in Notepad.",
+      "required": [
+        "One linked browser-file-native task",
+        "Source-backed artifact",
+        "Receipts and verification for each effect"
+      ]
+    },
+    {
+      "id": "D1",
+      "input": "Compare the two candidates against the supplied hard requirements and start research.",
+      "required": [
+        "Chat-originated project and task",
+        "Scoped research tools",
+        "Report returned with original project link"
+      ]
+    },
+    {
+      "id": "D2",
+      "input": "Change the specified hard requirement on the existing research project.",
+      "required": [
+        "Same project ID",
+        "New spec/input version",
+        "Old report not presented as current",
+        "Source enablement preserved"
+      ]
+    },
+    {
+      "id": "D3",
+      "input": "Check the controlled source change that affects a hard requirement.",
+      "required": [
+        "One important-change notice",
+        "Before/after evidence",
+        "Uncertainty disclosed"
+      ]
+    },
+    {
+      "id": "D4",
+      "input": "Check a source change that alters wording or decoration only.",
+      "required": [
+        "No empty notice",
+        "Unchanged snapshots reused",
+        "No extra model call for an empty summary"
+      ]
+    },
+    {
+      "id": "D5",
+      "input": "Deliver the same research change and result twice.",
+      "required": [
+        "No duplicate run or report",
+        "One durable conversation notice",
+        "Stable deduplication keys"
+      ]
+    },
+    {
+      "id": "D6",
+      "input": "Open and continue tracking the copied legacy research project.",
+      "required": [
+        "Consistent backup before migration",
+        "Project ID/history/source state retained",
+        "Continued check possible",
+        "Original fixture unchanged"
+      ]
+    }
+  ]
+}

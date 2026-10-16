@@ -7,6 +7,7 @@ import logging
 from typing import Any
 
 from nanomuse.assistant.ledger import EXECUTION_ADAPTERS, Ledger
+from nanomuse.assistant.research_link import ResearchLink
 from nanomuse.research.orchestrator import ResearchOrchestrator
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,8 @@ class Coordinator:
         self.research = research
         self._task: asyncio.Task[None] | None = None
         self.personal: Any = None
+        self.research_link: ResearchLink | None = None
+        self.service: Any = None
 
     def start(self) -> None:
         if self._task is None:
@@ -40,11 +43,19 @@ class Coordinator:
                 self.tick()
                 if self.personal is not None:
                     self.personal.pulse()
+                if self.research_link is not None and self.service is not None:
+                    from nanomuse.assistant.delivery import deliver_research
+
+                    for item in self.research_link.pending_deliveries():
+                        await deliver_research(self.service, item)
+                        self.research_link.delivered(item["id"])
             except Exception:
                 logger.exception("Assistant coordinator pass failed")
             await asyncio.sleep(1)
 
     def tick(self) -> None:
+        if self.research_link is not None:
+            self.research_link.recover()
         self.ledger.fire_due()
         for step in self.ledger.bound():
             if step["spec"]["adapter"] != "research":
@@ -91,7 +102,8 @@ class Coordinator:
             # The durable step is the dispatch outbox. Its ID never changes on retry.
             # A crash after enqueue but before binding reuses the domain request key.
             key = f"assistant:{step['id']}"
-            run = next(
+            run = self.research_link.run_for_step(step) if self.research_link is not None else None
+            run = run or next(
                 (
                     r
                     for r in self.research.store.runs(spec["project_id"])

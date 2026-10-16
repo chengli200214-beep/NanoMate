@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import contextlib
+import shlex
 import socket
+import subprocess
 import sys
 from pathlib import Path
 
@@ -88,7 +90,9 @@ async def test_shell_and_python(tmp_path: Path):
     assert r.ok and "hi" in r.output and "[stderr]" in r.output
     r = await shell.execute(command="exit 3")
     assert r.error == "exit code 3"
-    r = await shell.execute(command="sleep 5", timeout=1)
+    sleeper = [sys.executable, "-c", "import time; time.sleep(5)"]
+    command = subprocess.list2cmdline(sleeper) if sys.platform == "win32" else shlex.join(sleeper)
+    r = await shell.execute(command=command, timeout=1)
     assert r.error and "timed out" in r.error
     r = await shell.execute(command="echo ok", timeout="sixty")  # type: ignore[arg-type]
     assert r.ok, "a timeout the model wrote as words falls back to the default"

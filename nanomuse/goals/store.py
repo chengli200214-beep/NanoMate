@@ -22,6 +22,8 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
+from nanomuse.scheduling import civil_occurrence
+
 GOAL_STATUSES = ("active", "paused", "done", "cancelled")
 STEP_STATUSES = ("pending", "in_progress", "done", "blocked", "skipped")
 # Muse's life areas. "" means uncategorised.
@@ -68,25 +70,35 @@ def parse_check_in(spec: str) -> tuple[str, int | None, int, int] | None:
     return cadence, anchor, hour, minute
 
 
-def next_check_in(spec: str, after: datetime | None = None) -> datetime | None:
-    """The first check-in strictly after ``after`` (local time; default now)."""
+def next_check_in(
+    spec: str, after: datetime | None = None, *, local_time: bool = False
+) -> datetime | None:
+    """The first check-in after ``after``, skipping gaps and using fold 0 once.
+
+    Explicit aware datetimes retain their timezone. Default and naive inputs use
+    the OS timezone, resolved for each future date. Internal local routines pass
+    ``local_time=True`` when ``after`` is an absolute UTC dispatch timestamp.
+    """
     parsed = parse_check_in(spec)
     if parsed is None:
         return None
     cadence, anchor, hour, minute = parsed
-    now = (after or datetime.now()).astimezone()
+    use_local = local_time or after is None or after.tzinfo is None
+    now = (after or datetime.now()).astimezone() if use_local else after
+    assert now is not None
+    zone = None if use_local else now.tzinfo
     if cadence == "weekly" and anchor is None:
         anchor = now.weekday()  # "weekly" alone: same weekday as today
     day = now.date()
     for _ in range(62):  # two months is enough to hit any monthly anchor
-        candidate = datetime(day.year, day.month, day.day, hour, minute, tzinfo=now.tzinfo)
+        candidate = civil_occurrence(day, hour, minute, zone)
         fits = (
             cadence == "daily"
             or (cadence == "weekdays" and day.weekday() < 5)
             or (cadence == "weekly" and day.weekday() == anchor)
             or (cadence == "monthly" and day.day == (anchor or 1))
         )
-        if fits and candidate > now:
+        if fits and candidate is not None and candidate.timestamp() > now.timestamp():
             return candidate
         day += timedelta(days=1)
     return None
@@ -402,7 +414,7 @@ class GoalStore:
         if goal.next_check_in:
             scheduled = datetime.fromisoformat(goal.next_check_in).astimezone()
             after = max(after, scheduled)
-        nxt = next_check_in(goal.check_in, after=after) if goal.check_in else None
+        nxt = next_check_in(goal.check_in, after=after, local_time=True) if goal.check_in else None
         self._conn.execute(
             "UPDATE goals SET next_check_in = ? WHERE id = ?",
             (nxt.astimezone(UTC).isoformat(timespec="seconds") if nxt else "", goal_id),

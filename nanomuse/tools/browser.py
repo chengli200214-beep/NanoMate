@@ -379,6 +379,8 @@ class Browser(BaseTool):
             except RuntimeError as exc:
                 return ToolResult.fail(str(exc))
             try:
+                if action in {"navigate", "click", "type", "press", "back", "profile"}:
+                    backend.allow_legacy_downloads()
                 if action == "fetch":
                     return await self._fetch(backend, url, method, body)
                 if action == "profile":
@@ -545,6 +547,7 @@ class Browser(BaseTool):
         try:
             backend = self._pick_backend()
             await backend.ensure()
+            backend.allow_legacy_downloads()
             await self._frame(backend, f"Your turn: {reason[:60]}", thread=thread)
         except Exception as exc:  # noqa: BLE001 — the page may not be open yet; the hold still works
             logger.debug("hand_over frame: {}", exc)
@@ -582,6 +585,8 @@ class Browser(BaseTool):
         async with self.lock:
             backend = self._pick_backend()
             await backend.ensure()
+            if action in {"click", "type", "key", "back", "navigate", "take_over"}:
+                backend.allow_legacy_downloads()
             vp = backend.profile.viewport
             if action == "click":
                 if x is None or y is None:

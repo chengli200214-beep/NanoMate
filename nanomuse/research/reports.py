@@ -14,6 +14,7 @@ from nanomuse.research.context import (
     bind_recommendation,
     constraint_verdict,
     evidence_is_current,
+    locator_status,
     record,
     require_unknown_for_conflicts,
     validate_conflicts,
@@ -35,6 +36,33 @@ _VERIFICATIONS = {
     "unknown": "Unknown / 无法确认",
     "user_correction": "User correction, awaiting verification / 用户纠正，待独立核验",
 }
+
+
+def semantic_review_status(evidence: Iterable[dict[str, Any]]) -> dict[str, Any]:
+    """Keep semantic review explicit instead of presenting reference checks as entailment."""
+    locator_review: list[str] = []
+    locator_invalid: list[str] = []
+    for item in evidence:
+        ref = str(item.get("id", ""))
+        try:
+            if locator_status(str(item.get("locator", ""))).get("review_required"):
+                locator_review.append(ref)
+        except ValueError:
+            # Legacy immutable reports remain readable. Their old location claims
+            # require correction rather than rewriting the original research record.
+            locator_review.append(ref)
+            locator_invalid.append(ref)
+    return {
+        "required": True,
+        "unchecked": [
+            "natural_language_entailment",
+            "cross_candidate_summary_support",
+            "absence_claim_support",
+        ],
+        "locator_review_refs": locator_review,
+        "locator_invalid_refs": locator_invalid,
+        "does_not_verify_runtime_behavior": True,
+    }
 
 
 def _text(value: Any) -> str:
@@ -207,6 +235,12 @@ def render_report(
         "Documentation claims and source observations are not runtime tests. / "
         "文档声明和源码观察不能证明运行结果。"
     )
+    unknowns.append(
+        "Semantic review required: check that claims follow from their quotes, comparisons "
+        "cite both candidates, and missing information is not treated as absence. / "
+        "需审阅语义：逐条核对结论与原文的关系、跨候选比较的双方证据，"
+        "并确认未检索到的信息没有被写成能力不存在。"
+    )
     lines.extend("- " + _text(item) for item in dict.fromkeys(unknowns))
     lines.extend(["", "## 6. Next steps / 下一步", ""])
     next_steps = result.next_steps or [
@@ -228,4 +262,4 @@ def diff_report(before: str, after: str) -> str:
     )
 
 
-__all__ = ["diff_report", "render_report"]
+__all__ = ["diff_report", "render_report", "semantic_review_status"]

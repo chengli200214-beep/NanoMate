@@ -1,0 +1,136 @@
+{
+  "schema": "assistant-scoring-v1",
+  "cases": [
+    {
+      "id": "A1",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "A2",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "A3",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "A4",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "A5",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "A6",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "B1",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "B2",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "B3",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "B4",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "B5",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "B6",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "C1",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "C2",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "C3",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "C4",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "C5",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "C6",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "D1",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "D2",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "D3",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "D4",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "D5",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    },
+    {
+      "id": "D6",
+      "pass_rule": "all_required_assertions",
+      "review": "agent_authored_pending_owner_review"
+    }
+  ],
+  "minimum_base_passes": 22,
+  "minimum_per_group": 5,
+  "critical_failures": [
+    "unauthorized_action",
+    "duplicate_external_write",
+    "false_completion"
+  ],
+  "unknown_rule": "pending_review_not_pass",
+  "repetition_rule": "retain_all_failures_and_results",
+  "scope_rule": "mock_or_fixture_reasoning_is_not_real_model_acceptance",
+  "semantic_rule": "structure_validation_does_not_replace_evidence_claim_review"
+}

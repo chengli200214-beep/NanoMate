@@ -21,6 +21,7 @@ a signed-in request without driving the screen).
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 from abc import ABC, abstractmethod
@@ -157,6 +158,18 @@ class BrowserBackend(ABC):
     @abstractmethod
     async def close(self) -> None: ...
 
+    def begin_ledger_action(self) -> int:
+        """Reject unsolicited page downloads while the task ledger owns the page."""
+        return 0
+
+    async def finish_ledger_action(self, checkpoint: int) -> bool:
+        """Wait for cancellation attempts and report any unexpected attachment."""
+        return False
+
+    def allow_legacy_downloads(self) -> None:
+        """An explicit non-ledger browser action resumes its normal download policy."""
+        return None
+
     # ------------------------------------------------------------------ shared behaviour
     async def click_element(self, index: int) -> None:
         """Click a numbered element: scroll it into view, then click its centre."""
@@ -242,6 +255,10 @@ class PlaywrightBackend(BrowserBackend):
         self._pw: Any = None
         self._context: Any = None
         self._page: Any = None
+        self._ledger_downloads_blocked = False
+        self._blocked_downloads = 0
+        self._reported_downloads = 0
+        self._download_cancellations: set[asyncio.Task[Any]] = set()
 
     @staticmethod
     def available() -> bool:
@@ -281,6 +298,23 @@ class PlaywrightBackend(BrowserBackend):
         self._page.on("download", self._on_download)
 
     def _on_download(self, download: Any) -> None:
+        # Capture ownership synchronously when the event arrives. Reading this flag
+        # inside the background coroutine could miss a scope that just finished.
+        if self._ledger_downloads_blocked:
+            self._blocked_downloads += 1
+
+            async def cancel() -> None:
+                try:
+                    await asyncio.wait_for(download.cancel(), timeout=2.0)
+                except Exception as exc:  # noqa: BLE001
+                    # Even if cancellation is unconfirmed, this path never calls save_as.
+                    logger.warning("browser: ledger attachment cancellation failed: {}", exc)
+
+            task = spawn(cancel(), "cancelling an unsolicited ledger browser download")
+            self._download_cancellations.add(task)
+            task.add_done_callback(self._download_cancellations.discard)
+            return
+
         async def save() -> None:
             try:
                 self.downloads_dir.mkdir(parents=True, exist_ok=True)
@@ -291,6 +325,30 @@ class PlaywrightBackend(BrowserBackend):
                 logger.warning("browser: download failed: {}", exc)
 
         spawn(save(), "saving a browser download")
+
+    def begin_ledger_action(self) -> int:
+        # Keep suppression after the action returns: page timers may offer attachments
+        # later. Only an explicit user/non-ledger input starts a normal browser turn.
+        self._ledger_downloads_blocked = True
+        return self._reported_downloads
+
+    async def finish_ledger_action(self, checkpoint: int) -> bool:
+        # Drain callbacks queued by Playwright before the action completed, then wait
+        # for the bounded cancellation tasks already captured at event arrival.
+        await asyncio.sleep(0)
+        deadline = asyncio.get_running_loop().time() + 2.5
+        while (
+            self._download_cancellations
+            and (remaining := deadline - asyncio.get_running_loop().time()) > 0
+        ):
+            await asyncio.wait(tuple(self._download_cancellations), timeout=remaining)
+            await asyncio.sleep(0)
+        unexpected = self._blocked_downloads > checkpoint
+        self._reported_downloads = self._blocked_downloads
+        return unexpected
+
+    def allow_legacy_downloads(self) -> None:
+        self._ledger_downloads_blocked = False
 
     async def goto(self, url: str) -> None:
         await self._page.goto(url, wait_until="domcontentloaded")

@@ -32,6 +32,11 @@ if TYPE_CHECKING:
 # had nothing to compare and approved anything (#270).
 _WORD_RE = re.compile(r"[^\W_\u3400-\u9fff]+")
 _CJK_RE = re.compile(r"[\u3400-\u9fff]")
+_PREFERENCE_SCOPE_STOP_WORDS = frozenset(
+    "a an and are as at be by do for from in is it of on or that the this to when with "
+    "apply context current default global preference preferences purpose relevant request "
+    "reply replies answer answers style format user".split()
+)
 
 
 def _now() -> str:
@@ -273,11 +278,52 @@ class MemoryStore:
         return [item for _, item in scored[:limit]]
 
     def relevant(self, context: str, limit: int = 20) -> list[MemoryItem]:
-        """Memories to inject into the system prompt: matches first, then most recent."""
-        items = self.all()
+        """Match then fill recent memories, respecting confirmed preference scopes."""
+        items = self._context_items(context)
         if len(items) <= limit:
             return items
-        return self._fill(self.search(context, limit=limit), items, limit)
+        eligible = {item.id: item for item in items}
+        matched = [
+            eligible[item.id] for item in self.search(context, limit=limit) if item.id in eligible
+        ]
+        return self._fill(matched, items, limit)
+
+    def _context_items(self, context: str) -> list[MemoryItem]:
+        return [item for item in self.all() if self._preference_matches(item, context)]
+
+    @classmethod
+    def _preference_matches(cls, item: MemoryItem, context: str) -> bool:
+        """Owned preferences with a purpose need lexical scope overlap.
+
+        Ordinary memories keep their existing retrieval rules. Empty purpose is
+        global. Invalid or old unscoped projection metadata waits for the owning
+        preference store to repair it rather than entering an unrelated prompt.
+        This is a deterministic token boundary, not a semantic relevance judge.
+        """
+        if not cls._is_owned_projection(item):
+            return True
+        try:
+            metadata = json.loads(item.source.removeprefix("assistant_preference:"))
+            if not isinstance(metadata, dict):
+                return False
+            purpose, key = metadata["purpose"], metadata["key"]
+            if not isinstance(purpose, str) or not isinstance(key, str) or not key:
+                return False
+            expiry = metadata.get("expires_at")
+            if expiry is not None and (
+                isinstance(expiry, bool)
+                or not isinstance(expiry, (int, float))
+                or not math.isfinite(expiry)
+                or expiry <= datetime.now(UTC).timestamp()
+            ):
+                return False
+            if not purpose.strip():
+                return True
+            scope = tokenize(purpose + " " + key) - _PREFERENCE_SCOPE_STOP_WORDS
+            query = tokenize(context) - _PREFERENCE_SCOPE_STOP_WORDS
+            return bool(scope & query)
+        except (ValueError, TypeError, KeyError, OverflowError, RecursionError):
+            return False
 
     @staticmethod
     def _fill(matched: list[MemoryItem], items: list[MemoryItem], limit: int) -> list[MemoryItem]:
@@ -298,12 +344,18 @@ class MemoryStore:
 
     async def relevant_async(self, context: str, limit: int = 20) -> list[MemoryItem]:
         """``relevant`` with the meaning-based ranking fused in when an index is set up."""
-        items = self.all()
+        items = self._context_items(context)
         if len(items) <= limit:
             return items
         if self.index is not None:
-            return self._fill(await self.index.search(context, limit=limit), items, limit)
-        return self._fill(self.search(context, limit=limit), items, limit)
+            ranked = await self.index.search(context, limit=limit)
+            # An embedding request may have yielded while the user deleted or
+            # changed a preference. Never reinsert an old cached projection.
+            items = self._context_items(context)
+            eligible = {item.id: item for item in items}
+            matched = [eligible[item.id] for item in ranked if item.id in eligible]
+            return self._fill(matched, items, limit)
+        return self.relevant(context, limit)
 
     def similar(
         self, content: str, threshold: float = 0.5, limit: int = 3

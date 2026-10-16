@@ -214,6 +214,7 @@ class PreferenceStore:
                 if row["status"] == "active":
                     provenance = {
                         "key": row["key"],
+                        "purpose": row["purpose"],
                         "revision": row["revision"],
                         "source_task": row["source_task"],
                         "source_plan": row["source_plan"],

@@ -13,6 +13,8 @@ from pydantic import ValidationError
 
 from nanomuse.agent.holds import Holds
 from nanomuse.assistant.browser_actions import _OBSERVE_JS, BrowserActions, BrowserSpec
+from nanomuse.assistant.browser_actions import prepare_download as prepare_browser_download
+from nanomuse.assistant.browser_downloads import BrowserDownloads
 from nanomuse.schema import RiskLevel, ToolCall, ToolResult
 from nanomuse.tools.base import BaseTool, CallAssessment
 from nanomuse.tools.browser import _ANNOTATE_JS, Browser
@@ -374,3 +376,87 @@ async def test_availability_does_not_claim_missing_browser(tmp_path: Path) -> No
     assert not driver.available()
     with pytest.raises(ValueError, match="Enable the browser"):
         await driver.observe()
+
+
+def download_spec(observation: dict[str, Any], workspace: Path) -> BrowserSpec:
+    return prepare_browser_download(
+        {
+            "action": "download",
+            "index": 0,
+            "path": "article.bin",
+            "expected_url": observation["url"],
+            "observation_hash": observation["observation_hash"],
+        },
+        workspace,
+    )
+
+
+async def test_download_uses_fresh_link_and_inner_outbound_sentinel(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import httpx
+
+    driver, page, _, guard = fixture(tmp_path)
+    driver.downloads = BrowserDownloads(tmp_path / "state", tmp_path)
+    original_fetch = driver.downloads._fetch
+    from tests.test_assistant_downloads import public_resolver
+
+    driver.downloads._resolver = public_resolver
+    requests: list[str] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        requests.append(f"{request.url.scheme}://{request.headers['host']}{request.url.path}")
+        return httpx.Response(200, content=b"\xff\x00 downloaded")
+
+    async def fetch(*args: Any, **kwargs: Any) -> Any:
+        return await original_fetch(*args, **{**kwargs, "transport": httpx.MockTransport(respond)})
+
+    monkeypatch.setattr(driver.downloads, "_fetch", fetch)
+    value = download_spec(await driver.observe(), tmp_path)
+    result = await driver.execute(value, "key-1", "task-1", 1, "step-1")
+    assert requests == ["https://example.test/article"]
+    assert (tmp_path / "article.bin").read_bytes() == b"\xff\x00 downloaded"
+    assert result["verification"]["kind"] == "file_sha256"
+    assert not page.actions  # No page click handlers or browser-navigation downloads.
+    assert guard.calls[-1][1].risk == RiskLevel.SENSITIVE
+    assert guard.calls[-1][1].egress is True
+    assert guard.calls[-1][1].egress_target == "example.test"
+    assert json.loads(guard.calls[-1][0].function.arguments) == {
+        "action": "fetch",
+        "url": "https://example.test/article",
+        "method": "GET",
+        "path": "article.bin",
+    }
+    with pytest.raises(ValueError, match="expired or was consumed"):
+        await driver.execute(value, "key-1", "task-1", 1, "step-1")
+    assert len(requests) == 1
+
+
+async def test_page_change_during_download_approval_sends_no_request(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    driver, page, _, guard = fixture(tmp_path)
+    driver.downloads = BrowserDownloads(tmp_path / "state", tmp_path)
+
+    async def never(*_: Any, **__: Any) -> Any:
+        raise AssertionError("changed page must stop before HTTP")
+
+    monkeypatch.setattr(driver.downloads, "_fetch", never)
+    value = download_spec(await driver.observe(), tmp_path)
+    guard.before = lambda: page.state["elements"][0].update(href="/different-file")
+    with pytest.raises(ValueError, match="changed"):
+        await driver.execute(value, "key-1", "task-1", 1, "step-1")
+    assert not (tmp_path / "article.bin").exists()
+    assert driver.downloads._row("key-1") is None
+
+
+async def test_download_requires_configured_durable_store_and_execution_identity(
+    tmp_path: Path,
+) -> None:
+    driver, _, _, _ = fixture(tmp_path)
+    value = download_spec(await driver.observe(), tmp_path)
+    with pytest.raises(ValueError, match="receipts are unavailable"):
+        await driver.execute(value)
+    driver.downloads = BrowserDownloads(tmp_path / "state", tmp_path)
+    with pytest.raises(ValueError, match="request key"):
+        await driver.execute(value)

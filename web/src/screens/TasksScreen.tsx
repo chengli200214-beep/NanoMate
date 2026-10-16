@@ -28,7 +28,7 @@ export function TasksScreen() {
   const [preview, setPreview] = useState("");
   const [bindings, setBindings] = useState<{ id: string; title: string; module: string; status: string }[]>([]);
   const [projects, setProjects] = useState<{ id: string; title: string }[]>([]);
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState(() => typeof window === "undefined" ? "" : new URLSearchParams(window.location?.search ?? "").get("task") ?? "");
   const [detail, setDetail] = useState<Task | null>(null);
   const [title, setTitle] = useState("");
   const [criteria, setCriteria] = useState("");
@@ -134,6 +134,7 @@ export function TasksScreen() {
           {step.status === "waiting_user" && detail.status === "waiting_user" && ["file", "browser", "native"].includes(step.spec.adapter) && <button className={buttonClass} disabled={busy} onClick={() => void run(() => post(`/api/assistant/tasks/${selected}/steps/${step.id}/authorize-action`, { expected_revision: detail.revision }))}>{t("Approve this exact action")}</button>}
           {step.status === "outcome_unknown" && <p role="status">{t("The input may have reached its target. Take over, observe the current state and revise the remaining plan. Do not repeat the old input.")}</p>}
           {step.result.run_id && <p className="text-sm text-muted">{t("Research run")}: {step.result.run_id}</p>}
+          {step.spec.project_id && <a className="text-sm underline" href={`/?tab=research&project=${encodeURIComponent(step.spec.project_id)}`}>{t("Open research project")}</a>}
           {step.status === "needs_attention" && <p role="status">{t("Review the current inputs and create a revised plan.")}</p>}
           {step.result.user_evidence && <p>{step.result.user_evidence}</p>}
           {step.result.reminder && <p className="text-sm">{t("Reminder configuration saved")}: {step.result.reminder.id} · {t("Revision")} {step.result.reminder.revision}</p>}

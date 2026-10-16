@@ -363,7 +363,7 @@ class ReminderStore:
             if expected_next_at is not None and item.next_at != expected_next_at:
                 return None
             now = now or _now()
-            nxt = next_check_in(item.repeat, now.astimezone()) if item.repeat else None
+            nxt = next_check_in(item.repeat, now, local_time=True) if item.repeat else None
             self._conn.execute(
                 "UPDATE reminders SET next_at=?, status=?, last_fired_at=?, fired=fired+1, "
                 "revision=revision+1 WHERE id=?",

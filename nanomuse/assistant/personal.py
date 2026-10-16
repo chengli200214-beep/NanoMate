@@ -8,7 +8,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from nanomuse.assistant.browser_actions import BrowserActions, BrowserSpec
+from nanomuse.assistant.browser_actions import BrowserActions, BrowserSpec, prepare_download
 from nanomuse.assistant.documents import DocumentArtifacts, DocumentSpec, prepare
 from nanomuse.assistant.execution import ExecutionJournal
 from nanomuse.assistant.file_actions import FileActions, FileSpec
@@ -89,7 +89,7 @@ class PersonalRuntime:
         )
         self.reminders = ReminderActions(service.app.reminders)
         self.files = FileActions(service.data_dir / "assistant", self.workspace)
-        self.browser = BrowserActions(service, self.workspace)
+        self.browser = BrowserActions(service, self.workspace, service.data_dir / "assistant")
         self.native = NativeActions(service, self.workspace)
         self.journal = ExecutionJournal(service.data_dir / "assistant" / "actions.sqlite3")
         self._surface_owner = ""
@@ -121,8 +121,16 @@ class PersonalRuntime:
         )
 
     def validate(self, plan: Plan) -> None:
+        planned_directories: set[str] = set()
+        targets: set[str] = set()
         for position, step in enumerate(plan.steps):
+            if step.browser is not None:
+                step.browser = prepare_download(step.browser, self.workspace)
             if step.file is not None:
+                target = step.file.path.casefold()
+                if target in targets:
+                    raise ValueError("A plan cannot write the same file target twice")
+                targets.add(target)
                 reference = step.file.content_from_step
                 browser_source = (
                     plan.steps[reference].browser
@@ -136,7 +144,11 @@ class PersonalRuntime:
                     or browser_source.action != "extract"
                 ):
                     raise ValueError("File content must reference an earlier browser extract step")
-                step.file = prepare_file(step.file, self.workspace)
+                step.file = prepare_file(
+                    step.file, self.workspace, planned_directories=planned_directories
+                )
+                if step.file.action == "mkdir":
+                    planned_directories.add(target)
             if step.document is not None:
                 step.document = prepare(step.document, self.workspace)
             if step.reminder is not None and step.reminder.action != "create":
@@ -254,7 +266,17 @@ class PersonalRuntime:
             if previous is not None:
                 return previous
             if adapter == "browser":
-                output = await self.browser.execute(BrowserSpec.model_validate(spec[adapter]))
+                browser_spec = BrowserSpec.model_validate(spec[adapter])
+                if browser_spec.action == "download":
+                    output = await self.browser.execute(
+                        browser_spec,
+                        f"assistant:{step['id']}",
+                        step["task_id"],
+                        step["revision"],
+                        step["id"],
+                    )
+                else:
+                    output = await self.browser.execute(browser_spec)
             else:
                 output = await self.native.execute(NativeSpec.model_validate(spec[adapter]))
                 if isinstance(output.get("observation"), dict):
@@ -317,6 +339,15 @@ class PersonalRuntime:
             row = self.journal.get(step["id"])
             if row is None:
                 return "cancelled", {"adapter": adapter, "cancelled_before_execution": True}
+            if (
+                adapter == "browser"
+                and step["spec"]["browser"]["action"] == "download"
+                and self.browser.downloads is not None
+            ):
+                status, evidence = self.browser.downloads.cancel_evidence(key)
+                if status == "completed":
+                    self.journal.finish(step["id"], {"adapter": adapter, **evidence})
+                return status, {"adapter": adapter, **evidence}
             if row["status"] == "completed":
                 return "completed", {**row["result"], "recovered_receipt": True}
             return "outcome_unknown", {
@@ -380,6 +411,17 @@ class PersonalRuntime:
         if step["spec"]["adapter"] in {"browser", "native"}:
             receipt = self.journal.get(step["id"])
             if receipt is not None:
+                if (
+                    step["spec"]["adapter"] == "browser"
+                    and step["spec"]["browser"]["action"] == "download"
+                    and self.browser.downloads is not None
+                ):
+                    status, evidence = self.cancel_evidence(step)
+                    if status == "cancelled":
+                        status = "needs_attention"
+                        evidence = {"requires_new_preview": True, "stopped_before_download": True}
+                    self.ledger.reconcile(step["id"], status, evidence)
+                    return
                 if receipt["status"] == "completed":
                     self.ledger.reconcile(
                         step["id"], "completed", {**receipt["result"], "recovered_receipt": True}

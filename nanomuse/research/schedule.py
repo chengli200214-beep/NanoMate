@@ -6,6 +6,8 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from nanomuse.scheduling import civil_occurrence
+
 
 def next_check(now: float, tracking: dict[str, Any]) -> float:
     name = tracking["timezone"]
@@ -20,9 +22,10 @@ def next_check(now: float, tracking: dict[str, Any]) -> float:
     try:
         hour, minute = map(int, tracking["daily_time"].split(":"))
         local = datetime.fromtimestamp(now, UTC).astimezone(zone)
-        due = local.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        for offset in range(3):
+            due = civil_occurrence(local.date() + timedelta(days=offset), hour, minute, zone)
+            if due is not None and due.timestamp() > now:
+                return due.timestamp()
     except (ValueError, TypeError) as exc:
         raise ValueError("Daily check time must use HH:mm") from exc
-    if due.timestamp() <= now:
-        due += timedelta(days=1)
-    return due.timestamp()
+    raise ValueError("No valid daily check time in the next three dates")

@@ -228,6 +228,9 @@ class AgentSettings(BaseModel):
     user_profile: str = ""
     # Extra instructions appended to the system prompt.
     instructions: str = ""
+    # The isolated personal assistant keeps computer effects in approved ledger steps.
+    # Other runtime/desktop profiles retain their existing tool availability.
+    task_ledger_only: bool = False
 
 
 class SentinelRule(BaseModel):

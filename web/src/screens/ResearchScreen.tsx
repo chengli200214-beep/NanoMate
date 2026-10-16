@@ -52,7 +52,7 @@ export function ResearchScreen() {
   const t = useT();
   const { toast } = useStore();
   const [projects, setProjects] = useState<ResearchProject[]>([]);
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState(() => typeof window === "undefined" ? "" : new URLSearchParams(window.location?.search ?? "").get("project") ?? "");
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");

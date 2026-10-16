@@ -2141,9 +2141,12 @@ class MuseService:
             )
         main = self.threads.get(MAIN_THREAD)
         if main is not None:
-            recent = [e for e in main.timeline.events if e.get("type") in ("user", "assistant")][
-                -8:
-            ]
+            recent = [
+                e
+                for e in main.timeline.events
+                if e.get("type") in ("user", "assistant")
+                and not e.get("source_content_is_untrusted")
+            ][-8:]
             for e in recent:
                 context_lines.append(f"- recent {e['type']}: {str(e.get('text', ''))[:200]}")
         if self.settings.agent.user_profile.strip():
@@ -2311,9 +2314,12 @@ class MuseService:
                 lines.append("- today on the calendar:\n" + cal.render(agenda, today))
         main = self.threads.get(MAIN_THREAD)
         if main is not None:
-            recent = [e for e in main.timeline.events if e.get("type") in ("user", "assistant")][
-                -6:
-            ]
+            recent = [
+                e
+                for e in main.timeline.events
+                if e.get("type") in ("user", "assistant")
+                and not e.get("source_content_is_untrusted")
+            ][-6:]
             for e in recent:
                 lines.append(f"- recent {e['type']}: {str(e.get('text', ''))[:200]}")
         lines.append(f"- today's date: {datetime.now().strftime('%A %d %B %Y')}")

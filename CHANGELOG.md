@@ -10,6 +10,10 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Runtime
 
+- Connected main-chat research creation and condition updates to recoverable task links and deduplicated local result notices. Added verified public-link downloads, blocked unsolicited ledger attachments, and allowed file plans to create destination folders before classification. Scoped confirmed preferences by purpose, handled missing and repeated civil times, and added a hash-locked Windows assistant environment. Research reports disclosed pending semantic review and checked explicit evidence locations.
+
+- Restricted the personal assistant's model tools so file, browser, desktop, reminder and preference changes used their task or consent flows. Added isolated acceptance fixtures, shared evaluation spending reservations and evidence-bound manual verdicts. Local channel commands bypassed environment proxies when contacting the loopback service.
+
 - Connected previewed workspace file operations, observed browser actions and bounded Windows native actions to the task ledger, with per-step approval, manual takeover and recovery that stopped uncertain input from replaying. Paused workers reconciled existing receipts without repeating operations and retained manual control; returning it required the user's task controls. Cancellation retained unknown outcomes for review.
 
 - Connected reminder edits, verified local Markdown excerpts and explicitly confirmed personal preferences to versioned tasks, with replay receipts, artifact hash checks and preference removal from memory after deletion or expiry.

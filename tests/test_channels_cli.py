@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import json
 import socket
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
@@ -12,8 +14,9 @@ import httpx
 import pytest
 from typer.testing import CliRunner
 
-from nanomuse.channels.cli import channels_app
+from nanomuse.channels.cli import _Server, channels_app
 from nanomuse.channels.store import PairingStore
+from nanomuse.config import Settings
 
 runner = CliRunner()
 
@@ -70,6 +73,44 @@ def test_offline_status_pending_approve_deny(config: Path, tmp_path: Path):
     assert r.exit_code == 1 and "not running" in r.output
     r = run("login", "dingtalk", "--config", str(config))
     assert r.exit_code == 1 and "only `login feishu`" in r.output
+
+
+def test_local_runtime_request_never_reaches_environment_proxy(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list[tuple[str, str]] = []
+
+    class ProxyTrap(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            seen.append((self.path, self.headers.get("Authorization", "")))
+            self.send_response(502)
+            self.end_headers()
+
+        def log_message(self, format: str, *args: Any) -> None:
+            pass
+
+    with ThreadingHTTPServer(("127.0.0.1", 0), ProxyTrap) as proxy:
+        thread = threading.Thread(
+            target=proxy.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True
+        )
+        thread.start()
+        try:
+            address = f"http://127.0.0.1:{proxy.server_port}"
+            for name in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY"):
+                monkeypatch.setenv(name, address)
+            monkeypatch.setenv("NO_PROXY", "")
+            # Bound but not listening: the runtime is definitely offline, and no
+            # other fixture can acquire this port during the request.
+            with socket.socket() as offline:
+                offline.bind(("127.0.0.1", 0))
+                settings.server.host = "127.0.0.1"
+                settings.server.port = offline.getsockname()[1]
+                settings.server.token = "fixture-local-session"
+                assert _Server(settings).call("GET", "/api/channels") is None
+            assert seen == [], "The runtime credential must not be sent to a host proxy"
+        finally:
+            proxy.shutdown()
+            thread.join(timeout=2)
 
 
 def test_with_a_server_the_api_is_called(

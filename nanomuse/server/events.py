@@ -11,6 +11,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
+import threading
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -52,6 +54,8 @@ class Timeline:
         self._flush_handle: asyncio.TimerHandle | None = None
         self._writing: asyncio.Future[Any] | None = None
         self._dirty = False
+        self._durable_lock = asyncio.Lock()
+        self._file_lock = threading.RLock()
         self._load()
 
     def _load(self) -> None:
@@ -75,10 +79,7 @@ class Timeline:
 
     def _write(self, payload: str) -> None:
         try:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            tmp = self.path.with_suffix(".tmp")
-            tmp.write_text(payload, "utf-8")
-            tmp.replace(self.path)
+            self._write_confirmed(payload)
         except OSError as exc:  # pragma: no cover
             logger.warning("could not save timeline {}: {}", self.path, exc)
 
@@ -125,6 +126,60 @@ class Timeline:
             self.events = self.events[-self.max_events :]
         self.save()
         return event
+
+    async def add_durable(self, event: dict[str, Any]) -> bool:
+        """Persist a keyed local notification before its outbox is acknowledged.
+
+        Ordinary streaming events keep their coalesced writes. This path waits for
+        those writes, then exposes its write as the in-flight writer so a stale
+        snapshot cannot overwrite the acknowledged notification. Retrying an ID
+        does not add another bubble. A failed write raises and leaves it retryable.
+        """
+        if not event.get("id"):
+            raise ValueError("Durable events require a stable ID")
+        async with self._durable_lock:
+            if self._writing is not None:
+                try:
+                    await asyncio.shield(self._writing)
+                except OSError:
+                    # A previous strict write failed. Its outbox was not acknowledged.
+                    pass
+            existing = self.get(event["id"])
+            if existing is not None and any(
+                existing.get(key) != value
+                for key, value in event.items()
+                if key not in {"ts", "thread"}
+            ):
+                raise ValueError("Notification ID already used with different content")
+            added = existing is None
+            if added:
+                self.add(dict(event))
+            if self._flush_handle is not None:
+                self._flush_handle.cancel()
+                self._flush_handle = None
+            self._dirty = False
+            loop = asyncio.get_running_loop()
+            self._writing = loop.run_in_executor(None, self._write_confirmed, self._payload())
+            try:
+                await asyncio.shield(self._writing)
+            except BaseException:
+                self._dirty = True
+                raise
+            return added
+
+    def _write_confirmed(self, payload: str) -> None:
+        # Shutdown flushes can overlap executor writes. Serialize both and take the
+        # newest in-memory snapshot inside the lock, so a queued old snapshot cannot
+        # overwrite a notification, a later message, or an explicit user clear.
+        with self._file_lock:
+            payload = self._payload()
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = self.path.with_suffix(".tmp")
+            with tmp.open("w", encoding="utf-8") as stream:
+                stream.write(payload)
+                stream.flush()
+                os.fsync(stream.fileno())
+            tmp.replace(self.path)
 
     def update(self, event_id: str, **fields: Any) -> dict[str, Any] | None:
         ev = self._index.get(event_id)

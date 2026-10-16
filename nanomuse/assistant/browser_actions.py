@@ -18,13 +18,15 @@ from urllib.parse import urljoin, urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from nanomuse.assistant.browser_downloads import BrowserDownloads
+from nanomuse.assistant.file_actions import _missing, _relative, _root
 from nanomuse.schema import Function, RiskLevel, ToolCall, ToolResult
 from nanomuse.tools.base import BaseTool, CallAssessment
 from nanomuse.tools.browser import Browser
 from nanomuse.tools.browser_backends import BrowserBackend
 from nanomuse.tools.web import host_of
 
-_INTERACTIONS = {"fill", "click"}
+_INTERACTIONS = {"fill", "click", "download"}
 _OBSERVATION_TTL = 300.0
 _SENSITIVE = re.compile(
     r"password|passwd|passcode|one.?time|\botp\b|captcha|credit.?card|card.?number|"
@@ -93,15 +95,24 @@ class BrowserSpec(BaseModel):
 
     model_config = ConfigDict(extra="forbid", strict=True)
 
-    action: Literal["navigate", "extract", "fill", "click"]
+    action: Literal["navigate", "extract", "fill", "click", "download"]
     url: str | None = Field(default=None, max_length=4096)
     index: int | None = Field(default=None, ge=0, le=149)
     text: str | None = Field(default=None, max_length=10000)
     expected_url: str | None = Field(default=None, max_length=4096)
     observation_hash: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    path: str | None = Field(default=None, max_length=1024)
+    target_absent: bool = False
 
     @model_validator(mode="after")
     def valid_action(self) -> BrowserSpec:
+        if self.path is not None:
+            self.path = _relative(self.path)
+        if self.action == "download":
+            if self.path is None:
+                raise ValueError("A download needs an ordinary relative workspace path")
+        elif self.path is not None or self.target_absent:
+            raise ValueError("Only download accepts a destination path")
         if self.url is not None:
             _url(self.url)
         if self.expected_url is not None:
@@ -121,10 +132,20 @@ class BrowserSpec(BaseModel):
             or self.expected_url is None
             or self.observation_hash is None
             or (self.action == "fill" and self.text is None)
-            or (self.action == "click" and self.text is not None)
+            or (self.action in {"click", "download"} and self.text is not None)
         ):
             raise ValueError("An interaction needs a fresh observation, URL and element index")
         return self
+
+
+def prepare_download(spec: BrowserSpec | dict[str, Any], workspace: Path) -> BrowserSpec:
+    """Freeze the absent workspace destination in the reviewable task plan."""
+    parsed = BrowserSpec.model_validate(spec)
+    if parsed.action != "download":
+        return parsed
+    assert parsed.path is not None
+    _missing(_root(workspace), parsed.path)
+    return parsed.model_copy(update={"target_absent": True})
 
 
 class _BrowserLedgerTool(BaseTool):
@@ -136,6 +157,10 @@ class _BrowserLedgerTool(BaseTool):
     reads_private_data: bool = True
     driver: Any
     spec: BrowserSpec
+    request_key: str = ""
+    task_id: str = ""
+    revision: int = 1
+    step_id: str = ""
 
     def assess(self, args: dict[str, Any]) -> CallAssessment:
         original = self.driver.browser().assess(self.driver.tool_arguments(self.spec))
@@ -146,15 +171,24 @@ class _BrowserLedgerTool(BaseTool):
             values["egress"] = True
             values["egress_target"] = self.driver.interaction_host(self.spec)
             values["target"] = values["egress_target"]
-            values["warnings"] = [
-                "A draft field may save immediately on the website. Form submission, "
-                "credentials, payments and destructive controls are not supported here."
-            ]
+            values["warnings"] = (
+                [
+                    "Download one observed public link, without browser cookies, into a new "
+                    "workspace file. The limit is 16 MiB. The file is never opened or executed."
+                ]
+                if self.spec.action == "download"
+                else [
+                    "A draft field may save immediately on the website. Form submission, "
+                    "credentials, payments and destructive controls are not supported here."
+                ]
+            )
         return CallAssessment.model_validate(values)
 
     async def execute(self, **_: Any) -> ToolResult:
         try:
-            result = await self.driver._execute(self.spec)
+            result = await self.driver._execute(
+                self.spec, self.request_key, self.task_id, self.revision, self.step_id
+            )
             return ToolResult(output=json.dumps(result, ensure_ascii=False))
         except (ValueError, RuntimeError, LookupError) as exc:
             return ToolResult.fail(str(exc))
@@ -182,12 +216,13 @@ class BrowserActions:
     a previous interaction after a process restart or certify that a remote write failed.
     """
 
-    def __init__(self, service: Any, workspace: Path):
+    def __init__(self, service: Any, workspace: Path, data_dir: Path | None = None):
         self.service = service
         self.workspace = Path(workspace)
         self._observation: dict[str, Any] | None = None
         self._manual = False
         self.can_execute: Callable[[], bool] | None = None
+        self.downloads = BrowserDownloads(data_dir, workspace) if data_dir is not None else None
 
     def browser(self) -> Browser:
         browser = self.service.browser
@@ -221,10 +256,12 @@ class BrowserActions:
     def tool_arguments(self, spec: BrowserSpec) -> dict[str, Any]:
         if spec.action == "fill":
             return {"action": "type", "index": spec.index, "text": spec.text, "submit": False}
-        if spec.action == "click":
+        if spec.action in {"click", "download"}:
             # Following an ordinary anchor through navigate avoids page click handlers.
             target = self._pending_element(spec)
             href = urljoin(spec.expected_url or "", str(target.get("href", "")))
+            if spec.action == "download":
+                return {"action": "fetch", "url": href, "method": "GET", "path": spec.path}
             return {"action": "navigate", "url": href}
         return {"action": spec.action, **({"url": spec.url} if spec.url else {})}
 
@@ -236,12 +273,33 @@ class BrowserActions:
             return {}
         return next((e for e in self._observation["elements"] if e.get("index") == spec.index), {})
 
-    async def execute(self, spec: BrowserSpec) -> dict[str, Any]:
+    async def execute(
+        self,
+        spec: BrowserSpec,
+        request_key: str = "",
+        task_id: str = "",
+        revision: int = 1,
+        step_id: str = "",
+    ) -> dict[str, Any]:
         browser = self.browser()
         if self._held(browser):
             self.invalidate()
             raise ValueError("The user controls the browser; hand it back and observe again")
-        tool = _BrowserLedgerTool(driver=self, spec=spec)
+        if spec.action == "download":
+            if self.downloads is None:
+                raise ValueError(
+                    "Download receipts are unavailable; configure the assistant data directory"
+                )
+            # Validate durable identity before approval, without reading or sending a request.
+            self.downloads._payload(spec.model_dump(), request_key, task_id, revision, step_id)
+        tool = _BrowserLedgerTool(
+            driver=self,
+            spec=spec,
+            request_key=request_key,
+            task_id=task_id,
+            revision=revision,
+            step_id=step_id,
+        )
         result = await self.service.app.sentinel.guard(
             ToolCall(
                 function=Function(name="browser", arguments=json.dumps(self.tool_arguments(spec)))
@@ -319,7 +377,17 @@ class BrowserActions:
         }
         return self._observation
 
-    async def _execute(self, spec: BrowserSpec) -> dict[str, Any]:
+    def _download_running(self) -> None:
+        self._check_running()
+        browser = self.browser()
+        if self._held(browser):
+            raise ValueError("User took over before download publication")
+        if browser.input_fence is not None and (reason := browser.input_fence()):
+            raise ValueError(reason)
+
+    async def _execute(
+        self, spec: BrowserSpec, request_key: str, task_id: str, revision: int, step_id: str
+    ) -> dict[str, Any]:
         browser = self.browser()
         async with browser.lock:
             self._check_running()
@@ -327,83 +395,115 @@ class BrowserActions:
                 self.invalidate()
                 raise ValueError("Browser is under human control; a fresh observation is required")
             backend = browser._pick_backend()
-            await backend.ensure()
-            before: dict[str, Any] | None = None
-            args = self.tool_arguments(spec)
-            if spec.action in _INTERACTIONS:
-                before = self._observation
-                self.invalidate()  # consume even a rejected token, never retry by index
-                if (
-                    before is None
-                    or before["observation_hash"] != spec.observation_hash
-                    or before["expires_at"] < time.time()
-                    or before["url"] != spec.expected_url
-                ):
-                    raise ValueError("Observation expired or was consumed; observe the page again")
-                current = await self._capture(browser, backend)
-                if _digest(current) != before["state_hash"]:
-                    raise ValueError("Page, focus or viewport changed; observe the page again")
-                if (
-                    not current.get("focused")
-                    or current.get("visibility") != "visible"
-                    or current.get("ready_state") != "complete"
-                ):
-                    raise ValueError("Page is not focused, visible and fully loaded")
-                element = next(
-                    (e for e in current["elements"] if e.get("index") == spec.index), None
+            checkpoint = backend.begin_ledger_action()
+            try:
+                await backend.ensure()
+                return await self._execute_on_page(
+                    browser, backend, spec, request_key, task_id, revision, step_id
                 )
-                if element is None:
-                    raise ValueError("Element is no longer present")
-                self._validate_element(spec, element)
-                self._check_running()
-                if self._held(browser):
-                    raise ValueError("User took over before the browser action")
-            else:
-                self.invalidate()
-            result = await browser._act(
-                backend,
-                str(args["action"]),
-                args.get("url"),
-                args.get("index"),
-                args.get("text"),
-                False,
-                None,
-                "down",
-            )
-            if result.error:
-                raise ValueError(result.error)
-            after = await self._capture(browser, backend)
-            if spec.action == "fill":
-                field: dict[str, Any] = next(
-                    (e for e in after["elements"] if e.get("index") == spec.index), {}
-                )
-                original: dict[str, Any] = next(
-                    (e for e in (before or {}).get("elements", []) if e.get("index") == spec.index),
-                    {},
-                )
-                if (
-                    field.get("value") != spec.text
-                    or after["url"] != spec.expected_url
-                    or any(
-                        field.get(key) != original.get(key)
-                        for key in ("tag", "type", "name", "label", "autocomplete")
-                    )
-                ):
+            finally:
+                if await backend.finish_ledger_action(checkpoint):
+                    self.invalidate()
                     raise ValueError(
-                        "Draft field value could not be verified; do not retry blindly"
+                        "The page offered an unexpected attachment. It was not saved; "
+                        "observe again and create an explicit download step."
                     )
-            return {
-                "action": spec.action,
-                "effective_action": args["action"],
-                "before_hash": before["state_hash"] if before else None,
-                "observation": self._remember(after),
-                "text": after["text"],
-                "verification": "browser_fresh_observation",
-                "explicit_submit": False,
-                "remote_effects": "not_verified"
-                if spec.action in _INTERACTIONS
-                else "not_requested",
-            }
+
+    async def _execute_on_page(
+        self,
+        browser: Browser,
+        backend: BrowserBackend,
+        spec: BrowserSpec,
+        request_key: str,
+        task_id: str,
+        revision: int,
+        step_id: str,
+    ) -> dict[str, Any]:
+        before: dict[str, Any] | None = None
+        args = self.tool_arguments(spec)
+        if spec.action in _INTERACTIONS:
+            before = self._observation
+            self.invalidate()  # consume even a rejected token, never retry by index
+            if (
+                before is None
+                or before["observation_hash"] != spec.observation_hash
+                or before["expires_at"] < time.time()
+                or before["url"] != spec.expected_url
+            ):
+                raise ValueError("Observation expired or was consumed; observe the page again")
+            current = await self._capture(browser, backend)
+            if _digest(current) != before["state_hash"]:
+                raise ValueError("Page, focus or viewport changed; observe the page again")
+            if (
+                not current.get("focused")
+                or current.get("visibility") != "visible"
+                or current.get("ready_state") != "complete"
+            ):
+                raise ValueError("Page is not focused, visible and fully loaded")
+            element = next((e for e in current["elements"] if e.get("index") == spec.index), None)
+            if element is None:
+                raise ValueError("Element is no longer present")
+            self._validate_element(spec, element)
+            self._check_running()
+            if self._held(browser):
+                raise ValueError("User took over before the browser action")
+        else:
+            self.invalidate()
+        if spec.action == "download":
+            assert self.downloads is not None
+            download_result = await self.downloads.execute(
+                spec.model_dump(),
+                str(args["url"]),
+                request_key,
+                task_id,
+                revision,
+                step_id,
+                self._download_running,
+                timeout=browser.timeout_ms / 1000,
+            )
+            # The verified file receipt remains useful after a page changes. A download
+            # neither navigates the page nor issues a new element interaction token.
+            return {**download_result, "before_hash": before["state_hash"] if before else None}
+        result = await browser._act(
+            backend,
+            str(args["action"]),
+            args.get("url"),
+            args.get("index"),
+            args.get("text"),
+            False,
+            None,
+            "down",
+        )
+        if result.error:
+            raise ValueError(result.error)
+        after = await self._capture(browser, backend)
+        if spec.action == "fill":
+            field: dict[str, Any] = next(
+                (e for e in after["elements"] if e.get("index") == spec.index), {}
+            )
+            original: dict[str, Any] = next(
+                (e for e in (before or {}).get("elements", []) if e.get("index") == spec.index),
+                {},
+            )
+            if (
+                field.get("value") != spec.text
+                or after["url"] != spec.expected_url
+                or any(
+                    field.get(key) != original.get(key)
+                    for key in ("tag", "type", "name", "label", "autocomplete")
+                )
+            ):
+                raise ValueError("Draft field value could not be verified; do not retry blindly")
+        return {
+            "action": spec.action,
+            "effective_action": args["action"],
+            "before_hash": before["state_hash"] if before else None,
+            "observation": self._remember(after),
+            "text": after["text"],
+            "verification": "browser_fresh_observation",
+            "explicit_submit": False,
+            "remote_effects": "not_verified" if spec.action in _INTERACTIONS else "not_requested",
+        }
 
     @staticmethod
     def _validate_element(spec: BrowserSpec, element: dict[str, Any]) -> None:

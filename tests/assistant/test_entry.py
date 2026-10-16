@@ -58,7 +58,7 @@ def test_assistant_profile_keeps_auth_and_local_tools(tmp_path: Path) -> None:
     assert settings.memory.enabled
 
 
-def call(name: str, **arguments: str) -> ToolCall:
+def call(name: str, **arguments: object) -> ToolCall:
     return ToolCall(function=Function(name=name, arguments=json.dumps(arguments)))
 
 
@@ -77,23 +77,51 @@ def test_chat_tools_research_and_authenticated_inventory_coexist(settings: Setti
     settings.hub.enabled = False
     settings.cloud.models = settings.cloud.sync = False
     settings.memory.embeddings = "off"
+    settings.agent.task_ledger_only = True
     llm = MockLLM(
         [
             LLMResponse(
-                tool_calls=[call("files", action="write", path="notes.md", content="Notes")]
+                tool_calls=[
+                    call(
+                        "assistant_tasks",
+                        action="create",
+                        request_id="chat-notes",
+                        plan={
+                            "title": "Save notes",
+                            "success_criteria": "The workspace notes match the requested text",
+                            "steps": [
+                                {
+                                    "adapter": "file",
+                                    "title": "Save notes.md",
+                                    "file": {
+                                        "action": "write",
+                                        "path": "notes.md",
+                                        "content": "Notes",
+                                    },
+                                },
+                                {
+                                    "adapter": "reminder",
+                                    "title": "Review notes reminder",
+                                    "reminder": {
+                                        "action": "create",
+                                        "text": "Review notes",
+                                        "at": "2099-01-01T09:00:00+08:00",
+                                    },
+                                },
+                            ],
+                        },
+                    )
+                ]
             ),
             LLMResponse(
                 tool_calls=[
                     call(
                         "reminders",
-                        action="create",
-                        kind="remind",
-                        text="Review notes",
-                        at="2099-01-01T09:00:00+08:00",
+                        action="list",
                     )
                 ]
             ),
-            LLMResponse(content="Saved the notes and reminder."),
+            LLMResponse(content="Queued notes and reminder. Please review the file preview."),
         ]
     )
     service = MuseService(settings, llm=llm)
@@ -113,6 +141,28 @@ def test_chat_tools_research_and_authenticated_inventory_coexist(settings: Setti
         response = client.post("/api/threads/main/send", json={"text": "Save notes and remind me."})
         assert response.status_code == 200
         wait_idle(service)
+        assert not (settings.agent.workspace / "notes.md").exists()
+        task = client.get("/api/assistant/tasks").json()[0]
+        until = time.monotonic() + 10
+        while time.monotonic() < until:
+            task = client.get(f"/api/assistant/tasks/{task['id']}").json()
+            if task["status"] == "waiting_user":
+                break
+            time.sleep(0.02)
+        assert task["status"] == "waiting_user"
+        step = task["steps"][0]
+        response = client.post(
+            f"/api/assistant/tasks/{task['id']}/steps/{step['id']}/authorize-action",
+            json={"request_id": "approve-notes", "expected_revision": 1},
+        )
+        assert response.status_code == 200
+        until = time.monotonic() + 10
+        while time.monotonic() < until:
+            task = client.get(f"/api/assistant/tasks/{task['id']}").json()
+            if task["status"] == "completed":
+                break
+            time.sleep(0.02)
+        assert task["status"] == "completed"
         assert (settings.agent.workspace / "notes.md").read_text("utf-8") == "Notes"
         assert len(service.app.reminders.list()) == 1
         bindings = client.get("/api/assistant/module-bindings").json()

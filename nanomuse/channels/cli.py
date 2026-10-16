@@ -91,7 +91,14 @@ class _Server:
 
         try:
             response = httpx.request(
-                method, self.base + path, json=body, headers=self.headers, timeout=15
+                method,
+                self.base + path,
+                json=body,
+                headers=self.headers,
+                timeout=15,
+                # This is the local runtime's API. A host proxy must neither turn
+                # connection refusal into a gateway error nor receive its bearer.
+                trust_env=False,
             )
         except httpx.ConnectError:
             return None

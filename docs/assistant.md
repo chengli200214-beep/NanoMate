@@ -16,10 +16,27 @@ From the assistant checkout, using its configured Python dependencies:
 python scripts/assistant_dev.py --offline
 ```
 
+For a separate Windows Python 3.13 environment, runtime, development, browser and hands
+dependencies are hash-locked in `requirements-assistant-windows.txt`:
+
+```powershell
+uv venv .venv-assistant --python 3.13
+uv pip sync requirements-assistant-windows.txt --python .venv-assistant/Scripts/python.exe --require-hashes --default-index https://pypi.org/simple --no-config
+uv pip install --python .venv-assistant/Scripts/python.exe --no-deps -e . --default-index https://pypi.org/simple --no-config
+.venv-assistant/Scripts/python.exe -m playwright install chromium
+.venv-assistant/Scripts/python.exe scripts/assistant_dev.py --offline
+```
+
+The lock is Windows-specific. Keep this environment separate from any pending recovery
+observation and do not enable system site packages. Chromium is a separate installation.
+
 The default address is `http://127.0.0.1:8788/?tab=chat`. Open the private shortcut
 `.local/assistant-dev/open-assistant.url` to pair the browser. The shortcut contains a local
 token and must not be shared. Authentication stays enabled. The research-only launcher
 and its default port 8787 are unchanged.
+
+Local channel CLI commands contact the loopback service directly, without environment
+proxies. Their local authorization token stays on that connection.
 
 The entry rejects a nonempty directory that does not belong to this assistant profile.
 An OS lock prevents two assistant launchers using the same directory and releases when
@@ -134,8 +151,15 @@ The file adapter supports `write`, `copy`, `move` and `mkdir` within the selecte
 Its preview freezes the source hash for a copy or move and requires an absent target.
 Targets and parent directories must be ordinary workspace paths; absolute paths, traversal,
 symbolic links, junctions and Windows device names are rejected. Parent directories must
-already exist. Existing files and directories are never overwritten. A conflict, locked file
+already exist unless created by an earlier `mkdir` step. Existing files and directories are
+never overwritten. A conflict, locked file
 or changed source requires reviewing the error and a new plan rather than forcing a write.
+
+A plan may create a directory with an earlier `mkdir` step, then move or copy existing
+files into it. Validation freezes source hashes and checks future paths without creating
+directories. Each action still needs its exact preview approval. Execution checks the actual
+parents again; substituted files, symbolic links or junctions block publication. Repeated
+target paths within the file plan are rejected.
 
 Text writes accept at most 1 MiB of UTF-8 content; copy/move sources are limited to 16 MiB.
 Publication uses a staged file and a non-overwriting link, with resulting identity and byte
@@ -155,12 +179,30 @@ This connects browser reading to a local file without treating page content as i
 Enable the existing browser tool and configure its backend. Playwright also needs its
 Chromium binary; a configured backend alone does not prove that it can launch. The adapter
 reuses the existing browser, profile, live view and Sentinel. It supports `navigate`,
-`extract`, `fill` for ordinary text draft fields and `click` for ordinary HTTP(S) links.
+`extract`, `fill` for ordinary text draft fields, `click` for ordinary HTTP(S) links and
+`download` for one observed public link.
 Link following uses navigation to the observed URL, avoiding the page's click handlers.
 Buttons, form submission, credentials, verification codes, payments and destructive controls
-require the user. Arbitrary key presses, downloads and browser fetch requests are not part
+require the user. Arbitrary key presses and general browser fetch requests are not part
 of this ledger adapter. A website may save a draft as soon as a field changes, so filling
 still receives a sensitive action assessment.
+
+A download needs a fresh observed anchor and a new workspace-relative `path`. It sends a
+public HTTP(S) GET without browser cookies or authentication. Private hosts, compressed
+responses and redirects to a different origin are refused. The size limit is 16 MiB and
+the total deadline is the browser timeout, capped at 120 seconds. A completed receipt
+records source and final URLs, size and SHA-256; the file is neither opened nor executed.
+Interrupted requests are not fetched again automatically. Recovery only acknowledges the
+recorded file identity and bytes; a missing or changed published file requires inspection.
+Ledger page actions cancel unsolicited browser attachments, including delayed page downloads,
+instead of letting the browser save them outside the reviewed destination.
+
+Downloads use the existing public-address transport: every DNS answer is validated and the
+connection is pinned to the validated address with the original HTTPS hostname. System DNS
+is the default. Networks returning synthetic private addresses are refused. An operator may
+explicitly set `NANOMUSE_ASSISTANT_DNS=cloudflare` to send download hostnames to Cloudflare's
+fixed HTTPS resolver. This setting is separate from research DNS, never inherited from it,
+and never selected automatically. Private answers still fail. It does not modify system DNS.
 
 Choose **Observe current state** before a fill or link action. The observation includes the
 URL, title, body hash, numbered elements, focus and viewport. Its `observation_hash` expires
@@ -319,6 +361,46 @@ rather than claiming a single transaction across databases. External operations 
 promised exactly-once delivery. Research keeps its existing tool subset, Sentinel and model
 limits. Personal-domain adapters do not start a separate autonomous model loop.
 
+## Research from the main chat
+
+The main agent's `assistant_tasks` tool supports `research_list`, `research_get`,
+`research_create` and `research_revise`. Creation requires an explicit fixture or live
+mode and the existing research specification. Ordinary personal tasks do not need repository
+candidates. Live research retains its source permissions, Sentinel, tool subset and limits.
+
+Creation links one project, run and task with a stable request key. The run stays paused
+until the coordinator binds the task. Retrying identical inputs or recovering between the
+two database commits reuses those records. Changing conditions requires the current
+`expected_spec_id`; it keeps the project ID, source settings and report history, and creates
+a follow-up task for the new conditions. The original task remains inspectable.
+
+Report and important-change notices return to the main chat with a project link. Stable IDs
+are persisted before the module's outbox is acknowledged, so repeated delivery does not
+create a second stored bubble. This local delivery starts no model turn and sends no mail.
+Report text remains untrusted source material. Existing feedback and mute rules apply.
+Existing projects are backed up before additive link metadata is introduced; their historical
+notices are not replayed into chat.
+
+Evidence checks reject contradictory concrete file paths and explicit snapshot-text line
+ranges. Normalized HTML lines are not claimed as original source-file lines. Reports expose
+`semantic_review` metadata and a review notice: claim entailment, evidence for both sides of
+a comparison, and assertions about absent capabilities still require semantic review.
+These markers do not certify claims as true. Legacy reports remain readable.
+
+## Preference scope and civil time
+
+Confirmed preferences with a nonempty `purpose` enter prompt context only when the current
+text shares meaningful terms with their purpose or key. Empty purpose remains global.
+This is a deterministic lexical filter, not a semantic guarantee. Ordinary memories retain
+their original retrieval behavior. Deleted, expired or malformed preference projections
+cannot return through a stale asynchronous index result.
+
+Reminder cadence uses the operating system's local civil time. A nonexistent local time
+during a clock change is skipped; a repeated local time uses its first occurrence only.
+Future dates use that date's local offset. Explicit aware-zone scheduling helpers preserve
+the supplied zone. There is no new per-reminder IANA time-zone selector. Elapsed-time ledger
+schedules keep their existing interval semantics.
+
 ## HTTP contract: assistant-tasks-v1
 
 All routes require the host bearer authentication. Ledger scheduling and preference expiry
@@ -366,7 +448,7 @@ matching nested payload:
 | `document` | `document`: `source_paths`, optional `output_name` (default `digest.md`) and `notes`; the server prepares `source_hashes` |
 | `preference` | `preference`: action `set` or `delete`, `key`, `expected_revision`; sets require `value` and may include `purpose` and UTC Unix `expires_at` |
 | `file` | `file`: `action` (`write`, `copy`, `move`, `mkdir`), `path`; copies/moves require `source_path`; writes accept `content` or `content_from_step`; the server freezes `source_sha256` and `target_absent` |
-| `browser` | `browser`: `action` (`navigate`, `extract`, `fill`, `click`); navigation needs `url`; interactions need `index`, `expected_url`, `observation_hash`; filling also needs `text` |
+| `browser` | `browser`: `action` (`navigate`, `extract`, `fill`, `click`, `download`); navigation needs `url`; interactions need `index`, `expected_url`, `observation_hash`; filling also needs `text`; downloads require `path` and the server freezes `target_absent` |
 | `native` | `native`: `action`, `app` (`notepad`, `explorer`), and action-specific fields; inputs and save checks require `expected_observation`, while `observe` and `open_app` do not; opening accepts `path` (required for `explorer`), typing `text`, key actions `keys`, clicks `x`, `y`, `label`, and save checks `saved_file`, `expected_sha256` |
 
 New preference keys use `expected_revision: 0`. Deletions carry no value, purpose or expiry.
@@ -384,3 +466,26 @@ Browser/native action records distinguish observed state, input dispatch and ver
 bytes. A `started` intent without a completed result remains uncertain; clients must not
 retry it as an idempotent external command. New execution approvals cannot be given while
 the task is paused or to a superseded revision.
+
+## Model tool boundary
+
+The isolated assistant profile enables `agent.task_ledger_only`. Its model receives a
+filtered tool view: workspace files are read-only, reminder access is listing only, and
+shell, Python, raw browser/desktop input and direct memory mutation tools are unavailable.
+File, browser and native changes use `assistant_tasks` plans and the user's execution
+preview approvals. Reminder changes use ledger steps; confirmed preferences use their
+consent flow. Unknown outcomes require observation and a revised plan, not another raw tool.
+The underlying drivers remain available to the deterministic executor. Other runtime
+profiles default to their existing tools; the research executor keeps its separate subset.
+Forwarded research source text is excluded from the ideas and feed's recent assistant context.
+
+## Acceptance preparation
+
+The public `evals/assistant/manifest.json` and `scoring.json` describe 24 cases and the
+specified repeat layout. They are acceptance inputs, not completed results. Preparing a
+review bundle through `python -m evals.assistant` makes no provider call or approval.
+Code, inputs, model and dependency configuration must be frozen before a new paid batch.
+The evaluation guard shares durable reservations across main chat and research, stops on
+unknown usage and refuses old research approval receipts. Execution and manual-review
+limits are documented in `evals/assistant/README.md`. This guard does not establish a
+production-wide daily spending allowance.
