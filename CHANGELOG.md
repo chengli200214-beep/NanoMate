@@ -10,6 +10,8 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Runtime
 
+- Added an isolated personal-assistant development entry with chat and research, a single-instance directory lock and an authenticated capability inventory that distinguishes registration from execution verification.
+
 - Research re-extracted unchanged snapshots after requirement revisions, rejected inconsistent hard-condition verdicts, and retained qualifying paragraphs around short evidence fragments. A controlled-clock process probe covered cross-day and daylight-saving recovery without waiting overnight.
 - Research requirement edits preserved disabled sources for retained candidates, avoiding unexpected fetch attempts and misleading source-failure notices.
 - Research hard-condition tables used the same aggregate verdict as recommendations, so supplementary preference rows no longer hid an established fact.

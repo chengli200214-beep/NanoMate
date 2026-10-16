@@ -543,6 +543,12 @@ def create_app(settings: Settings, service: MuseService | None = None) -> FastAP
 
     install_research(app, svc, dep)
 
+    @app.get("/api/assistant/capabilities", dependencies=dep)
+    def assistant_capabilities() -> dict[str, Any]:
+        from nanomuse.assistant.capabilities import capabilities
+
+        return capabilities(svc)
+
     def _thread_or_404(thread_id: str):  # noqa: ANN202
         thread = svc.threads.get(thread_id)
         if thread is None:

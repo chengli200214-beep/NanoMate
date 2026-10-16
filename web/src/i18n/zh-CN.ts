@@ -6,6 +6,18 @@ import researchZhCN from "./research.zh-CN";
  * Run `npm test` — the i18n test lists the strings that still lack a translation.
  */
 const zhCN: Record<string, string> = {
+  "Assistant capabilities": "助手能力",
+  "Registration does not verify browser, desktop or model execution.": "工具已注册不代表浏览器、桌面或模型已通过实际执行验证。",
+  "Could not load assistant capabilities.": "无法加载助手能力状态。",
+  "Tool registered; execution not verified": "工具已注册，尚未验证执行",
+  "Model configured; connection not verified": "模型已配置，尚未验证连接",
+  "Needs model configuration": "需要配置模型",
+  "Browser dependency missing": "缺少浏览器依赖",
+  "Offline scripted responses": "离线脚本响应",
+  "Computer control": "电脑操作",
+  Reminders: "提醒",
+  Disabled: "未启用",
+  "Loading…": "正在加载…",
   // ── Shell, tabs, connection ───────────────────────────────────────────────────────
   Chat: "聊天",
   Feed: "动态",
