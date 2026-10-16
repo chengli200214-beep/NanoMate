@@ -99,8 +99,20 @@ npm --prefix web run check
 故障测试包含四个真实子进程异常退出点、租约恢复、过期输入拒绝、原子发布和项目隔离。
 场景运行器在执行前冻结资料与代码，首轮 32 次运行，另有四次预先指定复跑，分别保留预期
 与实际行为。离线通过只能证明流程，不能写成真实模型准确率、有效提醒率或研究成本改善。
-故障矩阵命令选择十组断言，每组重复三次；状态恢复部分使用 FakeClock 和数据库重开，
-另外的子进程测试验证真实 `os._exit(86)` 退出后的恢复。矩阵结果文件不能覆盖。
+故障矩阵保留十组各重复三次的断言，新增九次发布阶段真实进程退出，共 39 项。租约时间
+使用 FakeClock 和数据库重开，发布测试验证真实 `os._exit(86)` 退出后的恢复。矩阵结果
+文件不能覆盖。
+
+Windows 上运行完整上游测试时，应在测试进程的 PATH 中加入 Git for Windows 的 `usr/bin`，
+并让本机回环请求绕过代理。此前缺少这些设置时出现的 CLI 与 shell 失败，在定向复验中
+通过。以下命令只影响当前 PowerShell 进程，并保留已有的代理绕过列表：
+
+```powershell
+$researchGitRoot = Split-Path (Split-Path (Get-Command git).Source -Parent) -Parent
+$env:PATH = (Join-Path $researchGitRoot 'usr/bin') + ';' + $env:PATH
+$env:NO_PROXY = '127.0.0.1,localhost,::1,' + $env:NO_PROXY
+.venv/Scripts/python.exe -m pytest -q -m 'not live'
+```
 
 DeepSeek 真实研究、真实来源网络访问、夜间停机与次日定时检查、人工审定标注、真人试用
 均需另行完成验收。接口见 [契约](research-contracts.md)，实现见

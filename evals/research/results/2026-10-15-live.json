@@ -236,10 +236,9 @@
     }
   ],
   "remaining": [
-    "human review of draft annotations and key cited claims",
-    "full 32-execution evaluation and four preregistered repeats after review and budget selection",
-    "actual overnight recovery of the repaired runtime",
-    "three human trials and owner review of the core modules"
+    "owner semantic review of raw model claims",
+    "three real human trials and owner code review",
+    "an overnight pass of the current runtime is not claimed"
   ],
   "delivery_scope": {
     "excluded_formats": [
@@ -337,13 +336,21 @@
     }
   },
   "overnight": {
-    "status": "pending_real_elapsed_time",
+    "status": "passed",
     "artifacts": ".local/verification/2026-10-15-overnight-repaired",
     "prepared_at": "2026-10-15T15:10:55.019738+00:00",
     "resume_after_iso": "2026-10-16T01:00:02+00:00",
     "timezone": "Asia/Shanghai",
     "runtime_sha256": "9fe9f9ee8d905c63c1bbb3a236bd0473d37afebd048b610398bfb06f6c7d39ad",
     "previous_preparation": "superseded_before_resume_because_the_runtime_changed",
-    "overnight_passed": false
+    "overnight_passed": true,
+    "elapsed_seconds": 39281.14154982567,
+    "resumed_at": "2026-10-16T02:05:36.161288+00:00"
+  },
+  "post_checkpoint_update": {
+    "recorded_at": "2026-10-16T03:52:52.484481+00:00",
+    "original_overnight_status_at_checkpoint": "pending_real_elapsed_time",
+    "original_overnight_passed_at_checkpoint": false,
+    "note": "Original attempt records retained; annotation approval, original matrix and earlier-runtime overnight checks later completed"
   }
 }

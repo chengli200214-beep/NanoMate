@@ -123,9 +123,22 @@ rejection, atomic publication and project isolation. The scenario runner freezes
 and data for 32 initial executions and four preregistered repeats. It preserves semantic
 expectations and observed behavior separately. Offline results do not establish real
 model accuracy, useful reminders, or a reduction in research cost.
-The fault-matrix command selects ten assertion groups with three repetitions each.
-Its state-recovery cases use FakeClock and database reopen; the separate subprocess
-tests additionally verify real `os._exit(86)` recovery. It refuses to overwrite a result.
+The fault-matrix command retains ten assertion groups with three repetitions each and
+adds nine publication-process exits, for 39 cases. Lease timing uses FakeClock and
+database reopen; publication cases verify real `os._exit(86)` recovery. It refuses to
+overwrite a result.
+
+For the complete upstream suite on Windows, expose Git for Windows' `usr/bin` tools
+in the test process and bypass proxies for loopback requests. The CLI and shell failures
+observed without these settings passed targeted rechecks with them. These commands affect
+only the current PowerShell process and retain existing proxy exclusions:
+
+```powershell
+$researchGitRoot = Split-Path (Split-Path (Get-Command git).Source -Parent) -Parent
+$env:PATH = (Join-Path $researchGitRoot 'usr/bin') + ';' + $env:PATH
+$env:NO_PROXY = '127.0.0.1,localhost,::1,' + $env:NO_PROXY
+.venv/Scripts/python.exe -m pytest -q -m 'not live'
+```
 
 Live DeepSeek research, real-source network access, overnight scheduling, next-day
 checks, reviewed scenario labels and human trials are separate acceptance items.

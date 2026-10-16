@@ -282,5 +282,12 @@
     "Quality review is pending, so token differences are not quality-matched performance improvements.",
     "The initial baseline and full variants use the same pipeline; their differences reflect run variability.",
     "Four cases per group do not establish a general saving or statistically significant effect."
-  ]
+  ],
+  "post_review_findings": {
+    "recorded_at": "2026-10-16T03:52:52.484481+00:00",
+    "old_no_version_invalidation_valid_for_mechanism_conclusions": false,
+    "reason": "Status restoration did not expose old decisions to the model under current-version filtering",
+    "original_runs_and_usage_retained": true,
+    "repair_summary": "2026-10-16-review-repair.json"
+  }
 }

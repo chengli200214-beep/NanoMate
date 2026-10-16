@@ -1,0 +1,256 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-16T03:52:52.484481+00:00",
+  "runtime_commits": {
+    "matrix": "c67f3c9",
+    "followup_and_real_model": "c78fe0c",
+    "current_after_report_aggregation": "d45ccad67199d1bd1d11155f13d3616602b37b88"
+  },
+  "scope": "Owner-approved S1, two fictional candidates, eight synthetic snapshots; real repository comparison separate",
+  "repair_matrix": {
+    "executions": 20,
+    "statuses": {
+      "succeeded": 19,
+      "failed": 1
+    },
+    "variants": {
+      "full": {
+        "succeeded": 11,
+        "failed": 1
+      },
+      "no_impact_filter": {
+        "succeeded": 4
+      },
+      "no_version_invalidation": {
+        "succeeded": 4
+      }
+    },
+    "published_target_reports": 19,
+    "target_usage": {
+      "requests": 176,
+      "input_tokens": 1268134,
+      "output_tokens": 181357,
+      "total_tokens": 1449491,
+      "peak_miss_cost_upper_micro_cny": 3987124
+    },
+    "all_usage_including_setup": {
+      "requests": 319,
+      "input_tokens": 2135504,
+      "output_tokens": 311467,
+      "total_tokens": 2446971,
+      "peak_miss_cost_upper_micro_cny": 6762744
+    },
+    "freeze_sha256": "6bbc4501ca44499a3335039db5d011240caaf97df50de1edfdde299f0fdc1158",
+    "semantic_quality_metrics": null
+  },
+  "separate_conflict_followup": {
+    "executions": 1,
+    "statuses": {
+      "succeeded": 1
+    },
+    "variants": {
+      "full": {
+        "succeeded": 1
+      }
+    },
+    "published_target_reports": 1,
+    "target_usage": {
+      "requests": 13,
+      "input_tokens": 135406,
+      "output_tokens": 17943,
+      "total_tokens": 153349,
+      "peak_miss_cost_upper_micro_cny": 414356
+    },
+    "all_usage_including_setup": {
+      "requests": 22,
+      "input_tokens": 217823,
+      "output_tokens": 32451,
+      "total_tokens": 250274,
+      "peak_miss_cost_upper_micro_cny": 695254
+    },
+    "freeze_sha256": "f59e1d84e58982f9ac91e116c8a04c4faf6fd02febad9f1ac28abd3c4f6c985d",
+    "semantic_quality_metrics": null
+  },
+  "version_ablation_input_changed_in_all_four_cases": true,
+  "real_model_report": {
+    "status": "succeeded",
+    "usage": {
+      "requests": 6,
+      "input_tokens": 92043,
+      "output_tokens": 14716,
+      "total_tokens": 106759,
+      "peak_miss_cost_upper_micro_cny": 301814
+    },
+    "report_id": "report_0de6104ab05bdcf61f1b",
+    "source_scope": "Same saved public README versions as the original real report; no claim of latest repository state"
+  },
+  "editorial_report": {
+    "status": "published",
+    "origin": "agent_editorial_correction",
+    "report_id": "report_a1cb933bf2038a512868",
+    "raw_model_report_id": "report_0de6104ab05bdcf61f1b",
+    "paid_model_requests": 0,
+    "human_semantic_review_completed": false,
+    "patched_quotes": 3,
+    "added_optional_own_key_path": true
+  },
+  "deterministic_render_audit": {
+    "reports_checked": 22,
+    "changed_renders": [
+      {
+        "execution_id": "26-constraints-platform-no_version_invalidation-r0",
+        "changed": true
+      }
+    ],
+    "paid_model_requests": 0,
+    "raw_model_results_modified": false,
+    "records": [
+      {
+        "execution_id": "13-initial-portable-full-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "14-initial-hard-conflict-full-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "15-initial-missing-full-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "16-initial-conflicting-docs-full-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "17-constraints-no-sandbox-full-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "18-constraints-platform-full-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "19-constraints-budget-full-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "20-constraints-preference-to-hard-full-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "21-update-dependency-full-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "22-update-wording-full-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "23-update-duplicate-full-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "25-constraints-no-sandbox-no_version_invalidation-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "26-constraints-platform-no_version_invalidation-r0",
+        "changed": true
+      },
+      {
+        "execution_id": "27-constraints-budget-no_version_invalidation-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "28-constraints-preference-to-hard-no_version_invalidation-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "29-update-dependency-no_impact_filter-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "30-update-wording-no_impact_filter-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "31-update-duplicate-no_impact_filter-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "32-update-conflict-no_impact_filter-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "02-update-conflict-full-r0",
+        "changed": false
+      },
+      {
+        "execution_id": "2026-10-16-review-repair-real-report",
+        "changed": false
+      },
+      {
+        "execution_id": "2026-10-16-review-repair-editorial-report",
+        "changed": false
+      }
+    ]
+  },
+  "cumulative_approved_batch": {
+    "requests": 884,
+    "settled_requests": 884,
+    "unsettled_requests": 0,
+    "input_tokens": 6426639,
+    "output_tokens": 1004066,
+    "peak_miss_cost_upper_cny": 20.885806,
+    "actual_provider_bill_verified": false
+  },
+  "tests": {
+    "research_and_docs": 405,
+    "web": 133,
+    "fault_matrix": 39,
+    "mypy_files": 161,
+    "whole_repo_first_attempt": {
+      "passed": 1028,
+      "failed": 2,
+      "skipped": 59,
+      "deselected": 1
+    },
+    "targeted_environment_recheck": {
+      "passed": 2,
+      "scope": "Per-process loopback NO_PROXY and Git for Windows usr/bin, no global settings changed"
+    }
+  },
+  "wall_clock_current": {
+    "status": "passed",
+    "elapsed_seconds": 131.75221300125122,
+    "runtime_sha256": "0d9559cd495f58985962d53e78ca16ff5f2eebc14bc5aa0037f8003db9c814d4",
+    "new_model_calls": 0,
+    "new_reports": 0,
+    "new_notifications": 0
+  },
+  "overnight_earlier_runtime": {
+    "status": "passed",
+    "elapsed_seconds": 39281.14154982567,
+    "resumed_at": "2026-10-16T02:05:36.161288+00:00",
+    "runtime_sha256": "9fe9f9ee8d905c63c1bbb3a236bd0473d37afebd048b610398bfb06f6c7d39ad"
+  },
+  "human_review": {
+    "raw_reports": 5,
+    "new_compound_claim_groups": 31,
+    "historical_compound_claim_groups_retained": 38,
+    "completed": false,
+    "trials_completed": 0,
+    "trials_required": 3,
+    "model_quality_metrics": null,
+    "improvement_claim": null
+  },
+  "limitations": [
+    "One format failure remains in the 20-run cohort; the separate successful retry does not replace it",
+    "The old status-only version ablation is invalid for mechanism conclusions",
+    "The unchanged C4 source page already refers to a Linux-only README before the update, limiting before/after interpretation",
+    "Editorial source corrections are not scored as raw model output",
+    "The retained c67f3c9 Linux ablation report rendered a mixed meets/preference hard condition as unknown; the later renderer uses the same aggregate rule as recommendation eligibility",
+    "The earlier overnight pass does not establish an overnight pass of the current runtime",
+    "Quoted existence and dimension matching do not prove semantic entailment"
+  ]
+}
