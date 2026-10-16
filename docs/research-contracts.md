@@ -64,6 +64,13 @@ is meets can be selected. The validator and renderer derive recommendation text 
 field; unbound or ineligible selections abstain. A definitive hard verdict needs direct
 evidence whose dimension equals each referenced hard-condition ID. These are structural
 checks; quote entailment and compound factual claims still require semantic review.
+Recommendation and hard-condition tables use the same aggregate verdict. A preference
+alone stays unknown; a supplementary preference does not erase a direct meets verdict.
+Any unknown or failing verdict still prevents selection for that requirement.
+
+Report revisions may add `origin`, `derived_from_report_id` and
+`human_semantic_review_completed`. An `agent_editorial_correction` is explicitly labelled
+in its Markdown and retains the raw model report. It is excluded from raw model scoring.
 
 Unchanged cleaned source content retains its original immutable snapshot, URL and version.
 A ref moving to another commit updates the source's `observed_version`, `observed_url`,
@@ -85,7 +92,7 @@ new reminders. The changes API returns expired rules as disabled. Existing actio
 remain valid. Blank optional correction quotes are sent as null by the web client.
 
 Timezone names are bounded to 100 characters. Only missing-record exceptions become 404.
-Diagnostics use fixed bilingual messages with a next action, without raw exceptions or
+Error diagnostics use fixed bilingual messages with a next action, without raw exceptions or
 local paths. Transient errors retry three times with exponential delays unless Retry-After
 is supplied; certificate verification failures do not retry. Before upgrading an existing
 research database, the store saves a consistent `research.pre-v<target>.*.db` backup.

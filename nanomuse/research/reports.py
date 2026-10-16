@@ -12,13 +12,14 @@ from urllib.parse import quote, urlsplit
 from nanomuse.research.context import (
     ResearchValidationError,
     bind_recommendation,
+    constraint_verdict,
     evidence_is_current,
     record,
     require_unknown_for_conflicts,
     validate_conflicts,
     validate_decision_support,
 )
-from nanomuse.research.contracts import Comparison, DecisionDraft, ProjectSpec
+from nanomuse.research.contracts import Comparison, ProjectSpec
 
 _VERDICTS = {
     "meets": "Meets / 满足",
@@ -48,15 +49,6 @@ def _link(label: Any, url: Any) -> str:
         return "Source URL unavailable / 来源地址缺失"
     encoded = quote(target, safe=":/?#@!$&'*=+%,;~.-_")
     return f"[{_text(label)}](<{encoded}>)"
-
-
-def _constraint_verdict(decisions: list[DecisionDraft]) -> str:
-    verdicts = {item.verdict for item in decisions}
-    if "fails" in verdicts:
-        return "fails"
-    if not decisions or verdicts & {"unknown", "preference"}:
-        return "unknown"
-    return "meets"
 
 
 def render_report(
@@ -134,7 +126,7 @@ def render_report(
             refs = sorted({ref for item in matching for ref in item.evidence_refs})
             lines.append(
                 f"| {_text(candidate)} | {_text(constraint.text)} | "
-                f"{_VERDICTS[_constraint_verdict(matching)]} | {_text(', '.join(refs))} |"
+                f"{_VERDICTS[constraint_verdict(matching)]} | {_text(', '.join(refs))} |"
             )
     lines.extend(
         [
@@ -207,7 +199,7 @@ def render_report(
                 for item in result.decisions
                 if item.candidate == candidate and constraint.id in item.constraint_refs
             ]
-            if _constraint_verdict(matching) == "unknown":
+            if constraint_verdict(matching) == "unknown":
                 unknowns.append(f"{candidate}: {constraint.text}")
     unknowns.append(
         "Documentation claims and source observations are not runtime tests. / "

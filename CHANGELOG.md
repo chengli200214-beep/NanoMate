@@ -10,6 +10,7 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Runtime
 
+- Research hard-condition tables used the same aggregate verdict as recommendations, so supplementary preference rows no longer hid an established fact.
 - Research mute scopes derived condition tags from affected decisions, and model-format diagnostics recorded fixed failure categories and tool counts without saving response text.
 - Research reports bound their recommendation to a candidate meeting every hard requirement and required direct evidence in each hard condition's dimension. Context selection prioritized hard-condition and conflict evidence, and truncated tool responses ran no tools.
 - Research tracking reused unchanged source text across unrelated commits, narrowed mute scopes, backed up databases before upgrades and kept raw exception details out of diagnostics. Research events and idle polling refreshed background activity after reconnecting.

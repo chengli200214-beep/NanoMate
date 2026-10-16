@@ -103,6 +103,30 @@ def test_structured_selection_controls_recommendation_even_when_prose_disagrees(
     assert ALPHA in checked.recommendation and "Select Beta" not in checked.recommendation
 
 
+@pytest.mark.parametrize(
+    "first,extra,eligible",
+    [
+        ("meets", "preference", True),
+        ("preference", "preference", False),
+        ("meets", "unknown", False),
+        ("meets", "fails", False),
+    ],
+)
+def test_recommendation_and_hard_table_share_one_verdict(
+    first: str, extra: str, eligible: bool
+) -> None:
+    context, proposed = inputs()
+    proposed.recommended_candidate = ALPHA
+    proposed.decisions[0] = proposed.decisions[0].model_copy(update={"verdict": first})
+    proposed.decisions.append(proposed.decisions[0].model_copy(update={"verdict": extra}))
+    checked = validate_comparison(proposed, context)
+    assert (checked.recommended_candidate == ALPHA) == eligible
+    markdown = render_report(context["spec"], checked, context["evidence"])
+    hard_section = markdown.split("## 2.")[1].split("## 3.")[0]
+    alpha_row = next(line for line in hard_section.splitlines() if ALPHA in line)
+    assert ("Meets / 满足" in alpha_row) == eligible
+
+
 @pytest.mark.parametrize("dimension", ["windows", "relay"])
 def test_each_hard_constraint_needs_its_own_direct_evidence(dimension: str) -> None:
     context, proposed = inputs()

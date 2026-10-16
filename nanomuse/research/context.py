@@ -375,6 +375,16 @@ def validate_comparison(comparison: Comparison, context: dict[str, Any]) -> Comp
     )
 
 
+def constraint_verdict(decisions: list[DecisionDraft]) -> str:
+    """A preference cannot establish a hard fact or erase an established fact."""
+    verdicts = {item.verdict for item in decisions}
+    if "fails" in verdicts:
+        return "fails"
+    if "unknown" in verdicts or "meets" not in verdicts:
+        return "unknown"
+    return "meets"
+
+
 def bind_recommendation(spec: ProjectSpec, comparison: Comparison) -> Comparison:
     """Derive the displayed recommendation from one eligible structured candidate.
 
@@ -386,18 +396,14 @@ def bind_recommendation(spec: ProjectSpec, comparison: Comparison) -> Comparison
         candidate
         for candidate in spec.candidates
         if all(
-            any(
-                item.candidate == candidate
-                and ref in item.constraint_refs
-                and item.verdict == "meets"
-                for item in comparison.decisions
+            constraint_verdict(
+                [
+                    item
+                    for item in comparison.decisions
+                    if item.candidate == candidate and ref in item.constraint_refs
+                ]
             )
-            and not any(
-                item.candidate == candidate
-                and ref in item.constraint_refs
-                and item.verdict in {"fails", "unknown"}
-                for item in comparison.decisions
-            )
+            == "meets"
             for ref in hard_ids
         )
     }
@@ -506,6 +512,7 @@ __all__ = [
     "ResearchValidationError",
     "build_context",
     "bind_recommendation",
+    "constraint_verdict",
     "conflict_affects_decision",
     "evidence_is_current",
     "normalize_context",
