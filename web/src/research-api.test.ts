@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthError } from "./api";
-import { isActiveRun, repositoryUrl, researchApi, runControls, type ResearchRun } from "./research-api";
+import { isActiveRun, muteMatches, repositoryUrl, researchApi, runControls, type ResearchRun } from "./research-api";
 
 beforeEach(() => {
   vi.stubGlobal("window", { location: { href: "https://example.org/#research" }, history: { replaceState: () => undefined } });
@@ -9,6 +9,12 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("research requests", () => {
+  it("sends null for an optional blank correction quote", async () => {
+    const fetcher = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetcher);
+    await researchApi.correct("e", "Corrected", "  ", "Source review");
+    expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({ fact: "Corrected", quote: null, reason: "Source review" });
+  });
   it("uses the shared Bearer authentication and encodes project IDs", async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response("[]", { status: 200 }));
     vi.stubGlobal("fetch", fetcher);
@@ -54,6 +60,14 @@ describe("research requests", () => {
 });
 
 describe("research input and control boundaries", () => {
+  it("does not carry a mute across conditions, tags or legacy broad rules", () => {
+    const event = { id: "e", source_id: "s", spec_id: "v1", impact_level: "recommendation", affected_constraints: ["windows"] };
+    const rule = { id: "m", source_id: "s", impact_level: "recommendation", scope: { spec_id: "v1", change_type: "content", constraint_refs: ["windows"] } };
+    expect(muteMatches(rule, event)).toBe(true);
+    expect(muteMatches(rule, { ...event, spec_id: "v2" })).toBe(false);
+    expect(muteMatches(rule, { ...event, affected_constraints: ["offline"] })).toBe(false);
+    expect(muteMatches({ id: "old", source_id: "s", impact_level: "recommendation" }, event)).toBe(false);
+  });
   it("accepts only repository roots and canonicalizes .git links", () => {
     expect(repositoryUrl(" https://github.com/nano-muse/nanoMuse.git/ ")).toBe("https://github.com/nano-muse/nanoMuse");
     for (const value of ["https://github.com/a/b/issues", "http://github.com/a/b", "https://elsewhere.org/a/b", "https://user:secret@github.com/a/b", "https://github.com/a/b?token=secret", "https://github.com/a/b#readme", "not a URL"]) expect(repositoryUrl(value), value).toBeNull();

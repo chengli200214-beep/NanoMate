@@ -103,13 +103,17 @@ Differences across platforms or versions are not necessarily contradictions. Exp
 _STAGE_INSTRUCTIONS = {
     "extract": (
         "Extract concise evidence for the project requirements. Return an array of EvidenceDraft. "
-        "Use a dimension that identifies the relevant constraint ID when possible. "
+        "Use the exact constraint ID as dimension for evidence supporting that requirement. "
+        "Split compound facts into separate evidence with a quote covering each fact. "
         "For documentation use verification=documentation; source requires a source-code snapshot."
     ),
     "compare": (
         "Compare current evidence. Return a Comparison with decisions, unknowns, and next_steps. "
         "Include conflicts for incompatible current evidence and keep both source references. "
-        "Bind decisions to valid constraint_refs and evidence_refs. Do not recommend a candidate "
+        "Bind decisions to valid constraint_refs and evidence_refs. Each definitive hard verdict "
+        "needs direct evidence whose dimension equals that constraint ID. Select exactly one "
+        "recommended_candidate by its registered candidate ID, or null to abstain. "
+        "The selected candidate must meet every hard requirement. Do not recommend a candidate "
         "as meeting all hard requirements if any hard requirement is unknown or fails."
     ),
     "impact": (
@@ -239,6 +243,8 @@ class ResearchReasoner:
         for attempt in range(1, self.max_calls + 1):
             response = await self._ask(stage, messages, collection.to_params(), attempt)
             try:
+                if response.finish_reason == "length":
+                    raise ResearchFormatError("Model response was truncated")
                 if response.tool_calls:
                     if len(response.tool_calls) > 8:
                         raise ResearchFormatError(
@@ -254,8 +260,6 @@ class ResearchReasoner:
                         result = await self.sentinel.guard(call, tool)
                         messages.append(Message.tool(result.for_model(), call.id, call.name))
                     continue
-                if response.finish_reason == "length":
-                    raise ResearchFormatError("Model response was truncated")
                 content = (response.content or "").strip()
                 # A single JSON fence is formatting; surrounding prose is not silently ignored.
                 if content.startswith("```json\n") and content.endswith("\n```"):

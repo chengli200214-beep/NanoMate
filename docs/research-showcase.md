@@ -100,7 +100,18 @@ Deliver the runnable workspace, Markdown reports, documentation, interface scree
 reproducible acceptance records. Video, presentation slides and screen recordings were removed
 from the delivery scope at the owner's request. The generated video and its dedicated
 generation materials were removed; six interface screenshots remain under
-`.local/showcase/screenshots/`.
+`.local/showcase/screenshots/`, with reviewed copies under `docs/screenshots/research/`.
+
+The screenshots below show the offline fixture workspace captured on 2026-10-15. They
+contain public repository text and synthetic project/run IDs, with no keys, private paths
+or personal contact details visible. They document that historical UI, not the later live
+model results or the exact current wording.
+
+![Historical fixture overview](screenshots/research/01-overview.jpg)
+
+[Evidence](screenshots/research/02-evidence.jpg), [runs](screenshots/research/03-runs.jpg),
+[tracking](screenshots/research/04-changes.jpg), [conditions](screenshots/research/05-conditions.jpg)
+and [report differences](screenshots/research/06-report-diff.jpg).
 
 Use the following order to inspect the project. Identify saved history, fixture inputs and
 scripted model responses when showing them.
@@ -111,12 +122,30 @@ scripted model responses when showing them.
 | 2 | Inspect completed steps and recovery logs; use isolated data when reproducing a process restart | Subprocess recovery and no duplicate report |
 | 3 | Change a hard requirement, observe the old report become stale, then compare report versions | Requirement revisions, stale marker and report diff |
 | 4 | Inspect change/mute controls and zero new calls on unchanged sources; identify semantic reminders as pending live validation | Wall-clock summary and structured-result tests; no fabricated live notice |
-| 5 | Inspect 251 research tests, the earlier 36 offline workflows, live acceptance, failure cases and the three added modules | Checkpoint, sanitized summary and attribution |
+| 5 | Inspect the research tests, earlier 36 offline workflows, live acceptance, failure cases and added modules | Checkpoint, sanitized summary and attribution |
 
 The live two-repository comparison and process recovery are recorded in the
 [checkpoint](research-status.md). Three human trials remain open.
 Saved history must not be presented as a just-performed action. Scripted responses do not
 demonstrate autonomous semantic detection.
+
+## AI-assisted implementation and owner review
+
+The implementation separates source acquisition (`sources/`), reasoning and validation
+(`reasoning.py`, `context.py`), durable state and orchestration (`store.py`, `orchestrator.py`),
+and the web workspace. Shared types live in `contracts.py`; routes and report rendering use
+those types. Source acquisition returns data only, the reasoner proposes structured drafts,
+and the store validates and publishes within fenced transactions.
+
+The review repair was carried out sequentially by the coding assistant. Earlier generated
+implementation and evaluations remain subject to the owner's review. Automated checks cover
+contracts, leases, source restrictions and reproducible usage; they do not establish that
+the owner has read the code or that every model claim is correct.
+
+Before presenting personal engineering ownership, the owner should review `store.py`,
+`orchestrator.py` and `context.py`, explain a stale-worker failure and its regression test,
+trace one recommendation to its evidence, and record which design choices they accepted
+or changed. This owner review and the three human trials remain open.
 
 ## Interview evidence
 
@@ -126,8 +155,8 @@ just because it still has a complete report. Commits must check the attempt, lea
 version and project input version together.
 
 Counts are traceable in the [checkpoint](research-status.md) and
-[sanitized live summary](../evals/research/results/2026-10-15-live.json). The 251 research
-tests and earlier 36 offline workflows are not live-model task counts or accuracy measurements.
+[sanitized live summary](../evals/research/results/2026-10-15-live.json). Research test
+counts and earlier 36 offline workflows are not live-model task counts or accuracy measurements.
 Keep the fixture's missed conflicts and meaningful changes visible. Cost, useful-reminder
 rates and maintenance improvements require live runs and reviewed scoring. Human recruitment
 and trials remain pending.

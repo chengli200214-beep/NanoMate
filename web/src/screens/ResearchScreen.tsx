@@ -7,7 +7,7 @@ import { ResearchConflicts } from "../components/ResearchConflicts";
 import { TabHeader } from "../components/TabHeader";
 import { intlLocale, useT } from "../i18n";
 import {
-  isActiveRun, repositoryUrl, researchApi, runControls,
+  isActiveRun, muteMatches, repositoryUrl, researchApi, runControls,
   type ResearchChanges, type ResearchConflict, type ResearchConstraint, type ResearchDiagnostics, type ResearchDiff,
   type ResearchEvidence, type ResearchProject, type ResearchProjectDetail, type ResearchReport,
   type ResearchRun, type ResearchSpec, type ResearchTracking,
@@ -38,7 +38,7 @@ function Stamp({ value }: { value?: string }) {
 function Status({ value }: { value: string }) {
   const t = useT();
   const labels: Record<string, string> = {
-    queued: "Queued", running: "Running", paused: "Paused", succeeded: "Succeeded", failed: "Failed", cancelled: "Cancelled", retry_wait: "Waiting to retry", recovering: "Recovering", pending: "Pending", stale: "Out of date", active: "Current", valid: "Current", superseded: "Superseded", corrected: "Corrected", needs_attention: "Needs attention", irrelevant: "Irrelevant", related: "Related", recommendation: "Recommendation affected", uncertain: "Uncertain",
+    queued: "Queued", running: "Running", paused: "Paused", succeeded: "Succeeded", failed: "Failed", cancelled: "Cancelled", retry_wait: "Waiting to retry", recovering: "Recovering", pending: "Pending", stale: "Out of date", active: "Current", valid: "Current", superseded: "Superseded", corrected: "Corrected", needs_attention: "Needs attention", irrelevant: "Irrelevant", related: "Related", recommendation: "Recommendation affected", uncertain: "Uncertain", accepted: "Accepted", evaluated: "Evaluated",
   };
   return <span className={cx("inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium", value === "failed" || value === "stale" ? "bg-amber-500/10 text-amber-700 dark:text-amber-300" : "bg-surface-2 text-muted")}>{t(labels[value] ?? value)}</span>;
 }
@@ -138,7 +138,7 @@ function SpecForm({ initial, onSave, onCancel, busy }: { initial?: ResearchSpec;
 interface ProjectSnapshot { detail: ResearchProjectDetail; evidence: ResearchEvidence[]; conflicts: ResearchConflict[]; reports: ResearchReport[]; changes: ResearchChanges }
 function ProjectWorkspace({ id, onChanged }: { id: string; onChanged: () => void }) {
   const t = useT();
-  const { toast } = useStore();
+  const { state, toast } = useStore();
   const [data, setData] = useState<ProjectSnapshot | null>(null);
   const [view, setView] = useState<View>("overview");
   const [error, setError] = useState("");
@@ -151,6 +151,9 @@ function ProjectWorkspace({ id, onChanged }: { id: string; onChanged: () => void
   const requestId = useRef(0);
   const pendingRef = useRef(false);
   const startKeys = useRef<Record<string, string>>({});
+  const version = state?.researchUpdates?.[id] ?? 0;
+  const connected = state?.connected;
+  const previousSignal = useRef({ version, connected });
   const refresh = useCallback(async () => {
     const seq = ++requestId.current;
     setRefreshing(true);
@@ -162,16 +165,20 @@ function ProjectWorkspace({ id, onChanged }: { id: string; onChanged: () => void
     finally { if (alive.current && seq === requestId.current) setRefreshing(false); }
   }, [id]);
   useEffect(() => { alive.current = true; void refresh(); return () => { alive.current = false; }; }, [refresh]);
+  useEffect(() => {
+    const previous = previousSignal.current;
+    previousSignal.current = { version, connected };
+    if ((previous.version !== version || previous.connected !== connected) && !pendingRef.current) void refresh();
+  }, [version, connected, refresh]);
   const active = data?.detail.runs.some(isActiveRun) ?? false;
   useEffect(() => {
-    if (!active) return;
     let cancelled = false;
     let timer: ReturnType<typeof window.setTimeout>;
     const tick = async () => {
       if (!pendingRef.current) await refresh();
-      if (!cancelled) timer = window.setTimeout(() => void tick(), 2000);
+      if (!cancelled) timer = window.setTimeout(() => void tick(), active ? 2000 : 5000);
     };
-    timer = window.setTimeout(() => void tick(), 2000);
+    timer = window.setTimeout(() => void tick(), active ? 2000 : 5000);
     return () => { cancelled = true; window.clearTimeout(timer); };
   }, [active, refresh]);
   const perform: Perform = async (key, action, success) => {
@@ -202,6 +209,7 @@ function ProjectWorkspace({ id, onChanged }: { id: string; onChanged: () => void
   });
   return <div className="space-y-4">
     {error && <LoadError message={error} onRetry={() => void refresh()} />}
+    {detail.tracking_blocked && <p role="status" className="rounded-xl bg-amber-500/10 p-3 text-[13px]">{t("Tracking is waiting for a paused run or a run that needs attention.")}</p>}
     <section className="rounded-3xl bg-surface-2 p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="min-w-0 break-words text-xl font-semibold">{detail.title}</h2><span className="flex items-center gap-1 rounded-full border border-border px-2 py-1 text-[11px]"><FlaskConical size={12} />{t(detail.mode === "fixture" ? "Fixture mode" : "Live mode")}</span></div>
       <p className="mt-2 whitespace-pre-wrap text-[14px] leading-relaxed">{detail.spec.goal}</p>
@@ -334,13 +342,13 @@ function TrackingPanel({ project, busy, perform }: { project: ResearchProjectDet
 
 function ChangesPanel({ changes, busy, perform }: { changes: ResearchChanges; busy: boolean; perform: Perform }) {
   const t = useT();
-  const actionLabels: Record<string, string> = { accept: "Accept change", useless: "Not relevant", mute: "Mute this source", unmute: "Unmute this source" };
+  const actionLabels: Record<string, string> = { accept: "Accept change", useless: "Not relevant", mute: "Mute this source change", unmute: "Unmute this source change" };
   return <><Panel title={t("Notifications")}>{changes.notifications.length === 0 ? <Empty>{t("No actionable notifications.")}</Empty> : <div className="space-y-3">{changes.notifications.map((n) => <article key={n.id} className="rounded-2xl border border-border p-3"><Stamp value={n.created_at} /><div className="my-2 overflow-x-auto"><Markdown text={n.content} /></div><div className="flex flex-wrap items-center gap-2">{(["useful", "useless", "read"] as const).map((feedback) => <button type="button" key={feedback} className={cx(small, n.feedback === feedback && "bg-surface-2")} disabled={busy || n.feedback === feedback} onClick={() => void perform("feedback", () => researchApi.feedback(n.id, feedback), "Feedback saved.")}>{t(({ useful: "Useful", useless: "Not useful", read: "Mark read" })[feedback])}</button>)}</div></article>)}</div>}</Panel><Panel title={t("Change events")}>{changes.events.length === 0 ? <Empty>{t("No source changes recorded.")}</Empty> : <div className="space-y-3">{changes.events.map((event) => {
     const judgment = event.judgment;
     const summary = event.change_summary || event.summary || (typeof judgment?.change_summary === "string" ? judgment.change_summary : "");
     const impact = event.impact_level || (typeof judgment?.impact_level === "string" ? judgment.impact_level : "");
     const action = event.recommended_action || (typeof judgment?.recommended_action === "string" ? judgment.recommended_action : "");
-    const muted = changes.mute_rules.some((rule) => rule.source_id && rule.source_id === event.source_id && rule.impact_level === event.impact_level && rule.enabled !== false);
-    return <article key={event.id} className="rounded-2xl border border-border p-3"><div className="flex flex-wrap items-center gap-2"><Stamp value={event.created_at} />{impact && <Status value={impact} />}{event.status && <Status value={event.status} />}</div><p className="mt-2 text-[14px] leading-relaxed">{summary || t("Source content changed.")}</p>{action && <p className="mt-1 text-[13px] text-muted">{action}</p>}<div className="mt-3 flex flex-wrap gap-2">{(["accept", "useless", muted ? "unmute" : "mute"] as const).map((a) => <button type="button" className={small} key={a} disabled={busy || event.action === a} onClick={() => void perform("change", () => researchApi.changeAction(event.id, a), "Change action saved.")}>{t(actionLabels[a])}</button>)}</div><details className="mt-3 text-[12px]"><summary className="cursor-pointer text-muted">{t("Change evidence")}</summary><pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap break-all rounded-xl bg-surface-2 p-3 text-[11px]">{JSON.stringify(event, null, 2)}</pre></details></article>;
+    const muted = changes.mute_rules.some((rule) => muteMatches(rule, event));
+    return <article key={event.id} className="rounded-2xl border border-border p-3"><div className="flex flex-wrap items-center gap-2"><Stamp value={event.created_at} />{impact && <Status value={impact} />}{event.status && <Status value={event.status} />}</div><p className="mt-2 text-[14px] leading-relaxed">{summary || t("Source content changed.")}</p>{action && <p className="mt-1 text-[13px] text-muted">{action}</p>}<div className="mt-3 flex flex-wrap gap-2">{(["accept", "useless", muted ? "unmute" : "mute"] as const).map((a) => <button type="button" className={small} key={a} disabled={busy || (a === "accept" && event.status === "accepted") || (a === "useless" && event.feedback === "useless")} onClick={() => void perform("change", () => researchApi.changeAction(event.id, a), "Change action saved.")}>{t(actionLabels[a])}</button>)}</div><details className="mt-3 text-[12px]"><summary className="cursor-pointer text-muted">{t("Change evidence")}</summary><pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap break-all rounded-xl bg-surface-2 p-3 text-[11px]">{JSON.stringify(event, null, 2)}</pre></details></article>;
   })}</div>}</Panel><Panel title={t("Muted sources")}>{changes.mute_rules.filter((r) => r.enabled !== false).length === 0 ? <Empty>{t("No active mute rules.")}</Empty> : <ul className="space-y-2">{changes.mute_rules.filter((r) => r.enabled !== false).map((rule) => <li key={rule.id} className="break-all text-[12px] text-muted">{rule.source_id || rule.id}</li>)}</ul>}</Panel></>;
 }

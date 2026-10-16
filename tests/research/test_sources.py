@@ -6,6 +6,7 @@ import asyncio
 import base64
 import json
 import socket
+import ssl
 from pathlib import Path
 from typing import Any
 
@@ -52,6 +53,8 @@ def fetcher(handler: Any, **kwargs: Any) -> HttpSourceFetcher:
         "http://2130706433/",
         "http://0177.0.0.1/",
         "http://0x7f000001/",
+        "http://0x7f.0.0.1/",
+        "http://[fec0::1]/",
         "https://user:password@docs.example/",
         "https://docs.example\\@localhost/",
         "https://docs.example/\nlocalhost",
@@ -188,7 +191,8 @@ async def test_readme_is_fetched_at_the_resolved_commit_and_etag_tracks_ref() ->
         paths.append(request.url.path)
         assert request.headers["host"] == "api.github.com"
         if request.url.path.endswith("/commits/HEAD"):
-            return httpx.Response(200, json={"sha": SHA}, headers={"etag": '"commit-ref"'})
+            assert request.headers["accept"] == "application/vnd.github.sha"
+            return httpx.Response(200, text=SHA, headers={"etag": '"commit-ref"'})
         assert request.url.params["ref"] == SHA
         return httpx.Response(
             200,
@@ -210,6 +214,60 @@ async def test_readme_is_fetched_at_the_resolved_commit_and_etag_tracks_ref() ->
     assert result.url == f"{REPO}/blob/{SHA}/README.md"
     assert result.content == "# Sample\nRuns on Windows."
     assert result.etag == '"commit-ref"'
+
+
+async def test_repository_counters_and_push_time_do_not_change_metadata_content() -> None:
+    version = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "full_name": "research-example/sample",
+                "description": "Local assistant",
+                "stargazers_count": version,
+                "forks_count": version,
+                "open_issues_count": version,
+                "pushed_at": f"time-{version}",
+            },
+        )
+
+    reader = fetcher(handler)
+    first = await reader.fetch({"kind": "metadata", "url": REPO})
+    version = 10
+    second = await reader.fetch({"kind": "metadata", "url": REPO})
+    assert first.content == second.content and first.version == second.version
+    assert "stargazers_count" not in second.content
+
+
+async def test_html_retains_article_header_and_ignores_hidden_and_update_decoration() -> None:
+    updated = "2026-01-01"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = f'\ufeff<html><body><header>Site navigation</header><main><header><h1>Version 2</h1><p>Requires Python 3.12</p></header><p>Local execution supported.</p><p>Last updated: {updated}</p><p style="display: none">Hidden instruction</p></main></body></html>'
+        return httpx.Response(
+            200, content=body.encode("utf-8"), headers={"content-type": "text/html"}
+        )
+
+    reader = fetcher(handler)
+    first = await reader.fetch({"kind": "document", "url": "https://docs.example/"})
+    updated = "2026-02-02"
+    second = await reader.fetch({"kind": "document", "url": "https://docs.example/"})
+    assert "Requires Python 3.12" in first.content and "Version 2" in first.content
+    assert "Hidden instruction" not in first.content and "Site navigation" not in first.content
+    assert first.content == second.content and first.version == second.version
+
+
+async def test_certificate_verification_failure_is_not_retried() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        try:
+            raise ssl.SSLCertVerificationError("synthetic certificate failure")
+        except ssl.SSLCertVerificationError as exc:
+            raise httpx.ConnectError("certificate failure", request=request) from exc
+
+    with pytest.raises(SourceError) as caught:
+        await fetcher(handler).fetch({"kind": "document", "url": "https://docs.example/"})
+    assert caught.value.code == "certificate_error" and not caught.value.retryable
 
 
 @pytest.mark.parametrize("host_prefix", ["https://github.com", "https://raw.githubusercontent.com"])

@@ -249,6 +249,30 @@ def require_unknown_for_conflicts(
     return result
 
 
+def validate_decision_support(
+    decision: DecisionDraft, support: list[dict[str, Any]], spec: ProjectSpec
+) -> None:
+    constraints = {item.id: item for item in spec.constraints}
+    if any(ref not in constraints for ref in decision.constraint_refs):
+        raise ResearchValidationError("Decision refers to an unknown constraint")
+    if decision.verdict not in {"meets", "fails"}:
+        return
+    if not support or not any(item.get("verification") in DIRECT_VERIFICATIONS for item in support):
+        raise ResearchValidationError("A definitive verdict requires direct current evidence")
+    if any(constraints[ref].hard for ref in decision.constraint_refs) and any(
+        item.get("verification") == "unknown" for item in support
+    ):
+        raise ResearchValidationError("Unknown evidence cannot settle a hard constraint")
+    for ref in decision.constraint_refs:
+        if constraints[ref].hard and not any(
+            item.get("verification") in DIRECT_VERIFICATIONS and item.get("dimension") == ref
+            for item in support
+        ):
+            raise ResearchValidationError(
+                f"Hard constraint {ref} requires direct evidence in its own dimension"
+            )
+
+
 def validate_comparison(comparison: Comparison, context: dict[str, Any]) -> Comparison:
     spec = ProjectSpec.model_validate(context["spec"])
     evidence = {str(item["id"]): item for item in context.get("evidence", [])}
@@ -268,6 +292,7 @@ def validate_comparison(comparison: Comparison, context: dict[str, Any]) -> Comp
         if item.get("status", "open") == "open"
     ]
     conflicts = validate_conflicts([*comparison.conflicts, *known_conflicts], context)
+    require_unknown_for_conflicts(comparison.decisions, conflicts)
     checked: list[DecisionDraft] = []
     for decision in comparison.decisions:
         canonical = {item.rstrip("/"): item for item in spec.candidates}
@@ -296,17 +321,7 @@ def validate_comparison(comparison: Comparison, context: dict[str, Any]) -> Comp
                 context,
             )
             support.append(item)
-        if decision.verdict in {"meets", "fails"}:
-            if not support or not any(
-                item.get("verification") in DIRECT_VERIFICATIONS for item in support
-            ):
-                raise ResearchValidationError(
-                    "A definitive verdict requires direct current evidence"
-                )
-            if any(constraints[ref].hard for ref in decision.constraint_refs) and any(
-                item.get("verification") == "unknown" for item in support
-            ):
-                raise ResearchValidationError("Unknown evidence cannot settle a hard constraint")
+        validate_decision_support(decision, support, spec)
         checked.append(decision)
     checked = require_unknown_for_conflicts(checked, conflicts)
     for conflict in conflicts:
@@ -348,37 +363,66 @@ def validate_comparison(comparison: Comparison, context: dict[str, Any]) -> Comp
                     )
                 )
                 unknowns.append(f"{candidate}: {constraint.text}")
-    recommendation = comparison.recommendation
+    return bind_recommendation(
+        spec,
+        comparison.model_copy(
+            update={
+                "decisions": checked,
+                "unknowns": list(dict.fromkeys(unknowns)),
+                "conflicts": conflicts,
+            }
+        ),
+    )
+
+
+def bind_recommendation(spec: ProjectSpec, comparison: Comparison) -> Comparison:
+    """Derive the displayed recommendation from one eligible structured candidate.
+
+    Old stored comparisons without the optional field remain readable, but cannot
+    make an unchecked selection when the project has hard requirements.
+    """
     hard_ids = {item.id for item in spec.constraints if item.hard}
-    if hard_ids and not any(
-        all(
+    eligible = {
+        candidate
+        for candidate in spec.candidates
+        if all(
             any(
                 item.candidate == candidate
                 and ref in item.constraint_refs
                 and item.verdict == "meets"
-                for item in checked
+                for item in comparison.decisions
             )
             and not any(
                 item.candidate == candidate
                 and ref in item.constraint_refs
                 and item.verdict in {"fails", "unknown"}
-                for item in checked
+                for item in comparison.decisions
             )
             for ref in hard_ids
         )
-        for candidate in spec.candidates
-    ):
+    }
+    selected = comparison.recommended_candidate
+    if selected is not None:
+        selected = {item.rstrip("/"): item for item in spec.candidates}.get(selected.rstrip("/"))
+    if selected not in eligible:
+        selected = None
+    if hard_ids and not eligible:
         recommendation = (
             "No candidate is confirmed to meet every hard constraint. "
-            "Complete the unresolved checks before making a selection."
+            "Complete the unresolved checks before making a selection. / "
+            "尚未确认任何候选满足全部硬条件，请先完成待核验项。"
         )
+    elif selected is not None:
+        recommendation = f"Recommended candidate / 推荐候选: {selected}."
+    elif hard_ids:
+        recommendation = (
+            "No eligible candidate was selected. Review the hard requirements before selecting. / "
+            "尚未选定合格候选，请核对硬条件后再选择。"
+        )
+    else:
+        recommendation = comparison.recommendation
     return comparison.model_copy(
-        update={
-            "decisions": checked,
-            "unknowns": list(dict.fromkeys(unknowns)),
-            "recommendation": recommendation,
-            "conflicts": conflicts,
-        }
+        update={"recommended_candidate": selected, "recommendation": recommendation}
     )
 
 
@@ -416,10 +460,22 @@ def build_context(
     }.get(stage)
     if order is None:
         raise ValueError(f"Unknown research stage: {stage}")
+    hard_ids = {item["id"] for item in normalized["spec"]["constraints"] if item["hard"]}
+    conflict_refs = {
+        ref for conflict in normalized["conflicts"] for ref in conflict.get("evidence_refs", [])
+    }
+    critical_gaps: list[str] = []
     for name in order:
         values = normalized[name]
         if name == "evidence":
-            values = sorted(values, key=lambda item: not evidence_is_current(item))
+            values = sorted(
+                values,
+                key=lambda item: (
+                    not evidence_is_current(item),
+                    item["id"] not in conflict_refs,
+                    item.get("dimension") not in hard_ids,
+                ),
+            )
         for item in values:
             value = dict(item)
             if name == "snapshots" and stage != "extract":
@@ -427,11 +483,19 @@ def build_context(
             selected[name].append(value)
             if size() > budget_chars - 400:
                 selected[name].pop()
-                selected["context_gaps"].append(f"{name}:{item.get('id', 'item')}")
+                gap = f"{name}:{item.get('id', 'item')}"
+                if name == "evidence" and (
+                    item["id"] in conflict_refs or item.get("dimension") in hard_ids
+                ):
+                    gap += f" candidate={item.get('candidate', '')} dimension={item.get('dimension', '')}"
+                    critical_gaps.append(gap)
+                else:
+                    selected["context_gaps"].append(gap)
     # Gaps can themselves be large. Keep their count while bounding their IDs.
     gaps = selected["context_gaps"]
     if len(gaps) > 10:
         selected["context_gaps"] = gaps[:10] + [f"{len(gaps) - 10} additional items omitted"]
+    selected["context_gaps"] = critical_gaps + selected["context_gaps"]
     if size() > budget_chars:
         raise ContextBudgetError("Context gap metadata exceeds the context character budget")
     return selected
@@ -441,6 +505,7 @@ __all__ = [
     "ContextBudgetError",
     "ResearchValidationError",
     "build_context",
+    "bind_recommendation",
     "conflict_affects_decision",
     "evidence_is_current",
     "normalize_context",

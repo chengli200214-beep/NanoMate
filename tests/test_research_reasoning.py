@@ -107,6 +107,7 @@ def comparison() -> dict[str, Any]:
     return {
         "summary": "Both current README snapshots were inspected.",
         "recommendation": "Select Alpha.",
+        "recommended_candidate": ALPHA,
         "decisions": [
             {
                 "candidate": ALPHA,
@@ -278,7 +279,8 @@ async def test_missing_hard_decisions_are_unknown_and_no_candidate_is_confirmed(
 
 async def test_supported_hard_verdict_preserves_explainable_recommendation() -> None:
     result = await ResearchReasoner(MockLLM([response(comparison())])).compare(context())
-    assert result.recommendation == "Select Alpha."
+    assert result.recommended_candidate == ALPHA
+    assert ALPHA in result.recommendation
 
 
 async def test_valid_json_repair_is_counted_as_an_actual_call() -> None:

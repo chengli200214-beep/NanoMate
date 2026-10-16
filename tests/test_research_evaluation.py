@@ -68,6 +68,15 @@ def test_changed_inputs_fail_frozen_hash_verification(tmp_path: Path) -> None:
         verify_frozen(freeze)
 
 
+def test_content_freeze_fingerprint_is_independent_of_timestamp_and_output_path(
+    tmp_path: Path,
+) -> None:
+    first = freeze_inputs(DEFAULT_MANIFEST, tmp_path / "one", [])
+    second = freeze_inputs(DEFAULT_MANIFEST, tmp_path / "two", [])
+    assert first["frozen_at"] != second["frozen_at"]
+    assert first["content_sha256"] == second["content_sha256"]
+
+
 async def test_default_dry_run_makes_no_execution_or_quality_results(tmp_path: Path) -> None:
     output = tmp_path / "dry-run"
     args = parser().parse_args(["--output", str(output)])
@@ -155,7 +164,8 @@ async def test_actual_failure_is_retained_and_not_rewritten_as_a_pass(
     item = build_matrix(manifest, scenario_ids={"initial-portable"}, include_reruns=False)[0]
     result = await execute_one(manifest, item, tmp_path, "fixture")
     assert result["status"] == "failed"
-    assert "Deliberate workflow failure" in result["error"]
+    assert "Research could not continue" in result["error"]
+    assert "Deliberate workflow failure" not in result["error"]
     assert result["quality_score"] is None
     retained = json.loads(
         (tmp_path / "executions" / item["execution_id"] / "result.json").read_text("utf-8")
@@ -163,7 +173,7 @@ async def test_actual_failure_is_retained_and_not_rewritten_as_a_pass(
     assert retained["status"] == "failed" and retained["target_run"]["status"] == "failed"
 
 
-async def test_revision_ablation_is_identified_and_only_changes_previous_decision_statuses(
+async def test_revision_ablation_really_exposes_previous_decisions_to_comparison(
     tmp_path: Path,
 ) -> None:
     manifest = load_manifest(DEFAULT_MANIFEST)
@@ -176,6 +186,9 @@ async def test_revision_ablation_is_identified_and_only_changes_previous_decisio
     assert complete["observations"]["old_decisions_invalidated"] is True
     assert changed["observations"]["old_decisions_invalidated"] is False
     assert "intervention" in changed
+    assert complete["comparison_inputs"][-1]["decision_ids"] == []
+    assert changed["comparison_inputs"][-1]["historical_decision_ids"]
+    assert changed["comparison_inputs"][-1]["evidence_ids"]
     assert complete["setup_usage"]["model_calls"] > 0
     assert complete["usage"]["model_calls"] < len(complete["all_calls"])
 

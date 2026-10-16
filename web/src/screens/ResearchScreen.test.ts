@@ -5,7 +5,7 @@ import { setLocaleSetting } from "../i18n";
 import { researchApi, type ResearchProjectDetail, type ResearchReport, type ResearchRun } from "../research-api";
 import { ResearchScreen } from "./ResearchScreen";
 
-const store = vi.hoisted(() => ({ toast: vi.fn() }));
+const store = vi.hoisted(() => ({ toast: vi.fn(), state: { connected: true, researchUpdates: {} as Record<string, number> } }));
 vi.mock("../store", () => ({ useStore: () => store }));
 vi.mock("../components/TabHeader", () => ({ TabHeader: ({ title }: { title: string }) => createElement("h1", null, title) }));
 
@@ -36,6 +36,7 @@ beforeEach(() => {
   vi.spyOn(researchApi, "reports").mockResolvedValue([]);
   vi.spyOn(researchApi, "changes").mockResolvedValue({ events: [], notifications: [], mute_rules: [] });
   store.toast.mockReset();
+  store.state = { connected: true, researchUpdates: {} };
 });
 afterEach(() => {
   if (screen) act(() => screen.unmount());
@@ -131,15 +132,15 @@ describe("research workbench", () => {
     expect(JSON.stringify(screen.toJSON())).toContain("Conditions or evidence changed. Run research to update this report.");
   });
 
-  it("matches mute rules by both source and impact level", async () => {
+  it("matches mute rules by source, impact, conditions and change type", async () => {
     vi.mocked(researchApi.projects).mockResolvedValue([project]);
     vi.mocked(researchApi.changes).mockResolvedValue({
       events: [
-        { id: "event-related", source_id: "source-1", impact_level: "related", change_summary: "Related update" },
-        { id: "event-recommendation", source_id: "source-1", impact_level: "recommendation", change_summary: "Recommendation update" },
+        { id: "event-related", source_id: "source-1", spec_id: "spec-1", impact_level: "related", change_summary: "Related update" },
+        { id: "event-recommendation", source_id: "source-1", spec_id: "spec-1", impact_level: "recommendation", change_summary: "Recommendation update" },
       ],
       notifications: [],
-      mute_rules: [{ id: "mute-source-1-recommendation", source_id: "source-1", impact_level: "recommendation", enabled: true }],
+      mute_rules: [{ id: "mute-source-1-recommendation", source_id: "source-1", impact_level: "recommendation", scope: { spec_id: "spec-1", change_type: "content", constraint_refs: [] }, enabled: true }],
     });
     vi.spyOn(researchApi, "changeAction").mockResolvedValue({ id: "event-related" });
     await mount();
@@ -147,12 +148,28 @@ describe("research workbench", () => {
     const articles = screen.root.findAllByType("article");
     const related = articles.find((node) => text(node).includes("Related update"))!;
     const recommendation = articles.find((node) => text(node).includes("Recommendation update"))!;
-    const mute = related.findAllByType("button").find((node) => text(node).trim() === "Mute this source");
+    const mute = related.findAllByType("button").find((node) => text(node).trim() === "Mute this source change");
     expect(mute).toBeDefined();
-    expect(recommendation.findAllByType("button").some((node) => text(node).trim() === "Unmute this source")).toBe(true);
+    expect(recommendation.findAllByType("button").some((node) => text(node).trim() === "Unmute this source change")).toBe(true);
     expect(field("Model call limit per check").findByType("input").props.max).toBe(200);
     await act(async () => { mute!.props.onClick(); });
     expect(researchApi.changeAction).toHaveBeenCalledWith("event-related", "mute");
+  });
+
+  it("discovers background work while idle and refreshes a snapshot after reconnect", async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal("window", { setTimeout, clearTimeout });
+    vi.mocked(researchApi.projects).mockResolvedValue([project]);
+    await mount();
+    const before = vi.mocked(researchApi.project).mock.calls.length;
+    await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+    expect(vi.mocked(researchApi.project).mock.calls.length).toBe(before + 1);
+    store.state = { connected: false, researchUpdates: {} };
+    await act(async () => { screen.update(createElement(ResearchScreen)); });
+    const disconnected = vi.mocked(researchApi.project).mock.calls.length;
+    store.state = { connected: true, researchUpdates: { [project.id]: 7 } };
+    await act(async () => { screen.update(createElement(ResearchScreen)); });
+    expect(vi.mocked(researchApi.project).mock.calls.length).toBe(disconnected + 1);
   });
 
   it("loads conflicts independently and displays them on the evidence page", async () => {

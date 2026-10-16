@@ -47,10 +47,11 @@ it is not deprived of new information. Raw target costs can be compared after re
 
 Two experimental interventions are confined to this runner:
 
-- For the four condition revisions, `no_version_invalidation` restores old decision
-  statuses to `active` after the normal revision operation. Conditions, source inputs,
-  model, and tools remain the same. This tests decision-status invalidation; it does
-  not disable every possible version check in the application.
+- For the four condition revisions, `no_version_invalidation` restores old decisions
+  to `active` and supplies previous-version decisions, evidence and snapshots to the
+  model alongside current requirements. Results retain the IDs selected for context.
+  Execution fencing and source safety remain enabled. The earlier status-only
+  intervention did not change model input and is invalid for evaluating this mechanism.
 - For the four source updates, `no_impact_filter` still obtains the normal impact
   judgment, then forces the downstream notification level for each detected content
   change. The forced level is an experimental intervention, not the model's judgment.
@@ -83,8 +84,10 @@ The 12 scenarios do not establish statistical significance or broad task quality
 用真实返回的 token 和核实后的单价估算开支。每次运行使用独立目录，保存数据库、报告、
 调用和失败；旧版准备调用与目标更新调用分别记录。输出目录不能覆盖已有结果。
 
-基线获得最新条件和完整相同资料。版本消融只恢复旧结论的 active 状态，影响消融在正常
-判断后强制通知，均在运行器中明确标为实验干预。它们不能被描述为关闭应用内所有版本校验。
+基线获得最新条件和完整相同资料。版本消融恢复旧结论的 active 状态，并将旧版本决策、
+证据与快照送入当前条件的模型上下文，记录选入的 ID，仍保留执行围栏与来源安全。此前
+只改状态的消融未改变模型输入，不能证明该机制的作用。影响消融在正常判断后强制通知，
+均明确标为实验干预，不能描述为关闭应用内所有版本校验。
 
 执行前保存文件 SHA-256、commit、工作树状态及代码副本，执行途中输入改变则停止。
 结果保留每例实际行为，语义支持关系、推荐合理性和提醒质量等待人工审查，不自动产出改善

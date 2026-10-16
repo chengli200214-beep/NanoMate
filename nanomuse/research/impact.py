@@ -7,6 +7,19 @@ from typing import Any
 from nanomuse.research.contracts import Comparison, ImpactJudgment
 
 
+def mute_scope(event: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "source_id": event["source_id"],
+        "impact_level": event["impact_level"],
+        "spec_id": event.get("spec_id", ""),
+        "change_type": event.get("change_type", "content"),
+        "constraint_refs": sorted(
+            set(event.get("affected_constraints", []))
+            | set(event.get("notification_policy", {}).get("constraint_refs", []))
+        ),
+    }
+
+
 def evaluated_event(
     event: dict[str, Any],
     judgment: ImpactJudgment,

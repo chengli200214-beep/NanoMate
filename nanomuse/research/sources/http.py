@@ -10,6 +10,7 @@ import json
 import math
 import os
 import re
+import ssl
 from dataclasses import dataclass
 from datetime import UTC
 from email.utils import parsedate_to_datetime
@@ -110,7 +111,6 @@ def _document_text(body: str) -> tuple[str, str]:
             "iframe",
             "nav",
             "footer",
-            "header",
             "aside",
             "button",
             "form",
@@ -118,10 +118,28 @@ def _document_text(body: str) -> tuple[str, str]:
         ]
     ):
         tag.decompose()
+    for header in soup.find_all("header"):
+        if header.find_parent(["main", "article"]) is None:
+            header.decompose()
     for comment in soup.find_all(string=lambda item: isinstance(item, Comment)):
         comment.extract()
-    for hidden in soup.select('[hidden], [aria-hidden="true"]'):
+    for hidden in soup.select(
+        '[hidden], [aria-hidden="true"], .last-updated, .last_updated, .updated-at, [data-last-updated]'
+    ):
         hidden.decompose()
+    for tag in soup.find_all(style=True):
+        if re.search(r"(?:display\s*:\s*none|visibility\s*:\s*hidden)", str(tag["style"]), re.I):
+            tag.decompose()
+    for updated_label in soup.find_all(
+        string=re.compile(r"^\s*(?:last\s+updated|updated\s+at|最后更新|更新时间)\s*[:：]", re.I)
+    ):
+        parent = updated_label.parent
+        if (
+            parent
+            and parent.name in {"p", "span", "time"}
+            and len(parent.get_text(" ", strip=True)) < 150
+        ):
+            parent.decompose()
     main = soup.find("main") or soup.find("article") or soup.body or soup
     converter = HTML2Text()
     converter.ignore_images = True
@@ -245,21 +263,27 @@ class HttpSourceFetcher:
                 pass
         return None
 
-    async def _get(self, client: httpx.AsyncClient, url: str, *, etag: str = "") -> httpx.Response:
+    async def _get(
+        self, client: httpx.AsyncClient, url: str, *, etag: str = "", accept: str = ""
+    ) -> httpx.Response:
         try:
-            return await asyncio.wait_for(self._download(client, url, etag=etag), self._timeout)
+            return await asyncio.wait_for(
+                self._download(client, url, etag=etag, accept=accept), self._timeout
+            )
         except TimeoutError as exc:
             raise SourceError(
                 "The source request timed out.", code="timeout", retryable=True
             ) from exc
 
     async def _download(
-        self, client: httpx.AsyncClient, url: str, *, etag: str = ""
+        self, client: httpx.AsyncClient, url: str, *, etag: str = "", accept: str = ""
     ) -> httpx.Response:
         current = validate_url(url)
         headers: dict[str, str] = (
             {"Accept": "application/vnd.github+json"} if current.host == "api.github.com" else {}
         )
+        if accept:
+            headers["Accept"] = accept
         if self._token and current.host == "api.github.com" and current.scheme == "https":
             headers["Authorization"] = f"Bearer {self._token}"
         if etag:
@@ -322,8 +346,18 @@ class HttpSourceFetcher:
                 "The source request timed out.", code="timeout", retryable=True
             ) from exc
         except (httpx.HTTPError, OSError) as exc:
+            cause: BaseException | None = exc
+            certificate_failure = False
+            for _ in range(10):
+                if cause is None:
+                    break
+                certificate_failure |= isinstance(cause, ssl.SSLCertVerificationError)
+                certificate_failure |= "CERTIFICATE_VERIFY_FAILED" in str(cause)
+                cause = cause.__cause__ or cause.__context__
             raise SourceError(
-                "The source request failed.", code="network_error", retryable=True
+                "The source request failed.",
+                code="certificate_error" if certificate_failure else "network_error",
+                retryable=not certificate_failure,
             ) from exc
         raise SourceError("No source response was received.", code="invalid_response")
 
@@ -417,12 +451,8 @@ class HttpSourceFetcher:
                     "archived",
                     "disabled",
                     "visibility",
-                    "pushed_at",
                     "language",
                     "topics",
-                    "stargazers_count",
-                    "forks_count",
-                    "open_issues_count",
                 )
                 data = {key: data[key] for key in keys if key in data}
                 license_info = data.get("license")
@@ -464,12 +494,18 @@ class HttpSourceFetcher:
                 fetched_at=iso(self._clock.now()),
             )
         commit_response = await self._get(
-            client, repo.api + "/commits/" + quote(repo.ref, safe=""), etag=old_etag
+            client,
+            repo.api + "/commits/" + quote(repo.ref, safe=""),
+            etag=old_etag,
+            accept="application/vnd.github.sha",
         )
         if commit_response.status_code == 304:
             return self._unchanged(source, previous, commit_response.headers.get("etag", ""))
-        commit = self._json(commit_response)
-        sha = commit.get("sha", "") if isinstance(commit, dict) else ""
+        sha = commit_response.text.strip()
+        # Older compatible proxies may still return the JSON representation.
+        if not _SHA.fullmatch(sha):
+            commit = self._json(commit_response)
+            sha = commit.get("sha", "") if isinstance(commit, dict) else ""
         if not isinstance(sha, str) or not _SHA.fullmatch(sha):
             raise SourceError(
                 "GitHub did not return a full commit identifier.", code="invalid_response"
@@ -533,7 +569,7 @@ class HttpSourceFetcher:
                 code="unsupported_media",
             )
         try:
-            body = response.content.decode(response.encoding or "utf-8-sig")
+            body = response.content.decode(response.encoding or "utf-8-sig").lstrip("\ufeff")
         except (UnicodeDecodeError, LookupError) as exc:
             raise SourceError("The source is not readable text.", code="invalid_content") from exc
         if "\x00" in body:

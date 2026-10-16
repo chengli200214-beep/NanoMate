@@ -83,6 +83,7 @@ export interface Stream {
 }
 
 export interface AppState {
+  researchUpdates: Record<string, number>;
   connected: boolean;
   loaded: boolean;
   authError: boolean;
@@ -208,6 +209,7 @@ function liteFromUrl(): boolean {
 }
 
 const initial: AppState = {
+  researchUpdates: {},
   connected: false,
   loaded: false,
   authError: false,
@@ -397,6 +399,8 @@ function reducer(state: AppState, action: Action): AppState {
 
 function applyWs(state: AppState, msg: WsMessage): AppState {
   switch (msg.kind) {
+    case "research":
+      return { ...state, researchUpdates: { ...state.researchUpdates, [msg.project_id]: Math.max(state.researchUpdates[msg.project_id] ?? 0, msg.sequence) } };
     case "hello":
       return reducer(state, { type: "hello", state: msg.state });
     case "event":

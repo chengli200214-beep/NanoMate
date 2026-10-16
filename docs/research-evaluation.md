@@ -50,6 +50,25 @@ version. `--budget-ledger PATH` reuses an existing approved ledger, including al
 settled spending; it does not grant another allowance. Repairs use a new output directory
 and freeze, retain a budget-before snapshot, and never replace the original matrix results.
 
+## Interpretation after review
+
+The original `no_version_invalidation` intervention only restored status flags. Current-version
+filtering still excluded those decisions from model input, so that historical four-run group
+is invalid as evidence for the version mechanism. Its usage and failures remain in the record.
+The repaired intervention supplies previous-version decisions, evidence and snapshots alongside
+current requirements, while retaining execution fences and source safety checks. Each result
+records the decision and evidence IDs actually selected for comparison context.
+
+`freeze_sha256` identifies the exact audit record, including time and machine paths. The added
+`content_sha256` fingerprints logical input paths, file hashes, matrix and configuration for
+comparison across machines. Target usage includes all following replay attempts, even after
+a target failure. `stale_reference_misuse_count` measures obsolete references mechanically;
+`stale_fact_semantic_misuse` remains null until the actual claims are reviewed.
+
+The fault matrix now runs the original 30 cases plus nine abrupt publication-process exits.
+Report references, database integrity, model-call records and emitted audit logs are checked
+where those artifacts exist. These tests establish recovery behavior, not model accuracy.
+
 ## 中文
 
 评测运行器默认只冻结场景、SHA-256 和运行矩阵，不请求模型。显式选择 fixture 后，才会

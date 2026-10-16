@@ -1,4 +1,4 @@
-"""Run the ten frozen fault assertions three times each, using offline inputs."""
+"""Run the original 30 faults and nine publication-process exits using offline inputs."""
 
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ MATRIX = [
     "tests/research/test_consistency.py::"
     "test_conflict_retains_both_source_versions_and_cannot_settle_requirement",
     WORKFLOW + "test_expired_worker_cannot_override_new_attempt",
+    "tests/research/test_process_recovery.py::test_publication_process_exit_matrix",
 ]
 
 

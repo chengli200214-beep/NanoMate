@@ -10,6 +10,9 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Runtime
 
+- Research reports bound their recommendation to a candidate meeting every hard requirement and required direct evidence in each hard condition's dimension. Context selection prioritized hard-condition and conflict evidence, and truncated tool responses ran no tools.
+- Research tracking reused unchanged source text across unrelated commits, narrowed mute scopes, backed up databases before upgrades and kept raw exception details out of diagnostics. Research events and idle polling refreshed background activity after reconnecting.
+- Research evaluation exposed previous-version context in its version ablation and identified the earlier status-only intervention as invalid. Publication fault checks added nine actual process exits.
 - Research acceptance retained the complete live matrix, bounded failures and a separate conflict-reminder repair result. Annotation approval, workflow execution and semantic output review were reported separately.
 - Research tracking notified once when a changed source left a hard requirement in conflict, even when the model's impact judgment was uncertain. Event records preserved the original judgment and applied policy; scoped muting and unknown verdicts stayed in effect.
 - Research repair evaluations reused the approved batch ledger, retaining prior spending and separate frozen results.
@@ -26,6 +29,7 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Web
 
+- Research corrections accepted an empty optional quote, change actions reflected their saved status and paused runs explained blocked tracking. Research terminology used the dedicated Chinese translations.
 - Research documentation added product scope, architecture and data diagrams, and a project walkthrough. Delivery requirements excluded videos, presentation slides and screen recordings at the owner's request, retaining the workspace, Markdown reports, documentation, screenshots and acceptance records.
 - The research workspace added project conditions, source imports, evidence corrections, conflict details, run controls, change tracking and authenticated Markdown exports in English and Chinese.
 - **Each Feed section showed its own load error and retry.** Posts, activity, Next up and calendar requests kept their last successful content when a refresh failed; retrying one section no longer refetched the others.

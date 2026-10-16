@@ -88,6 +88,7 @@ class ConflictDraft(StrictModel):
 class Comparison(StrictModel):
     summary: str
     recommendation: str
+    recommended_candidate: str | None = None
     decisions: list[DecisionDraft]
     conflicts: list[ConflictDraft] = Field(default_factory=list)
     unknowns: list[str] = Field(default_factory=list)

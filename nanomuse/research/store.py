@@ -15,6 +15,7 @@ from typing import Any
 
 from nanomuse.research.clock import SystemClock, iso
 from nanomuse.research.contracts import SCHEMA_VERSION, Clock, ProjectSpec, SourceInput
+from nanomuse.research.impact import mute_scope
 
 TABLES = {
     "project",
@@ -41,20 +42,29 @@ def fingerprint(value: Any) -> str:
     ).hexdigest()
 
 
+class ResearchNotFoundError(KeyError):
+    """A requested record is absent, distinct from an internal missing field."""
+
+
 class ResearchStore:
     def __init__(self, directory: Path, clock: Clock | None = None) -> None:
         self.directory = directory
         directory.mkdir(parents=True, exist_ok=True)
         self.clock = clock or SystemClock()
         self.lock = threading.RLock()
-        self.db = sqlite3.connect(
-            directory / "research.db", check_same_thread=False, isolation_level=None
-        )
+        database = directory / "research.db"
+        existing = database.exists() and database.stat().st_size > 0
+        self.db = sqlite3.connect(database, check_same_thread=False, isolation_level=None)
         self.db.row_factory = sqlite3.Row
         self.db.execute("PRAGMA busy_timeout=5000")
         version = self.db.execute("PRAGMA user_version").fetchone()[0]
         if version > SCHEMA_VERSION:
+            self.db.close()
             raise RuntimeError("Research database is newer than this application")
+        if existing and version < SCHEMA_VERSION:
+            backup = directory / f"research.pre-v{SCHEMA_VERSION}.{uid('backup')}.db"
+            with sqlite3.connect(backup) as target:
+                self.db.backup(target)
         self.db.executescript(Path(__file__).with_name("schema.sql").read_text("utf-8"))
         columns = {row[1] for row in self.db.execute("PRAGMA table_info(research_run)")}
         if "input_version" not in columns:
@@ -86,7 +96,7 @@ class ResearchStore:
         with self.lock:
             row = self.db.execute(f"SELECT data FROM {table} WHERE id=?", (record_id,)).fetchone()
         if row is None:
-            raise KeyError(record_id)
+            raise ResearchNotFoundError(record_id)
         return dict(json.loads(row[0]))
 
     def list(self, table: str, project_id: str | None = None) -> builtins.list[dict[str, Any]]:
@@ -242,6 +252,16 @@ class ResearchStore:
             raise ValueError("A public source URL is required")
         if source.kind == "manual" and not source.content.strip():
             raise ValueError("Manual source content is empty")
+        if source.url:
+            from nanomuse.research.sources.errors import SourceError
+            from nanomuse.research.sources.security import validate_url
+
+            try:
+                validate_url(source.url)
+            except SourceError as exc:
+                raise ValueError(
+                    "Use a public HTTP or HTTPS source URL. / 请填写公开的 HTTP 或 HTTPS 来源地址。"
+                ) from exc
         with self.transaction():
             restart = bool(project["current_report_id"]) or any(
                 run["status"] in {"queued", "running", "paused", "needs_attention"}
@@ -282,6 +302,10 @@ class ResearchStore:
             "sources": self.list("source", project_id),
             "runs": self.runs(project_id),
             "current_report": report,
+            "tracking_blocked": project["tracking"]["enabled"]
+            and any(
+                row["status"] in {"paused", "needs_attention"} for row in self.runs(project_id)
+            ),
         }
 
     def runs(self, project_id: str) -> builtins.list[dict[str, Any]]:
@@ -296,7 +320,7 @@ class ResearchStore:
         with self.lock:
             row = self.db.execute("SELECT * FROM research_run WHERE id=?", (run_id,)).fetchone()
             if row is None:
-                raise KeyError(run_id)
+                raise ResearchNotFoundError(run_id)
             steps = self.db.execute(
                 "SELECT * FROM research_step WHERE run_id=? ORDER BY position", (run_id,)
             ).fetchall()
@@ -324,7 +348,10 @@ class ResearchStore:
                 (project_id, request_key),
             ).fetchone()
             if previous:
-                return self.run(previous[0])
+                existing_run = self.run(previous[0])
+                if existing_run["kind"] != kind:
+                    raise ValueError("This request key was already used for a different run kind")
+                return existing_run
             run_id = uid("run")
             self.db.execute(
                 "INSERT INTO research_run(id,project_id,spec_id,kind,status,request_key,created_at,missed_from,missed_to,input_version) "
@@ -438,6 +465,7 @@ class ResearchStore:
                 return False
             project_id = step["project_id"]
             run = self.run(step["run_id"])
+            self._advance_event_sequence(project_id)
             if output.get("no_changes"):
                 self.db.execute(
                     "UPDATE research_step SET status='succeeded',output='{}',lease_until=0 WHERE run_id=? AND status IN ('pending','running')",
@@ -451,11 +479,14 @@ class ResearchStore:
                 snapshot = output["snapshot"]
                 self._put("source_snapshot", snapshot)
                 source = self.get("source", step["source_id"])
+                observation = output.get("observation", snapshot)
                 source.update(
                     latest_snapshot_id=snapshot["id"],
                     error="",
                     checked_at=iso(self.clock.now()),
-                    etag=snapshot.get("etag", ""),
+                    etag=observation.get("etag", ""),
+                    observed_version=observation.get("version", ""),
+                    observed_url=observation.get("url", ""),
                 )
                 self._put("source", source)
                 previous = output.get("previous_snapshot")
@@ -594,9 +625,7 @@ class ResearchStore:
                 for event in output.get("events", []):
                     self._put("impact_event", event)
                     muted = any(
-                        m.get("enabled", True)
-                        and m["source_id"] == event["source_id"]
-                        and m["impact_level"] == event["impact_level"]
+                        m.get("enabled", True) and m.get("scope") == mute_scope(event)
                         for m in self.list("mute_rule", project_id)
                     )
                     if event["impact_level"] == "recommendation" and not muted:
@@ -611,6 +640,11 @@ class ResearchStore:
                 (json.dumps(output, ensure_ascii=False), step["id"]),
             )
             return True
+
+    def _advance_event_sequence(self, project_id: str) -> None:
+        project = self.get("project", project_id)
+        project["event_sequence"] = project.get("event_sequence", 0) + 1
+        self._put("project", project)
 
     def _notify(self, project_id: str, dedupe_key: str, content: str, event_id: str) -> None:
         value = {
@@ -632,12 +666,14 @@ class ResearchStore:
         error: str,
         retryable: bool = False,
         needs_attention: bool = False,
-        retry_after: float = 1,
+        retry_after: float | None = None,
     ) -> None:
         with self.transaction():
             if not self._owns(step):
                 return
-            retry = retryable and step["attempt"] < 3
+            self._advance_event_sequence(step["project_id"])
+            retry = retryable and step["attempt"] < 4
+            delay = retry_after if retry_after is not None else min(60, 2 ** (step["attempt"] - 1))
             if not retry and step["stage"] == "collect" and not needs_attention:
                 source = self.get("source", step["source_id"])
                 source["error"] = error[:1000]
@@ -652,7 +688,7 @@ class ResearchStore:
                 (
                     "pending" if retry else "failed",
                     error[:1000],
-                    self.clock.now() + retry_after,
+                    self.clock.now() + delay,
                     step["id"],
                 ),
             )

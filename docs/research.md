@@ -81,7 +81,8 @@ project for real-model research. An existing fixture project cannot switch mode.
    Checks happen while the service runs. Missed checks merge into one catch-up run
    at restart. Unchanged sources do not trigger model requests or a new report.
 7. Inspect version differences, export Markdown, accept updates, give reminder
-   feedback or mute a source's impact level. Only recommendation-level source changes
+   feedback or mute a source's impact level for the current condition version and affected
+   condition IDs. Only recommendation-level source changes
    create an impact notification; a new research report has a separate ready notice.
 
 ## Persistence and limits

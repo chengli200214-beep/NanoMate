@@ -1432,6 +1432,7 @@ export interface FileInfo {
 }
 
 export type WsMessage =
+  | { kind: "research"; project_id: string; run_id: string; stage: string; sequence: number }
   | { kind: "hello"; state: StateSnapshot }
   | { kind: "event"; event: TimelineEvent }
   | { kind: "update"; event: TimelineEvent }

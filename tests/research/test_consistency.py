@@ -23,6 +23,7 @@ from nanomuse.research.contracts import (
     ProjectSpec,
     SourceInput,
 )
+from nanomuse.research.impact import mute_scope
 from nanomuse.research.orchestrator import ResearchOrchestrator
 from nanomuse.research.reasoning import FixtureReasoner, ResearchReasoner
 from nanomuse.research.sources import FixtureFetcher
@@ -323,6 +324,7 @@ async def test_meaningful_change_is_deduplicated_and_muting_is_scoped(tmp_path: 
             "mute_rule",
             {
                 "id": "mute_test",
+                "scope": mute_scope(events[0]),
                 "project_id": project["id"],
                 "source_id": events[0]["source_id"],
                 "impact_level": "recommendation",
@@ -415,6 +417,14 @@ async def test_uncertain_hard_conflict_notifies_once_with_original_judgment_and_
                 "mute_rule",
                 {
                     "id": "mute_conflict",
+                    "scope": mute_scope(
+                        {
+                            "source_id": changing["id"],
+                            "impact_level": "recommendation",
+                            "spec_id": project["spec_id"],
+                            "affected_constraints": ["local"],
+                        }
+                    ),
                     "project_id": project["id"],
                     "source_id": changing["id"],
                     "impact_level": "recommendation",

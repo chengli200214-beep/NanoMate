@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime, timedelta
 from typing import Any
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import Response
@@ -14,8 +12,10 @@ from pydantic import BaseModel, Field
 
 from nanomuse.research.clock import iso
 from nanomuse.research.contracts import ProjectSpec, SourceInput
+from nanomuse.research.impact import mute_scope
 from nanomuse.research.orchestrator import NeedsAttention, ResearchOrchestrator, report_diff
-from nanomuse.research.store import ResearchStore
+from nanomuse.research.schedule import next_check
+from nanomuse.research.store import ResearchNotFoundError, ResearchStore, fingerprint
 
 
 class RunBody(BaseModel):
@@ -40,8 +40,8 @@ class FeedbackBody(BaseModel):
 class TrackingBody(BaseModel):
     enabled: bool
     interval_minutes: int = Field(default=1440, ge=1, le=10080)
-    timezone: str = "UTC"
-    daily_time: str = ""
+    timezone: str = Field(default="UTC", min_length=1, max_length=100)
+    daily_time: str = Field(default="", max_length=5)
     max_calls: int = Field(default=40, ge=1, le=200)
 
 
@@ -52,30 +52,12 @@ class DomainRoute(APIRoute):
         async def guarded(request: Any) -> Any:
             try:
                 return await handler(request)
-            except KeyError as exc:
+            except ResearchNotFoundError as exc:
                 raise HTTPException(404, "No such research record") from exc
             except ValueError as exc:
                 raise HTTPException(400, str(exc)) from exc
 
         return guarded
-
-
-def next_check(now: float, tracking: dict[str, Any]) -> float:
-    try:
-        zone = ZoneInfo(tracking["timezone"])
-    except (ZoneInfoNotFoundError, ValueError) as exc:
-        raise ValueError("Unknown timezone") from exc
-    if not tracking["daily_time"]:
-        return now + tracking["interval_minutes"] * 60
-    try:
-        hour, minute = map(int, tracking["daily_time"].split(":"))
-        local = datetime.fromtimestamp(now, UTC).astimezone(zone)
-        due = local.replace(hour=hour, minute=minute, second=0, microsecond=0)
-    except (ValueError, TypeError) as exc:
-        raise ValueError("Daily check time must use HH:mm") from exc
-    if due.timestamp() <= now:
-        due += timedelta(days=1)
-    return due.timestamp()
 
 
 def install_research(app: FastAPI, service: Any, dependencies: list[Any]) -> ResearchOrchestrator:
@@ -226,11 +208,18 @@ def install_research(app: FastAPI, service: Any, dependencies: list[Any]) -> Res
 
     @router.get("/projects/{project_id}/changes")
     async def changes(project_id: str) -> dict[str, Any]:
-        store.get("project", project_id)
+        project = store.get("project", project_id)
         return {
             "events": store.list("impact_event", project_id),
             "notifications": store.list("notification", project_id),
-            "mute_rules": store.list("mute_rule", project_id),
+            "mute_rules": [
+                {
+                    **rule,
+                    "enabled": bool(rule.get("enabled", True))
+                    and rule.get("scope", {}).get("spec_id") == project["spec_id"],
+                }
+                for rule in store.list("mute_rule", project_id)
+            ],
         }
 
     @router.post("/changes/{change_id}/action")
@@ -249,7 +238,8 @@ def install_research(app: FastAPI, service: Any, dependencies: list[Any]) -> Res
                             (json.dumps(notice, ensure_ascii=False), notice["id"]),
                         )
             elif body.action in {"mute", "unmute"}:
-                rule_id = f"mute_{event['source_id']}_{event['impact_level']}"
+                scope = mute_scope(event)
+                rule_id = "mute_" + fingerprint(scope)[:24]
                 store._put(
                     "mute_rule",
                     {
@@ -257,6 +247,7 @@ def install_research(app: FastAPI, service: Any, dependencies: list[Any]) -> Res
                         "project_id": event["project_id"],
                         "source_id": event["source_id"],
                         "impact_level": event["impact_level"],
+                        "scope": scope,
                         "enabled": body.action == "mute",
                         "created_at": iso(store.clock.now()),
                     },

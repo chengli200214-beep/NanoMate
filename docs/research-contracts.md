@@ -55,3 +55,36 @@ and fence previous runs. Step commits check owner, attempt, lease, input hash, i
 version and current specification. Snapshots, specifications and reports are immutable.
 Model requests reserve a stable call ID before network I/O; completed usage updates
 the same record. A reclaimed running request becomes unknown and still consumes budget.
+
+## Review repairs
+
+`Comparison.recommended_candidate` is an optional candidate ID or null. It defaults to
+null for older records. With hard requirements, only a candidate whose every hard verdict
+is meets can be selected. The validator and renderer derive recommendation text from this
+field; unbound or ineligible selections abstain. A definitive hard verdict needs direct
+evidence whose dimension equals each referenced hard-condition ID. These are structural
+checks; quote entailment and compound factual claims still require semantic review.
+
+Unchanged cleaned source content retains its original immutable snapshot, URL and version.
+A ref moving to another commit updates the source's `observed_version`, `observed_url`,
+ETag and check time. It does not invalidate evidence or call the model. Metadata excludes
+stars, forks, issue counters and push time. HTML article headers remain readable; explicit
+hidden content and update decoration are removed. Ref resolution requests only GitHub's
+SHA representation, documented in the [GitHub commit API](https://docs.github.com/en/rest/commits/commits#get-a-commit).
+
+WebSocket research frames add `kind: research`, `project_id`, `run_id`, `stage` and a durable
+per-project `sequence`; the older `type: research` remains for compatibility. Frames are
+invalidation hints, not state patches. Clients fetch the current snapshot after a frame or
+reconnection. The workspace also polls every two seconds during runs and every five seconds
+while idle. Project detail adds optional `tracking_blocked` for paused or attention runs.
+
+Mute rules match source, impact level, condition version, change type and sorted affected
+condition IDs. Previous broad rules and rules for previous conditions no longer suppress
+new reminders. The changes API returns expired rules as disabled. Existing action paths
+remain valid. Blank optional correction quotes are sent as null by the web client.
+
+Timezone names are bounded to 100 characters. Only missing-record exceptions become 404.
+Diagnostics use fixed bilingual messages with a next action, without raw exceptions or
+local paths. Transient errors retry three times with exponential delays unless Retry-After
+is supplied; certificate verification failures do not retry. Before upgrading an existing
+research database, the store saves a consistent `research.pre-v<target>.*.db` backup.

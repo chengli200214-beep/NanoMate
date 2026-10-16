@@ -12,10 +12,14 @@ from typing import Any
 import pytest
 
 import nanomuse
+from nanomuse.config import SentinelSettings
 from nanomuse.research.clock import FakeClock
 from nanomuse.research.contracts import ProjectSpec
 from nanomuse.research.orchestrator import ResearchOrchestrator
 from nanomuse.research.store import ResearchStore, fingerprint
+from nanomuse.sentinel import Sentinel
+from nanomuse.sentinel.audit import AuditLog
+from nanomuse.ui import HeadlessUI
 
 RUNTIME_ROOT = Path(nanomuse.__file__).resolve().parent.parent
 REPOSITORIES = [
@@ -262,6 +266,57 @@ async def test_crash_after_report_write_keeps_previous_report_readable(tmp_path:
             == 1
         )
         assert reopened.run(new_run["id"])["status"] == "succeeded"
+    finally:
+        reopened.close()
+
+
+@pytest.mark.parametrize("repeat", range(3))
+@pytest.mark.parametrize("point", ["after_report_write", "before_step_commit", "after_step_commit"])
+async def test_publication_process_exit_matrix(tmp_path: Path, point: str, repeat: int) -> None:
+    clock = FakeClock()
+    directory = tmp_path / f"attempt-{repeat}"
+    store = ResearchStore(directory, clock)
+    spec = ProjectSpec(
+        title="Crash publication", goal="Compare", candidates=REPOSITORIES, mode="fixture"
+    )
+    project = store.create_project(spec)
+    run = store.enqueue(project["id"])
+    audit = AuditLog(directory / "audit.jsonl")
+    worker = ResearchOrchestrator(
+        store, sentinel=Sentinel(SentinelSettings(), audit, HeadlessUI(approve=False))
+    )
+    for _ in range(len(run["steps"]) - 1):
+        assert await worker.tick()
+    before_calls = len(store.list("model_call", project["id"]))
+    assert store.project(project["id"])["current_report_id"] is None
+    store.close()
+    crashed = await asyncio.to_thread(_crash_worker, directory, run["id"], point)
+    assert crashed.returncode == 86
+    reopened = ResearchStore(directory, clock)
+    try:
+        committed = point == "after_step_commit"
+        assert len(reopened.list("report_revision", project["id"])) == int(committed)
+        assert len(reopened.list("notification", project["id"])) == int(committed)
+        clock.advance(61)
+        resumed = ResearchOrchestrator(reopened)
+        for _ in range(5):
+            if not await resumed.tick():
+                break
+        assert reopened.run(run["id"])["status"] == "succeeded"
+        assert len(reopened.list("report_revision", project["id"])) == 1
+        assert len(reopened.list("notification", project["id"])) == 1
+        assert len(reopened.list("model_call", project["id"])) == before_calls
+        report = reopened.project(project["id"])["current_report"]
+        assert Path(report["path"]).read_text("utf-8") == report["markdown"]
+        assert report["hash"] == fingerprint(report["markdown"])
+        for decision_id in report["decision_refs"]:
+            for ref in reopened.get("decision_revision", decision_id)["evidence_refs"]:
+                evidence = reopened.get("evidence", ref)
+                snapshot = reopened.get("source_snapshot", evidence["snapshot_id"])
+                assert evidence["quote"] in snapshot["content"]
+                assert evidence["project_id"] == snapshot["project_id"] == project["id"]
+        assert any(row.get("tool") == "read_source" for row in audit.tail(100))
+        assert reopened.db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
     finally:
         reopened.close()
 

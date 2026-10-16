@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
@@ -9,13 +11,17 @@ import pytest
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.testclient import TestClient
 
+from nanomuse.config import SentinelSettings
 from nanomuse.research.api import install_research, next_check
 from nanomuse.research.clock import FakeClock
 from nanomuse.research.contracts import ProjectSpec, SourceInput
 from nanomuse.research.orchestrator import ResearchOrchestrator
 from nanomuse.research.reasoning import FixtureReasoner
 from nanomuse.research.sources import FixtureFetcher
-from nanomuse.research.store import ResearchStore
+from nanomuse.research.store import ResearchStore, fingerprint
+from nanomuse.sentinel import Sentinel
+from nanomuse.sentinel.audit import AuditLog
+from nanomuse.ui import HeadlessUI
 
 REPOS = ["https://github.com/Anil-matcha/open-dots", "https://github.com/nano-muse/nanoMuse"]
 
@@ -34,11 +40,46 @@ def spec(**changes: Any) -> ProjectSpec:
 
 
 @pytest.fixture
-def store(tmp_path: Path) -> ResearchStore:
-    return ResearchStore(tmp_path, FakeClock())
+def store(tmp_path: Path) -> Iterator[ResearchStore]:
+    current = ResearchStore(tmp_path, FakeClock())
+    yield current
+    # Inspect a reopened database, including tests that closed their original handle.
+    inspected = ResearchStore(tmp_path, current.clock)
+    try:
+        assert inspected.db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+        for report in inspected.list("report_revision"):
+            assert report["hash"] == fingerprint(report["markdown"])
+            for ref in report["decision_refs"]:
+                decision = inspected.get("decision_revision", ref)
+                assert decision["project_id"] == report["project_id"]
+                for evidence_ref in decision["evidence_refs"]:
+                    evidence = inspected.get("evidence", evidence_ref)
+                    snapshot = inspected.get("source_snapshot", evidence["snapshot_id"])
+                    assert evidence["project_id"] == snapshot["project_id"] == report["project_id"]
+                    assert evidence["quote"] in snapshot["content"]
+                    assert evidence["version"] == snapshot["version"]
+        for call in inspected.list("model_call"):
+            assert call["stage"] in {"extract", "compare", "impact"}
+            assert inspected.run(call["run_id"])["project_id"] == call["project_id"]
+        if audit_path := next(tmp_path.glob("audit.jsonl"), None):
+            records = [json.loads(line) for line in audit_path.read_text("utf-8").splitlines()]
+            assert records and all(row.get("event") for row in records)
+            assert any(row.get("tool") == "read_source" for row in records)
+    finally:
+        inspected.close()
+
+
+def attach_audit(worker: ResearchOrchestrator) -> None:
+    if worker.sentinel is None:
+        worker.sentinel = Sentinel(
+            SentinelSettings(),
+            AuditLog(worker.store.directory / "audit.jsonl"),
+            HeadlessUI(approve=False),
+        )
 
 
 async def drain(worker: ResearchOrchestrator, limit: int = 30) -> None:
+    attach_audit(worker)
     for _ in range(limit):
         if not await worker.tick():
             return
@@ -49,13 +90,13 @@ async def drain(worker: ResearchOrchestrator, limit: int = 30) -> None:
 async def test_timeout_is_bounded(store: ResearchStore, repeat: int) -> None:
     p = store.create_project(spec())
     run = store.enqueue(p["id"])
-    for attempt in range(3):
+    for attempt in range(4):
         step = store.claim(f"worker-{repeat}")
         assert step is not None and step["attempt"] == attempt + 1
         store.fail(step, "temporary timeout", retryable=True)
         store.clock.advance(5)  # type: ignore[attr-defined]
     result = store.run(run["id"])
-    assert result["steps"][0]["attempt"] == 3
+    assert result["steps"][0]["attempt"] == 4
     assert result["steps"][0]["error"] == "temporary timeout"
     assert result["steps"][0]["status"] == "succeeded"  # source gap, not fabricated data
     assert store.list("source_snapshot", p["id"]) == []
@@ -98,11 +139,15 @@ async def test_committed_source_is_not_repeated_after_restart(
     run = store.enqueue(p["id"])
     assert await ResearchOrchestrator(store).tick()
     first = store.run(run["id"])["steps"][0]
-    await drain(ResearchOrchestrator(store))
-    after = store.run(run["id"])
+    directory, clock = store.directory, store.clock
+    store.close()
+    reopened = ResearchStore(directory, clock)
+    await drain(ResearchOrchestrator(reopened))
+    after = reopened.run(run["id"])
     assert after["status"] == "succeeded"
     assert after["steps"][0]["attempt"] == first["attempt"] == 1
-    assert len(store.list("report_revision", p["id"])) == 1
+    assert len(reopened.list("report_revision", p["id"])) == 1
+    reopened.close()
 
 
 @pytest.mark.parametrize("repeat", range(3))
@@ -202,12 +247,19 @@ def test_expired_worker_cannot_override_new_attempt(store: ResearchStore, repeat
 async def test_pause_cancel_and_project_isolation(store: ResearchStore) -> None:
     p = store.create_project(spec())
     other = store.create_project(spec(title="Separate project"))
+    store.enqueue(other["id"])
+    await drain(ResearchOrchestrator(store))
+    other_evidence = store.list("evidence", other["id"])
+    assert other_evidence
     run = store.enqueue(p["id"])
     store.control(run["id"], "pause")
     assert store.claim("test") is None
     store.control(run["id"], "resume")
     await drain(ResearchOrchestrator(store))
-    assert store.list("evidence", other["id"]) == []
+    assert store.list("evidence", other["id"]) == other_evidence
+    assert not {row["id"] for row in other_evidence} & {
+        row["id"] for row in store.list("evidence", p["id"])
+    }
     run2 = store.enqueue(p["id"])
     claimed = store.claim("test")
     store.control(run2["id"], "cancel")

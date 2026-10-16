@@ -30,6 +30,7 @@ def _public_address(value: str) -> str:
         or address.is_loopback
         or address.is_link_local
         or address.is_unspecified
+        or (isinstance(address, ipaddress.IPv6Address) and address.is_site_local)
     ):
         raise SourceError("Only public Internet destinations are allowed.", code="unsafe_url")
     if isinstance(address, ipaddress.IPv6Address) and (
@@ -67,7 +68,9 @@ def validate_url(value: str) -> httpx.URL:
     except ValueError:
         # A single name is often a machine on the local search domain. Numeric variants
         # such as decimal IPv4 must not acquire meaning from the system resolver.
-        if "." not in host or re.fullmatch(r"[0-9.]+", host):
+        if "." not in host or re.fullmatch(
+            r"(?:0x[0-9a-f]+|[0-9]+)(?:\.(?:0x[0-9a-f]+|[0-9]+))*", host
+        ):
             raise SourceError(
                 "Use a public, fully qualified hostname.", code="unsafe_url"
             ) from None

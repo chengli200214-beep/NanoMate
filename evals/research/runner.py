@@ -169,6 +169,9 @@ def freeze_inputs(
                 "input_path": str(path),
                 "frozen_path": str(destination.relative_to(output)),
                 "sha256": sha256(path),
+                "logical_path": str(path.resolve().relative_to(root.resolve())).replace("\\", "/")
+                if path.resolve().is_relative_to(root.resolve())
+                else f"external/{index:02d}-{path.name}",
             }
         )
     freeze = {
@@ -182,6 +185,16 @@ def freeze_inputs(
         "annotation_status": approval["status"] if approval else "agent_draft_pending_human_review",
         "owner_approval": approval,
         "evaluation_configuration": configuration,
+        "content_sha256": hashlib.sha256(
+            json.dumps(
+                {
+                    "files": {row["logical_path"]: row["sha256"] for row in records},
+                    "matrix": matrix,
+                    "configuration": configuration,
+                },
+                sort_keys=True,
+            ).encode("utf-8")
+        ).hexdigest(),
     }
     freeze["freeze_sha256"] = hashlib.sha256(
         json.dumps(freeze, sort_keys=True).encode("utf-8")
@@ -229,6 +242,20 @@ class EvaluationReasoner:
         self.variant = variant
         self.interventions: list[dict[str, Any]] = []
         self.calls: list[dict[str, Any]] = delegate.calls
+        self.previous_context: dict[str, Any] | None = None
+        self.comparison_inputs: list[dict[str, Any]] = []
+
+    def _context(self, context: dict[str, Any]) -> dict[str, Any]:
+        if self.variant != "no_version_invalidation" or self.previous_context is None:
+            return context
+        combined = deepcopy(context)
+        for name in ("decisions", "evidence", "snapshots"):
+            by_id = {row["id"]: row for row in combined[name]}
+            for row in self.previous_context[name]:
+                if row["id"] not in by_id:
+                    by_id[row["id"]] = deepcopy(row)
+            combined[name] = list(by_id.values())
+        return combined
 
     def set_call_budget(self, remaining: int) -> None:
         if hasattr(self.delegate, "set_call_budget"):
@@ -239,13 +266,29 @@ class EvaluationReasoner:
             self.delegate.set_call_observer(callback)
 
     async def extract(self, context: dict[str, Any]) -> Any:
-        return await self.delegate.extract(context)
+        return await self.delegate.extract(self._context(context))
 
     async def compare(self, context: dict[str, Any]) -> Any:
-        return await self.delegate.compare(context)
+        from nanomuse.research.context import build_context
+
+        selected_context = self._context(context)
+        selected = build_context(
+            "compare", selected_context, getattr(self.delegate, "context_budget_chars", 48_000)
+        )
+        previous_ids = {row["id"] for row in (self.previous_context or {}).get("decisions", [])}
+        self.comparison_inputs.append(
+            {
+                "decision_ids": [row["id"] for row in selected["decisions"]],
+                "historical_decision_ids": [
+                    row["id"] for row in selected["decisions"] if row["id"] in previous_ids
+                ],
+                "evidence_ids": [row["id"] for row in selected["evidence"]],
+            }
+        )
+        return await self.delegate.compare(selected_context)
 
     async def impact(self, context: dict[str, Any]) -> ImpactJudgment:
-        result = await self.delegate.impact(context)
+        result = await self.delegate.impact(self._context(context))
         if self.variant == "no_impact_filter":
             # The experiment disables the final impact gate, not the model call. The
             # current store notifies at recommendation level; this forced level is an
@@ -387,6 +430,8 @@ def _observations(
         "report_present": report is not None,
         "report_sections": report["markdown"].count("\n## ") if report else 0,
         "obsolete_or_unbound_evidence_refs": invalid,
+        "stale_reference_misuse_count": len(set(invalid)),
+        "stale_fact_semantic_misuse": None,
         "must_identify_observations": facts,
         "old_decision_statuses": old_statuses,
         "old_decisions_invalidated": bool(old_statuses)
@@ -503,18 +548,24 @@ async def execute_one(
         _configure_sources(store, project_id, target_sources)
         clock.advance(60)
         if needs_setup and scenario["group"] == "constraint_change":
+            previous_spec = store.project(project_id)["spec"]
+            previous_context = engine._context(
+                project_id, {key: previous_spec[key] for key in ProjectSpec.model_fields}
+            )
             store.revise(project_id, target_spec)
             target = store.runs(project_id)[0]
             if item["variant"] == "no_version_invalidation":
-                # Controlled experiment: restore the previous decision statuses after
-                # revise, leaving current conditions and full source inputs unchanged.
+                # Disable semantic version invalidation at the evaluation boundary.
+                # The real execution fence and current requirements stay enabled.
                 with store.transaction():
                     for identifier in old_decisions:
                         previous = store.get("decision_revision", identifier)
                         previous["status"] = "active"
                         store._put("decision_revision", previous)
+                reasoner.previous_context = previous_context
                 result["intervention"] = (
-                    "Restored previous decision statuses to active after revision"
+                    "Reused previous-version decisions and evidence in the model context; "
+                    "retained current requirements and the execution fence"
                 )
         else:
             kind = "check" if needs_setup and scenario["group"] == "source_update" else "research"
@@ -566,6 +617,10 @@ async def execute_one(
         result["all_calls"] = reasoner.calls
         result["target_calls"] = reasoner.calls[target_calls_start:]
         result["interventions"] = reasoner.interventions
+        result["comparison_inputs"] = reasoner.comparison_inputs
+        result["usage_scope"] = (
+            "Target workflow and all following replay attempts, including failures"
+        )
         if project_id:
             write_json(
                 directory / "state.json",
@@ -748,7 +803,8 @@ async def run_suite(args: argparse.Namespace) -> dict[str, Any]:
     results.sort(key=lambda row: row["execution_id"])
     summary = summarize(results, args.mode, len(matrix))
     summary["freeze_sha256"] = freeze["freeze_sha256"]
-    summary["annotation_status"] = manifest["annotation_status"]
+    summary["annotation_source_status"] = manifest["annotation_status"]
+    summary["annotation_status"] = approval["status"] if approval else manifest["annotation_status"]
     summary["owner_approval"] = approval
     summary["workers"] = args.workers
     if budget:

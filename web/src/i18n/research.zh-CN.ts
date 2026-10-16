@@ -1,5 +1,10 @@
 /** Research workbench strings. The English keys are the source locale. */
 const researchZhCN: Record<string, string> = {
+  "Accepted": "已接受",
+  "Evaluated": "已评估",
+  "Mute this source change": "静默此类来源变化",
+  "Unmute this source change": "恢复此类来源提醒",
+  "Tracking is waiting for a paused run or a run that needs attention.": "跟踪正等待已暂停或需要处理的运行结束。",
   Research: "技术选型",
   Overview: "概览",
   Evidence: "证据",

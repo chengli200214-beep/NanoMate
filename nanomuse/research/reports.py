@@ -11,10 +11,12 @@ from urllib.parse import quote, urlsplit
 
 from nanomuse.research.context import (
     ResearchValidationError,
+    bind_recommendation,
     evidence_is_current,
     record,
     require_unknown_for_conflicts,
     validate_conflicts,
+    validate_decision_support,
 )
 from nanomuse.research.contracts import Comparison, DecisionDraft, ProjectSpec
 
@@ -75,7 +77,9 @@ def render_report(
         check_snapshots=False,
     )
     decisions = require_unknown_for_conflicts(result.decisions, conflicts)
-    result = result.model_copy(update={"conflicts": conflicts, "decisions": decisions})
+    result = bind_recommendation(
+        project, result.model_copy(update={"conflicts": conflicts, "decisions": decisions})
+    )
     dimensions = {item.id: item.text for item in project.constraints}
     dimensions["overview"] = "Overview / 概览"
     for decision in result.decisions:
@@ -89,6 +93,7 @@ def render_report(
                 )
             if not evidence_is_current(item):
                 raise ResearchValidationError("Report contains an obsolete evidence citation")
+        validate_decision_support(decision, [rows[ref] for ref in decision.evidence_refs], project)
     lines = [f"# {_text(project.title)}", ""]
     if project.mode == "fixture":
         lines.extend(

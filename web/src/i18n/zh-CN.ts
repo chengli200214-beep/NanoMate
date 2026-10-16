@@ -6,7 +6,6 @@ import researchZhCN from "./research.zh-CN";
  * Run `npm test` — the i18n test lists the strings that still lack a translation.
  */
 const zhCN: Record<string, string> = {
-  ...researchZhCN,
   // ── Shell, tabs, connection ───────────────────────────────────────────────────────
   Chat: "聊天",
   Feed: "动态",
@@ -1851,6 +1850,7 @@ const zhCN: Record<string, string> = {
   "the address must start with http:// or https://": "地址必须以 http:// 或 https:// 开头",
   "that is nanoMuse Cloud; it is the account, not an endpoint": "那是 nanoMuse Cloud；它是账号，不是接口",
   "a key has no spaces in it": "密钥里不会有空格",
+  ...researchZhCN,
 };
 
 export default zhCN;

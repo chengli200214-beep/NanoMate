@@ -45,6 +45,7 @@ export interface ResearchProject {
 }
 export interface ResearchProjectDetail extends ResearchProject {
   spec: ResearchSpec; sources: ResearchSource[]; runs: ResearchRun[]; current_report: ResearchReport | null;
+  tracking_blocked?: boolean;
 }
 export interface ResearchEvidence {
   id: string; project_id: string; candidate: string; dimension: string; fact: string; quote: string;
@@ -60,11 +61,24 @@ export interface ResearchChange {
   id: string; source_id?: string; created_at?: string; status?: string; action?: string;
   summary?: string; change_summary?: string; impact_level?: string; recommended_action?: string;
   judgment?: Record<string, unknown>; [key: string]: unknown;
+  spec_id?: string; affected_constraints?: string[]; change_type?: string; feedback?: string;
+  notification_policy?: { constraint_refs?: string[] };
 }
 export interface ResearchNotification {
   id: string; content: string; feedback?: string; created_at: string;
 }
-export interface ResearchMuteRule { id: string; source_id?: string; impact_level?: string; enabled?: boolean; [key: string]: unknown }
+export interface ResearchMuteRule {
+  id: string; source_id?: string; impact_level?: string; enabled?: boolean;
+  scope?: { spec_id?: string; change_type?: string; constraint_refs?: string[] };
+  [key: string]: unknown;
+}
+export function muteMatches(rule: ResearchMuteRule, event: ResearchChange): boolean {
+  const refs = [...new Set([...(event.affected_constraints ?? []), ...(event.notification_policy?.constraint_refs ?? [])])].sort();
+  return rule.enabled !== false && !!rule.scope && rule.source_id === event.source_id
+    && rule.impact_level === event.impact_level && rule.scope.spec_id === event.spec_id
+    && rule.scope.change_type === (event.change_type ?? "content")
+    && JSON.stringify(rule.scope.constraint_refs) === JSON.stringify(refs);
+}
 export interface ResearchChanges {
   events: ResearchChange[]; notifications: ResearchNotification[]; mute_rules: ResearchMuteRule[];
 }
@@ -90,7 +104,7 @@ export const researchApi = {
   control: (id: string, action: ResearchControl) => request<ResearchRun>(`${root}/runs/${idPath(id)}/control`, post({ action })),
   evidence: (id: string) => request<ResearchEvidence[]>(`${projectPath(id)}/evidence`),
   conflicts: (id: string) => request<ResearchConflict[]>(`${projectPath(id)}/conflicts`),
-  correct: (id: string, fact: string, quote: string, reason: string) => request<ResearchEvidence>(`${root}/evidence/${idPath(id)}/correction`, post({ fact, quote, reason })),
+  correct: (id: string, fact: string, quote: string, reason: string) => request<ResearchEvidence>(`${root}/evidence/${idPath(id)}/correction`, post({ fact, quote: quote.trim() || null, reason })),
   reverify: (id: string) => request<ResearchRun>(`${root}/evidence/${idPath(id)}/reverify`, post({})),
   reports: (id: string) => request<ResearchReport[]>(`${projectPath(id)}/reports`),
   diff: (id: string, previous: string) => request<ResearchDiff>(`${root}/reports/${idPath(id)}/diff?previous=${idPath(previous)}`),

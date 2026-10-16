@@ -6,14 +6,15 @@ import asyncio
 import contextlib
 import difflib
 import json
-import os
 from collections.abc import Callable
 from typing import Any
 
 from nanomuse.llm.base import BaseLLM
 from nanomuse.research.clock import iso
 from nanomuse.research.contracts import FetchedSource, ProjectSpec, Reasoner, SourceFetcher
+from nanomuse.research.errors import safe_error
 from nanomuse.research.faults import crash_point
+from nanomuse.research.schedule import next_check
 from nanomuse.research.store import ResearchStore, fingerprint, uid
 from nanomuse.schema import Function, ToolCall
 from nanomuse.sentinel import Sentinel
@@ -21,6 +22,10 @@ from nanomuse.sentinel import Sentinel
 
 class NeedsAttention(Exception):
     """A user must supply configuration or extend a budget."""
+
+    def __init__(self, message: str, *, code: str = "configuration") -> None:
+        super().__init__(message)
+        self.code = code
 
 
 class ResearchOrchestrator:
@@ -92,8 +97,6 @@ class ResearchOrchestrator:
                     continue
                 tracking["next_check_at"] = now + tracking["interval_minutes"] * 60
                 if tracking.get("daily_time"):
-                    from nanomuse.research.api import next_check
-
                     tracking["next_check_at"] = next_check(now, tracking)
                 self.store._put("project", project)
                 self.store.enqueue(project["id"], "check", f"schedule:{due}", due, now)
@@ -154,7 +157,8 @@ class ResearchOrchestrator:
                 )
                 if needs_model and len(calls) >= project["tracking"]["max_calls"]:
                     raise NeedsAttention(
-                        "Model call budget reached. Increase the budget and retry."
+                        "Model call budget reached. Increase the budget and retry.",
+                        code="model_budget",
                     )
                 if needs_model:
                     reasoner = self._get_reasoner(project, run["id"])
@@ -169,17 +173,8 @@ class ResearchOrchestrator:
                     calls_before = len(reasoner.calls)
             output = await asyncio.wait_for(self._execute(step, run, spec, reasoner), 180)
             crash_point("before_step_commit")
-            committed = self.store.complete(step, output)
+            self.store.complete(step, output)
             crash_point("after_step_commit")
-            if committed and self.on_event:
-                self.on_event(
-                    {
-                        "type": "research",
-                        "project_id": project["id"],
-                        "run_id": run["id"],
-                        "stage": step["stage"],
-                    }
-                )
         except asyncio.CancelledError:
             raise
         except Exception as exc:
@@ -190,18 +185,12 @@ class ResearchOrchestrator:
                 "model_budget",
                 "context_budget",
             }
-            # Provider errors may include request details. Keep credentials out of stored diagnostics.
-            message = str(exc)[:500]
-            for secret_name in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GITHUB_TOKEN", "GH_TOKEN"):
-                secret = os.environ.get(secret_name)
-                if secret:
-                    message = message.replace(secret, "[redacted]")
             self.store.fail(
                 step,
-                f"{type(exc).__name__}: {message}",
+                safe_error(exc),
                 retryable,
                 attention,
-                float(getattr(exc, "retry_after", None) or 1),
+                getattr(exc, "retry_after", None),
             )
         finally:
             heartbeat.cancel()
@@ -220,6 +209,19 @@ class ResearchOrchestrator:
                 "needs_attention",
             }:
                 self._reasoners.pop(step["run_id"], None)
+            if self.on_event:
+                self.on_event(
+                    {
+                        "kind": "research",
+                        "type": "research",
+                        "project_id": step["project_id"],
+                        "run_id": step["run_id"],
+                        "stage": step["stage"],
+                        "sequence": self.store.get("project", step["project_id"]).get(
+                            "event_sequence", 0
+                        ),
+                    }
+                )
         return True
 
     def _get_reasoner(self, project: dict[str, Any], run_id: str) -> Reasoner:
@@ -256,7 +258,7 @@ class ResearchOrchestrator:
             "decisions": [
                 d
                 for d in self.store.list("decision_revision", project_id)
-                if d["spec_id"] == project["spec_id"]
+                if d["spec_id"] == project["spec_id"] and d["status"] == "active"
             ],
             "conflicts": [
                 c
@@ -288,13 +290,24 @@ class ResearchOrchestrator:
             )
             if previous and source.get("etag"):
                 previous = {**previous, "etag": source["etag"]}
+            request_previous = (
+                {
+                    **previous,
+                    "version": source.get("observed_version") or previous["version"],
+                    "url": source.get("observed_url") or previous["url"],
+                }
+                if previous
+                else None
+            )
             fetcher = self.fetcher or (
                 FixtureFetcher() if spec["mode"] == "fixture" else HttpSourceFetcher()
             )
             if self.sentinel:
                 from nanomuse.research.sources.tool import FetchRegisteredSource
 
-                tool = FetchRegisteredSource(source=source, previous=previous, fetcher=fetcher)
+                tool = FetchRegisteredSource(
+                    source=source, previous=request_previous, fetcher=fetcher
+                )
                 call = ToolCall(
                     function=Function(
                         name="read_source", arguments=json.dumps({"source_id": source["id"]})
@@ -304,10 +317,13 @@ class ResearchOrchestrator:
                 if tool.last_error:
                     raise tool.last_error
                 if result.error:
-                    raise NeedsAttention("Permission to read the registered source was denied")
+                    raise NeedsAttention(
+                        "Permission to read the registered source was denied",
+                        code="source_permission",
+                    )
                 fetched = FetchedSource.model_validate_json(result.output)
             else:
-                fetched = await fetcher.fetch(source, previous)
+                fetched = await fetcher.fetch(source, request_previous)
             content = previous["content"] if fetched.not_modified and previous else fetched.content
             content_hash = fingerprint(content)
             snapshot_id = (
@@ -326,7 +342,19 @@ class ResearchOrchestrator:
                 "checked_at": iso(self.store.clock.now()),
                 "kind": source["kind"],
             }
-            return {"snapshot": snapshot, "previous_snapshot": previous["id"] if previous else None}
+            if previous and previous.get("content_hash") == content_hash:
+                # Evidence stays bound to its immutable original snapshot. A ref moving
+                # without changing this source body is an observation, not a new fact.
+                snapshot = previous
+            return {
+                "snapshot": snapshot,
+                "previous_snapshot": previous["id"] if previous else None,
+                "observation": {
+                    "version": fetched.version,
+                    "url": fetched.url,
+                    "etag": fetched.etag,
+                },
+            }
 
         context = self._context(project_id, spec)
         if reasoner is None and step["stage"] != "publish":
@@ -335,7 +363,8 @@ class ResearchOrchestrator:
             assert reasoner is not None
             if not context["snapshots"]:
                 raise NeedsAttention(
-                    "No source could be read. Add a source or retry after restoring access."
+                    "No source could be read. Add a source or retry after restoring access.",
+                    code="source_unavailable",
                 )
             needs_verification = {
                 e["snapshot_id"]
