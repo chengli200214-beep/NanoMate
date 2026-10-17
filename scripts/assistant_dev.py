@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import threading
 from pathlib import Path
 from urllib.parse import quote
 
@@ -28,6 +29,9 @@ def main() -> None:
     parser.add_argument("--config", type=Path)
     parser.add_argument("--offline", action="store_true", help="Use labelled scripted responses.")
     parser.add_argument("--check", action="store_true", help="Print inventory without serving.")
+    parser.add_argument(
+        "--desktop-control", action="store_true", help="Stop when the owning desktop closes stdin."
+    )
     args = parser.parse_args()
     if not 1024 <= args.port <= 65535:
         parser.error("Choose a port between 1024 and 65535.")
@@ -51,9 +55,21 @@ def main() -> None:
             )
             print(f"Assistant: {url}", flush=True)
             print(f"Private pairing shortcut: {shortcut}", flush=True)
-            uvicorn.run(
-                app, host="127.0.0.1", port=args.port, log_level="warning", access_log=False
+            server = uvicorn.Server(
+                uvicorn.Config(
+                    app, host="127.0.0.1", port=args.port, log_level="warning", access_log=False
+                )
             )
+            if args.desktop_control:
+                # Only the parent owns this pipe. No HTTP shutdown endpoint is exposed.
+                def control() -> None:
+                    while line := sys.stdin.readline():
+                        if line.strip() == "shutdown":
+                            break
+                    server.should_exit = True
+
+                threading.Thread(target=control, daemon=True, name="desktop-control").start()
+            server.run()
     except ValueError as exc:
         parser.error(str(exc))
 

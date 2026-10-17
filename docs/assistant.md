@@ -1,5 +1,9 @@
 # Personal assistant development entry
 
+The [standalone Windows desktop](assistant-desktop.md) uses this same personal-assistant
+runtime and retains research as a module. Its first launch is offline and owns a separate
+local profile by default.
+
 The personal assistant opens at chat and retains the research workspace. Its task ledger
 coordinates research, user-confirmed checkpoints, reminder changes, local document artifacts,
 confirmed personal preferences, workspace files, browser actions and bounded Windows native

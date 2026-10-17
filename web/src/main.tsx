@@ -6,6 +6,7 @@ import { applyLang } from "./i18n";
 import { StoreProvider } from "./store";
 import { applyTheme } from "./theme";
 import "./index.css";
+import "./assistant-desktop.css";
 
 applyLang();
 applyTheme();

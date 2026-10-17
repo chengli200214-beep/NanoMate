@@ -8,6 +8,7 @@
     />
     <meta name="theme-color" content="#ffffff" />
     <script>
+      if (new URLSearchParams(location.search).get("ui") === "desktop") document.documentElement.dataset.ui = "assistant";
       // light unless dark was chosen under Settings → Appearance (or "system"): applied
       // before the first paint so a dark choice does not flash white
       try {

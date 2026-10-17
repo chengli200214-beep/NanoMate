@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { useT } from "../i18n";
 import { useStore } from "../store";
 import { MuseRoundButton } from "./MuseHeader";
+import { isAssistantDesktop } from "../desktop";
 
 /**
  * Muse's page bar, the way the Android app draws it on every screen reached from the drawer or
@@ -26,6 +27,7 @@ export function PageBar({
 }) {
   const { setTab } = useStore();
   const t = useT();
+  if (isAssistantDesktop()) return <header className="assistant-module-header"><div><h1>{title}</h1>{description && <p className="mt-2 text-sm text-muted">{description}</p>}</div><div>{actions}</div></header>;
   return (
     <header className="safe-top shrink-0">
       <div className="relative flex h-14 items-center justify-center px-3">

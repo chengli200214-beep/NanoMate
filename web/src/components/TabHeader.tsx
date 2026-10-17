@@ -5,6 +5,7 @@ import { useStore, type Tab } from "../store";
 import { MuseHeader, MusePageTitle, MuseRoundButton } from "./MuseHeader";
 import { useMenuKeys } from "./useMenuKeys";
 import { MuseSheet } from "../screens/MuseSheet";
+import { isAssistantDesktop } from "../desktop";
 
 /**
  * The big-face header the Android app puts on the Feed, Ideas, Goals and Library tabs: the
@@ -37,6 +38,8 @@ export function TabHeader({
     : state.status.state === "working" ? state.status.detail || t("On it")
     : state.status.state === "waiting" ? t("Waiting for you")
     : null;
+
+  if (isAssistantDesktop()) return <div className="assistant-module-header"><h1>{title}</h1><div>{children}{trailing ?? <MoreMenu actions={actions} />}</div></div>;
 
   return (
     <>

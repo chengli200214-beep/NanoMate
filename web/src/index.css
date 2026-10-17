@@ -37,6 +37,7 @@
   --color-surface: var(--om-surface);
   --color-surface-2: var(--om-surface-2);
   --color-border: var(--om-border);
+  --color-line: var(--om-border);
   --color-fg: var(--om-fg);
   --color-muted: var(--om-muted);
   --color-accent: var(--om-accent);

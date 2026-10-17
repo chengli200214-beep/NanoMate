@@ -1,6 +1,7 @@
 import assistantPersonalZhCN from "./assistant-personal.zh-CN";
 import assistantExecutionZhCN from "./assistant-execution.zh-CN";
 import researchZhCN from "./research.zh-CN";
+import assistantDesktopZhCN from "./assistant-desktop.zh-CN";
 
 /**
  * 简体中文. Keys are the English source strings; `{name}`-style placeholders are kept as-is.
@@ -8,6 +9,7 @@ import researchZhCN from "./research.zh-CN";
  * Run `npm test` — the i18n test lists the strings that still lack a translation.
  */
 const zhCN: Record<string, string> = {
+  ...assistantDesktopZhCN,
   ...assistantExecutionZhCN,
   "View preference source task": "查看偏好来源任务",
   "Result needs verification": "结果需要核对",

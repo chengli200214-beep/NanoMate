@@ -8,6 +8,7 @@
     />
     <meta name="theme-color" content="#ffffff" />
     <script>
+      if (new URLSearchParams(location.search).get("ui") === "desktop") document.documentElement.dataset.ui = "assistant";
       // light unless dark was chosen under Settings → Appearance (or "system"): applied
       // before the first paint so a dark choice does not flash white
       try {
@@ -25,13 +26,13 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
     <title>nanoMuse</title>
-    <script type="module" crossorigin src="/assets/index-CNAhPZNz.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/MuseHeader-Bdw9o-sK.js">
-    <link rel="modulepreload" crossorigin href="/assets/external-link-qXl15v1s.js">
-    <link rel="modulepreload" crossorigin href="/assets/Form-zhkYAnbY.js">
-    <link rel="modulepreload" crossorigin href="/assets/StarNudge-9EKGd_Ow.js">
-    <link rel="modulepreload" crossorigin href="/assets/refresh-cw-CADEOEoG.js">
-    <link rel="stylesheet" crossorigin href="/assets/index-CHqjSGcx.css">
+    <script type="module" crossorigin src="/assets/index-DXqh_Ohi.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/MuseHeader-BPbma7FB.js">
+    <link rel="modulepreload" crossorigin href="/assets/external-link-Owx6rYok.js">
+    <link rel="modulepreload" crossorigin href="/assets/Form-BSLWn0Eb.js">
+    <link rel="modulepreload" crossorigin href="/assets/StarNudge-41nql-db.js">
+    <link rel="modulepreload" crossorigin href="/assets/refresh-cw-BZAgKWTN.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-Dvgu4Xo0.css">
   </head>
   <body>
     <div id="root"></div>

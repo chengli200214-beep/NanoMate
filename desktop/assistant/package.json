@@ -1,0 +1,22 @@
+{
+  "name": "nanomuse-assistant-desktop",
+  "productName": "nanoMuse Assistant",
+  "private": true,
+  "version": "1.0.5",
+  "description": "A desktop workspace for the local nanoMuse personal assistant and research module.",
+  "license": "GPL-3.0-or-later",
+  "author": "nanoMuse contributors",
+  "main": "src/main.cjs",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "electron .",
+    "check": "node --check src/main.cjs && node --check src/preload.cjs && node --check src/runtime.cjs && node --test tests/*.test.cjs",
+    "test": "node --test tests/*.test.cjs",
+    "dist:dir": "electron-builder --config electron-builder.yml --dir --publish never",
+    "dist:win": "electron-builder --config electron-builder.yml --win nsis --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.7.0",
+    "electron-builder": "26.15.3"
+  }
+}

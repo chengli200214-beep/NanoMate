@@ -21,11 +21,14 @@ import { cx, timeDivider, timeShort } from "../util";
 import { MuseSheet } from "./MuseSheet";
 import { countDay, countTask, StarNudgeOnce } from "../components/StarNudge";
 import { useShowSteps } from "../steps";
+import { isAssistantDesktop } from "../desktop";
+import { AssistantComposerMeta, AssistantWelcome } from "../components/AssistantWorkspace";
 
 export function ChatScreen() {
   const { state, send, sendViaCloud, decide, loadEvents, openFile, toast, setDrawer, setTab } = useStore();
   const t = useT();
   const { profile, status, activeThread, threads } = state;
+  const desktop = isAssistantDesktop();
   // undefined until the first fetch for this thread has returned — don't flash the empty state
   const loaded = state.events[activeThread];
   const events = useMemo(() => loaded ?? [], [loaded]);
@@ -203,10 +206,10 @@ export function ChatScreen() {
   );
 
   return (
-    <div className="relative flex h-full flex-col">
+    <div className={cx("relative flex h-full flex-col", desktop && "assistant-chat", desktop && eventsLoaded && events.length === 0 && !stream && !bound && "assistant-chat-empty")}>
       {/* Muse's header: the face on its disc, the name tag with what it is doing, the round hamburger
           and menu. A scrim over the list, which scrolls under it; no bar and no line below it. */}
-      <div ref={headerRef} className="pointer-events-none absolute inset-x-0 top-0 z-10">
+      <div ref={headerRef} className={cx("pointer-events-none absolute inset-x-0 top-0 z-10", desktop && "assistant-legacy-header")}>
         <MuseHeader
           scrim
           profile={profile}
@@ -245,8 +248,8 @@ export function ChatScreen() {
       <div aria-hidden className="list-fade-top pointer-events-none absolute inset-x-0 top-0 z-[5] h-20" style={{ opacity: scrolledUp ? 1 : 0 }} />
 
       {/* Timeline */}
-      <div ref={listRef} onScroll={measure} className="relative flex-1 overflow-y-auto px-3 pb-3">
-        <div ref={contentRef} className="space-y-2.5">
+      <div ref={listRef} onScroll={measure} className="assistant-timeline relative flex-1 overflow-y-auto px-3 pb-3">
+        <div ref={contentRef} className="assistant-timeline-inner space-y-2.5">
           {/* the room the header takes; the first message starts under it, not behind it */}
           <div aria-hidden style={{ height: headerHeight }} />
           {state.hasMore[activeThread] && events.length > 0 && (
@@ -263,7 +266,7 @@ export function ChatScreen() {
           {/* The first conversation's opening, where the history begins: the app speaks first */}
           {bound && eventsLoaded && !state.hasMore[activeThread] && intro && <IntroLines lines={intro.lines} />}
           {eventsLoaded && events.length === 0 && !stream && !bound && (
-            <EmptyChat
+            desktop && !thread?.device ? <AssistantWelcome /> : <EmptyChat
               name={name}
               device={thread?.device ? thread.device_name || thread.device : undefined}
               onSend={(text) => send(activeThread, text).catch((e: Error) => toast(e.message || t("Could not send")))}
@@ -298,8 +301,8 @@ export function ChatScreen() {
           {/* A message written on another device is never this device's unfinished turn (C9):
               nothing here ever offers to continue it. While that device works, this says so. */}
           {working && !thread?.busy && <WorkingLine who={working} />}
-          {!thread?.busy && status.state === "idle" && taskCount !== null && <StarNudgeOnce moment="tasks" n={taskCount} className="mx-1 my-2" />}
-          {!thread?.busy && status.state === "idle" && dayCount !== null && <StarNudgeOnce moment="days_used" n={dayCount} className="mx-1 my-2" />}
+          {!desktop && !thread?.busy && status.state === "idle" && taskCount !== null && <StarNudgeOnce moment="tasks" n={taskCount} className="mx-1 my-2" />}
+          {!desktop && !thread?.busy && status.state === "idle" && dayCount !== null && <StarNudgeOnce moment="days_used" n={dayCount} className="mx-1 my-2" />}
         </div>
         {showJump && (
           <button
@@ -858,7 +861,7 @@ function Composer({
   };
 
   return (
-    <form onSubmit={submit} className="shrink-0 bg-bg px-3 pt-1.5 pb-1">
+    <form onSubmit={submit} className={cx("shrink-0 bg-bg px-3 pt-1.5 pb-1", isAssistantDesktop() && "assistant-composer")}>
       {busy && !waiting && (
         <div className="px-2 pb-1 text-[12px] text-muted">{t("{name} is working; anything you send now is picked up right away.", { name })}</div>
       )}
@@ -929,7 +932,7 @@ function Composer({
           ))}
         </div>
       )}
-      <div className="flex items-end gap-2 rounded-[26px] border border-border bg-surface px-1.5 py-1.5 shadow-[0_2px_12px_-6px_rgba(0,0,0,0.12)] focus-within:border-fg/20">
+      <div className="assistant-composer-box flex items-end gap-2 rounded-[26px] border border-border bg-surface px-1.5 py-1.5 shadow-[0_2px_12px_-6px_rgba(0,0,0,0.12)] focus-within:border-fg/20">
         <input
           ref={fileRef}
           type="file"
@@ -977,11 +980,11 @@ function Composer({
             }
           }}
           rows={1}
-          placeholder={waiting ? t("Answer {name}…", { name }) : pending.length > 0 ? t("Say what to do with it…") : t("Message")}
+          placeholder={waiting ? t("Answer {name}…", { name }) : pending.length > 0 ? t("Say what to do with it…") : isAssistantDesktop() ? t("Tell me what you have in mind…") : t("Message")}
           aria-label={t("Message")}
           className="flex-1 resize-none bg-transparent px-1 py-2 text-[15px] leading-[1.4] outline-none placeholder:text-muted"
         />
-        {dictation.supported && <MicButton listening={dictation.listening} onClick={toggleDictation} />}
+        {dictation.supported && !isAssistantDesktop() && <MicButton listening={dictation.listening} onClick={toggleDictation} />}
         <button
           type="submit"
           disabled={(!text.trim() && attached.length === 0) || uploading}
@@ -996,6 +999,7 @@ function Composer({
           <ArrowUp size={19} strokeWidth={2.5} />
         </button>
       </div>
+      {isAssistantDesktop() && <><AssistantComposerMeta /><p className="assistant-composer-footnote">{t("Review results before relying on them.")}<span>{t("Enter to send · Shift+Enter for a new line")}</span></p></>}
     </form>
   );
 }

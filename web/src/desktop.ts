@@ -8,6 +8,10 @@ export interface DesktopBridge {
   /** Node's process.platform: "darwin", "win32", "linux" */
   platform: string;
   version: string;
+  /** The standalone assistant uses its own window chrome and the shared runtime UI. */
+  surface?: "assistant";
+  windowAction?: (action: "minimize" | "maximize" | "close") => void;
+  onWindowState?: (cb: (state: { maximized: boolean }) => void) => (() => void);
   /** whether the app starts with the computer (Electron's login item); older shells have neither */
   loginItem?: () => Promise<boolean>;
   setLoginItem?: (on: boolean) => void;
@@ -22,11 +26,17 @@ declare global {
 }
 
 export function desktopBridge(): DesktopBridge | null {
-  return window.nanomuseDesktop ?? null;
+  return typeof window === "undefined" ? null : window.nanomuseDesktop ?? null;
 }
 
 export function isDesktopApp(): boolean {
   return !!window.nanomuseDesktop;
+}
+
+/** The query option previews the layout in a browser without granting desktop powers. */
+export function isAssistantDesktop(): boolean {
+  return desktopBridge()?.surface === "assistant" ||
+    (typeof window !== "undefined" && new URLSearchParams(window.location?.search ?? "").get("ui") === "desktop");
 }
 
 /** The desktop title bar is hidden on macOS ("hiddenInset"): the window's controls sit over our page. */
@@ -36,6 +46,7 @@ export function hasInsetTitleBar(): boolean {
 
 /** Marks <html> so the stylesheet's `wide:` variant and the title-bar spacing apply (index.css). */
 export function markDesktopShell(): void {
+  if (isAssistantDesktop()) document.documentElement.dataset.ui = "assistant";
   const bridge = desktopBridge();
   if (!bridge) return;
   document.documentElement.classList.add("desktop");

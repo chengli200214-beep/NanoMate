@@ -79,3 +79,8 @@ cloud/data/
 
 # Research workbench: isolated local settings, access token, databases and reports.
 .local/
+# Standalone assistant build products and private runtime state.
+desktop/assistant/node_modules/
+desktop/assistant/dist/
+desktop/assistant/runtime/
+desktop/assistant/browsers/

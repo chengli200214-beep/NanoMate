@@ -1,0 +1,42 @@
+appId: io.github.nanomuse.assistant
+productName: nanoMuse Assistant
+executableName: nanoMuse-Assistant
+copyright: GPL-3.0-or-later, nanoMuse contributors
+artifactName: nanoMuse-Assistant-${version}-${os}-${arch}.${ext}
+directories:
+  output: dist
+  buildResources: ../../harness/desktop/resources
+files:
+  - src/**
+  - resources/**
+  - package.json
+extraResources:
+  - from: ../../LICENSE
+    to: LICENSE.txt
+  - from: ../../NOTICE
+    to: NOTICE.txt
+  - from: runtime/assistant-runtime
+    to: assistant-runtime
+    filter: ["**/*"]
+  - from: ../../harness/desktop/resources/app-icon.png
+    to: app-icon.png
+  - from: browsers
+    to: browsers
+    filter: ["**/*"]
+asar: true
+npmRebuild: false
+nodeGypRebuild: false
+publish: null
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  icon: ../../harness/desktop/resources/app-icon.png
+  signExecutable: false
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: nanoMuse Assistant
+  deleteAppDataOnUninstall: false

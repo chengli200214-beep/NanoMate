@@ -6,7 +6,8 @@ import { DesktopRemoteHint } from "./components/DesktopRemoteHint";
 import { ChatsDrawer } from "./components/ChatsDrawer";
 import { FileViewer } from "./components/FileViewer";
 import { FirstSignInSteps, useFirstSignIn } from "./components/FirstSignInSteps";
-import { desktopBridge } from "./desktop";
+import { desktopBridge, isAssistantDesktop } from "./desktop";
+import { AssistantWorkspace } from "./components/AssistantWorkspace";
 import { Sidebar } from "./components/Sidebar";
 import { ChatScreen } from "./screens/ChatScreen";
 import { FeedScreen } from "./screens/FeedScreen";
@@ -123,6 +124,30 @@ export default function App() {
   // a plan change waiting for your answer is worth a red badge; the count of goals is not
   const proposals = state.goals.filter((g) => g.proposal && g.status !== "cancelled").length;
   const feedUnseen = state.pendingApprovals.filter((a) => a.ts > state.feedSeenAt).length;
+
+  if (isAssistantDesktop()) return <AssistantWorkspace>
+    {state.gone && <div role="status" className="assistant-connection-banner">{t("This nanoMuse has stopped. Reload the page once it is running again.")}</div>}
+    <Suspense fallback={<Loading />}>
+      {state.tab === "chat" && <ChatScreen />}
+      {state.tab === "feed" && <FeedScreen />}
+      {state.tab === "ideas" && <IdeasScreen />}
+      {state.tab === "goals" && <GoalsScreen />}
+      {state.tab === "tasks" && <TasksScreen />}
+      {state.tab === "research" && <ResearchScreen />}
+      {state.tab === "library" && <LibraryScreen />}
+      {state.tab === "memory" && <MemoryScreen />}
+      {state.tab === "skills" && <SkillsScreen />}
+      {state.tab === "connections" && <ConnectionsScreen />}
+      {state.tab === "channels" && <ChannelsScreen />}
+      {state.tab === "devices" && <DevicesScreen />}
+      {state.tab === "you" && <SettingsScreen />}
+      {state.tab === "account" && <AccountScreen />}
+      {state.tab === "coding" && <CodingScreen />}
+      {state.tab === "avatar" && <AvatarStudioScreen />}
+    </Suspense>
+    <FileViewer path={state.viewer} onClose={() => openFile(null)} />
+    {firstSteps}
+  </AssistantWorkspace>;
 
   // One column on the phone; on a wide screen (a full browser) and in the desktop app at any
   // width, a sidebar takes over from the tab bar and the chats sheet — same screens either side.

@@ -4,6 +4,8 @@ import { useT } from "../i18n";
 import { TabHeader } from "../components/TabHeader";
 import { PersonalTaskComposer } from "../components/PersonalTaskComposer";
 import { ExecutionTaskComposer } from "../components/ExecutionTaskComposer";
+import { isAssistantDesktop } from "../desktop";
+import { CheckCircle2, Clock3, ListTodo, Plus, X } from "lucide-react";
 
 type StepSpec = { adapter: string; title: string; project_id?: string; kind?: string; preference?: { action: string; key: string; value?: string; purpose?: string } };
 type Plan = { title: string; success_criteria: string; steps: StepSpec[] };
@@ -21,6 +23,8 @@ const buttonClass = "rounded-xl border border-line px-3 py-2 text-sm disabled:op
 
 export function TasksScreen() {
   const t = useT();
+  const desktop = isAssistantDesktop();
+  const [composer, setComposer] = useState<"personal" | "execution" | "plan" | null>(null);
   const [tasks, setTasks] = useState<Summary[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [preferences, setPreferences] = useState<Preference[]>([]);
@@ -93,15 +97,17 @@ export function TasksScreen() {
   const control = (action: string) => run(() => post(`/api/assistant/tasks/${selected}/actions`, { action, expected_revision: detail?.revision }));
   const current = detail?.steps.filter((s) => s.revision === detail.revision) ?? [];
   const terminal = detail && ["completed", "cancelled", "cancelling"].includes(detail.status);
-  return <div className="flex h-full flex-col">
-    <TabHeader title={t("Task ledger")} />
+  return <div className={desktop ? "assistant-task-page flex h-full flex-col" : "flex h-full flex-col"}>
+    <TabHeader title={t("Task ledger")}>{desktop && <button className="assistant-primary-button" onClick={() => setComposer(composer ? null : "personal")}><Plus size={16} />{t("Create a task")}</button>}</TabHeader>
     <main className="overflow-auto p-4 space-y-5">
-      <p className="text-sm text-muted">{t("Tasks connect personal actions, files, browser and Windows apps. Research remains available as a module.")}</p>
+      <p className="text-sm text-muted">{desktop ? t("Your plans, progress and actions that need a decision.") : t("Tasks connect personal actions, files, browser and Windows apps. Research remains available as a module.")}</p>
+      {desktop && <div className="assistant-task-stats"><div><ListTodo size={17} /><span>{t("All tasks")}</span><strong>{tasks.length}</strong></div><div><Clock3 size={17} /><span>{t("In progress")}</span><strong>{tasks.filter((task) => ["running", "queued", "bound"].includes(task.status)).length}</strong></div><div><CheckCircle2 size={17} /><span>{t("To review")}</span><strong>{tasks.filter((task) => ["needs_attention", "waiting_user", "waiting_approval", "outcome_unknown"].includes(task.status)).length}</strong></div></div>}
       {error && <p role="alert">{t("The request failed or the plan changed. Refresh and review before retrying.")}</p>}
-      <button className={buttonClass} onClick={() => void run(load)} disabled={busy}>{t("Refresh")}</button>
-      <PersonalTaskComposer onCreated={load} />
-      <ExecutionTaskComposer selected={detail} onCreated={load} />
-      <section className="space-y-3 rounded-2xl border border-line p-4">
+      {!desktop && <button className={buttonClass} onClick={() => void run(load)} disabled={busy}>{t("Refresh")}</button>}
+      {desktop && composer && <div className="assistant-task-compose-tabs">{([{ id: "personal", label: "Personal task" }, { id: "execution", label: "Desktop actions" }, { id: "plan", label: "Plan" }] as const).map((item) => <button key={item.id} aria-pressed={composer === item.id} onClick={() => setComposer(item.id)}>{t(item.label)}</button>)}<button className="assistant-icon" aria-label={t("Close")} onClick={() => setComposer(null)}><X size={15} /></button></div>}
+      {(!desktop || composer === "personal") && <PersonalTaskComposer onCreated={load} />}
+      {(!desktop || composer === "execution") && <ExecutionTaskComposer selected={detail} onCreated={load} />}
+      {(!desktop || composer === "plan") && <section className="space-y-3 rounded-2xl border border-line p-4">
         <h2 className="font-medium">{t("Compose a plan")}</h2>
         <label className="block">{t("Task title")}<input className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} maxLength={500} /></label>
         <label className="block">{t("Success criteria")}<textarea className={inputClass} value={criteria} onChange={(e) => setCriteria(e.target.value)} maxLength={4000} /></label>
@@ -116,9 +122,9 @@ export function TasksScreen() {
           <p className="text-sm text-muted">{t("Replacement uses the form above. Completed evidence stays in history. Active research must settle first.")}</p>
           <button className={buttonClass} disabled={busy || !valid || !reason.trim() || current.some((s) => ["running", "bound"].includes(s.status))} onClick={() => void run(() => post(`/api/assistant/tasks/${selected}/plan-revisions`, { plan: plan(), expected_revision: detail.revision, reason }))}>{t("Replace selected task plan")}</button>
         </>}
-      </section>
+      </section>}
       <section className="space-y-2"><h2 className="font-medium">{t("Tasks")}</h2>
-        {!tasks.length && <p>{t("No tasks yet")}</p>}
+        {!tasks.length && (desktop ? <div className="assistant-empty-tasks"><ListTodo size={29} strokeWidth={1.2} /><h3>{t("No work is waiting.")}</h3><p>{t("Start with a conversation, or create a task here.")}</p><button className="assistant-primary-button" onClick={() => setComposer("personal")}><Plus size={14} />{t("Create a task")}</button></div> : <p>{t("No tasks yet")}</p>)}
         {tasks.map((task) => <button key={task.id} aria-pressed={selected === task.id} className={`${buttonClass} block w-full text-left`} onClick={() => { setDetail(null); setSelected(task.id); setEvidence(""); setPreview(""); }}>{task.title} · {t(statuses[task.status] ?? task.status)} · {t("Revision")} {task.revision}</button>)}
       </section>
       {detail && detail.id === selected && <section className="space-y-3 rounded-2xl border border-line p-4">
@@ -154,14 +160,14 @@ export function TasksScreen() {
         <section className="space-y-2"><h3>{t("Task outputs")}</h3>{artifacts.map((a) => <div key={a.id} className="rounded-xl border border-line p-3 text-sm"><p>{a.path ?? a.id} · {t("Revision")} {a.revision}</p>{a.path && <><p>{t(a.verified ? "File verified" : "File changed or missing")}</p><button className={buttonClass} disabled={busy || !a.verified} onClick={() => void run(async () => { const output = await request<Artifact>(`/api/assistant/artifacts/${a.id}`); setPreview(output.content ?? ""); })}>{t("Read verified output")}</button></>}<p className="break-all text-xs text-muted">{a.sha256 ?? a.hash}</p></div>)}</section>
         {preview && <pre className="whitespace-pre-wrap break-words rounded-xl bg-surface-2 p-3 text-sm">{preview}</pre>}
       </section>}
-      <section className="space-y-2"><h2 className="font-medium">{t("Schedules")}</h2>{schedules.map((s) => <div key={s.id} className="rounded-xl border border-line p-3">{s.payload.plan.title} · {s.enabled ? new Date(s.next_at * 1000).toLocaleString() : t("Disabled")}
+      {(!desktop || schedules.length > 0) && <section className="space-y-2"><h2 className="font-medium">{t("Schedules")}</h2>{schedules.map((s) => <div key={s.id} className="rounded-xl border border-line p-3">{s.payload.plan.title} · {s.enabled ? new Date(s.next_at * 1000).toLocaleString() : t("Disabled")}
         {Boolean(s.enabled) && <button className={`${buttonClass} ml-3`} disabled={busy} onClick={() => void run(() => request(`/api/assistant/schedules/${s.id}`, { method: "DELETE" }))}>{t("Stop future occurrences")}</button>}
-      </div>)}</section>
-      <section className="space-y-2"><h2 className="font-medium">{t("Existing goals and reminders")}</h2>
+      </div>)}</section>}
+      {(!desktop || bindings.length > 0) && <section className="space-y-2"><h2 className="font-medium">{t("Existing goals and reminders")}</h2>
         <p className="text-sm text-muted">{t("Read-only module view. A fired reminder does not prove its requested work was completed.")}</p>
         {bindings.map((b) => <p key={b.id}>{t(b.module === "goals" ? "Goals" : "Reminders")}: {b.title} · {t(({ active: "Active", done: "Done", paused: "Paused", cancelled: "Cancelled" } as Record<string, string>)[b.status] ?? b.status)}</p>)}
-      </section>
-      <section className="space-y-2"><h2 className="font-medium">{t("Confirmed personal preferences")}</h2><p className="text-sm text-muted">{t("Preferences are context. Your current request takes priority. Changes and deletion use a versioned task.")}</p>{preferences.filter((p) => p.status === "active").map((p) => <article key={p.key} className="rounded-xl border border-line p-3"><p>{p.key}: {p.value}</p><p className="text-sm text-muted">{p.purpose} · {t("Revision")} {p.revision}</p><button className={buttonClass} onClick={() => { setDetail(null); setSelected(p.source_task); setPreview(""); }}>{t("View preference source task")}</button></article>)}</section>
+      </section>}
+      {(!desktop || preferences.some((p) => p.status === "active")) && <section className="space-y-2"><h2 className="font-medium">{t("Confirmed personal preferences")}</h2><p className="text-sm text-muted">{t("Preferences are context. Your current request takes priority. Changes and deletion use a versioned task.")}</p>{preferences.filter((p) => p.status === "active").map((p) => <article key={p.key} className="rounded-xl border border-line p-3"><p>{p.key}: {p.value}</p><p className="text-sm text-muted">{p.purpose} · {t("Revision")} {p.revision}</p><button className={buttonClass} onClick={() => { setDetail(null); setSelected(p.source_task); setPreview(""); }}>{t("View preference source task")}</button></article>)}</section>}
     </main>
   </div>;
 }
