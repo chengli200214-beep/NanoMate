@@ -1,4 +1,4 @@
-# nanoMuse Assistant
+# NanoMate
 
 Trợ lý cá nhân Windows với sổ tác vụ và mô-đun nghiên cứu có bằng chứng.
 
@@ -10,12 +10,12 @@ Trợ lý cá nhân Windows với sổ tác vụ và mô-đun nghiên cứu có 
   <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
-  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
+  <a href="https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
   <a href="../../docs/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
   <a href="../../docs/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
 
-**nanoMuse Assistant** kết hợp hội thoại, kế hoạch, lời nhắc, tài liệu và nghiên cứu. Nêu mục tiêu, xem lại các bước rồi theo dõi kết quả trong sổ tác vụ bền vững. Bản phát triển từ [nanoMuse](https://github.com/nano-muse/nanoMuse) này bổ sung không gian Windows độc lập và giữ lại nghiên cứu.
+**NanoMate** kết hợp hội thoại, kế hoạch, lời nhắc, tài liệu và nghiên cứu. Nêu mục tiêu, xem lại các bước rồi theo dõi kết quả trong sổ tác vụ bền vững. Bản phát triển từ [nanoMuse](https://github.com/nano-muse/nanoMuse) này bổ sung không gian Windows độc lập và giữ lại nghiên cứu.
 
 ## Giao diện sản phẩm
 
@@ -45,7 +45,7 @@ Trợ lý cá nhân Windows với sổ tác vụ và mô-đun nghiên cứu có 
 
 ## Bắt đầu
 
-1. Tải và chạy [bộ cài Windows x64 chưa ký](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe) hoặc biên dịch từ nguồn bên dưới. Gói gồm Python và Chromium.
+1. Tải và chạy [bộ cài Windows x64 chưa ký](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe) hoặc biên dịch từ nguồn bên dưới. Gói gồm Python và Chromium.
 2. Mở **Connections** từ cài đặt hoặc bộ chọn mô hình. Chọn DeepSeek, `https://api.deepseek.com`, `deepseek-flash` và lưu khóa riêng vào kho mã hóa cục bộ.
 3. Đặt hạn mức ngày và tác vụ trong `[assistant_usage]` của `%APPDATA%\nanoMuse Assistant\assistant.toml`. Giá trị ban đầu là 0. Chọn chính sách giá đã xem xét và hạn mức đủ dự phòng: [hướng dẫn](../../docs/assistant.md#local-runtime-usage-limits). Không đặt khóa ở tệp này.
 4. Chọn **Runtime → Use configured model**, hoặc thoát từ khay rồi chạy `nanoMuse-Assistant.exe --live`. Lưu khóa không tự đổi chế độ hay cấp ngân sách.
@@ -65,8 +65,8 @@ Trợ lý cá nhân Windows với sổ tác vụ và mô-đun nghiên cứu có 
 Cần Windows x64, Git, Node.js 22, Python 3.13 và uv. Chạy từ thư mục gốc. Tập lệnh chuẩn bị phụ thuộc JavaScript, Chromium và Python.
 
 ```powershell
-git clone --branch research-assistant https://github.com/chengli200214-beep/continuous-research-assistant.git
-cd continuous-research-assistant
+git clone --branch research-assistant https://github.com/chengli200214-beep/NanoMate.git
+cd NanoMate
 uv venv .local/assistant-desktop-build --python 3.13
 uv pip sync requirements-assistant-windows.txt --python .local/assistant-desktop-build/Scripts/python.exe --require-hashes --default-index https://pypi.org/simple --no-config
 uv pip install --python .local/assistant-desktop-build/Scripts/python.exe --no-deps -e . --default-index https://pypi.org/simple --no-config

@@ -1,11 +1,13 @@
-# 个人助手桌面端
+# NanoMate 个人助手桌面端
 
 独立 Windows 桌面端以个人助手为入口，共用现有对话、任务账本、提醒、文件产物、记忆、审批与人工接管功能。调研保留为独立模块，原有 DeepSeek Harness 桌面入口也继续保留。
 
+项目仓库名称为 NanoMate。当前 1.0.5 安装包仍使用 `nanoMuse Assistant` 的程序名称和数据目录。
+
 ## 下载 Windows 安装包 {#download-for-windows}
 
-[下载 Windows x64 安装包](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)，
-[Release 页面](https://github.com/chengli200214-beep/continuous-research-assistant/releases/tag/desktop-assistant-v1.0.5) 同时提供校验文件和安装说明。
+[下载 Windows x64 安装包](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)，
+[版本发布页面](https://github.com/chengli200214-beep/NanoMate/releases/tag/desktop-assistant-v1.0.5) 同时提供校验文件和安装说明。
 安装包目前未签名，不包含已保存的密钥、个人配置、任务库或调研数据。新配置默认采用离线模式且付费额度为零，
 使用者需要自行填写模型连接及费用限制。
 

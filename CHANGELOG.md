@@ -6,6 +6,8 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Documentation
 
+- 将项目仓库更名为 `NanoMate`，同步了各语言首页、源码克隆、安装包下载和发布说明链接，保留了中文介绍。
+
 - 将个人助手项目首页和 Windows 桌面版发布介绍改为中文，并同步了各语言首页的导航。
 
 - Added Windows installer downloads, checksums and first-run instructions for the standalone assistant release.

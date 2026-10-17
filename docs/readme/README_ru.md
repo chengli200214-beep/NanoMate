@@ -1,4 +1,4 @@
-# nanoMuse Assistant
+# NanoMate
 
 Персональный помощник Windows с журналом задач и исследовательским модулем с доказательствами.
 
@@ -10,12 +10,12 @@
   <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
-  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
+  <a href="https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
   <a href="../../docs/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
   <a href="../../docs/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
 
-**nanoMuse Assistant** объединяет диалоги, планы, напоминания, документы и исследования. Опишите цель, проверьте шаги и отслеживайте результат в постоянном журнале. Эта адаптация [nanoMuse](https://github.com/nano-muse/nanoMuse) добавляет отдельное пространство Windows и сохраняет исследовательский модуль.
+**NanoMate** объединяет диалоги, планы, напоминания, документы и исследования. Опишите цель, проверьте шаги и отслеживайте результат в постоянном журнале. Эта адаптация [nanoMuse](https://github.com/nano-muse/nanoMuse) добавляет отдельное пространство Windows и сохраняет исследовательский модуль.
 
 ## Интерфейс
 
@@ -45,7 +45,7 @@
 
 ## Начало работы
 
-1. Скачайте и запустите [установщик Windows x64 без подписи](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe) или соберите приложение ниже. Пакет содержит Python и Chromium.
+1. Скачайте и запустите [установщик Windows x64 без подписи](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe) или соберите приложение ниже. Пакет содержит Python и Chromium.
 2. Откройте **Connections** в настройках или выборе модели. Выберите DeepSeek, `https://api.deepseek.com`, `deepseek-flash` и сохраните ключ в локальном зашифрованном хранилище.
 3. Настройте дневной лимит и лимит задачи в `[assistant_usage]` файла `%APPDATA%\nanoMuse Assistant\assistant.toml`. Начальные значения нулевые. Выберите проверенную ценовую политику и сумму резервирования: [руководство](../../docs/assistant.md#local-runtime-usage-limits). Не храните там ключи.
 4. Выберите **Runtime → Use configured model** либо выйдите через трей и запустите `nanoMuse-Assistant.exe --live`. Сохранение ключа не меняет режим и не разрешает расходы.
@@ -65,8 +65,8 @@
 Нужны Windows x64, Git, Node.js 22, Python 3.13 и uv. Запускайте из корня репозитория. Скрипт подготовит зависимости JavaScript, Chromium и Python.
 
 ```powershell
-git clone --branch research-assistant https://github.com/chengli200214-beep/continuous-research-assistant.git
-cd continuous-research-assistant
+git clone --branch research-assistant https://github.com/chengli200214-beep/NanoMate.git
+cd NanoMate
 uv venv .local/assistant-desktop-build --python 3.13
 uv pip sync requirements-assistant-windows.txt --python .local/assistant-desktop-build/Scripts/python.exe --require-hashes --default-index https://pypi.org/simple --no-config
 uv pip install --python .local/assistant-desktop-build/Scripts/python.exe --no-deps -e . --default-index https://pypi.org/simple --no-config

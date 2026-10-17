@@ -1,4 +1,4 @@
-# nanoMuse Assistant
+# NanoMate
 
 작업 원장과 근거 기반 조사 모듈을 갖춘 Windows 개인 비서.
 
@@ -10,12 +10,12 @@
   <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
-  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
+  <a href="https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
   <a href="../../docs/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
   <a href="../../docs/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
 
-**nanoMuse Assistant**는 대화, 계획, 알림, 자료, 조사를 하나로 모읍니다. 목표를 설명하고 단계를 검토한 뒤 영구 저장되는 작업 원장에서 결과를 확인합니다. [nanoMuse](https://github.com/nano-muse/nanoMuse)를 기반으로 독립 Windows 작업 공간을 추가하고 조사 기능을 유지했습니다.
+**NanoMate**는 대화, 계획, 알림, 자료, 조사를 하나로 모읍니다. 목표를 설명하고 단계를 검토한 뒤 영구 저장되는 작업 원장에서 결과를 확인합니다. [nanoMuse](https://github.com/nano-muse/nanoMuse)를 기반으로 독립 Windows 작업 공간을 추가하고 조사 기능을 유지했습니다.
 
 ## 제품 화면
 
@@ -45,7 +45,7 @@
 
 ## 시작하기
 
-1. [Windows x64 설치 프로그램, 서명 없음](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)을 내려받아 실행하거나 아래 소스로 빌드합니다. Python과 Chromium이 포함됩니다.
+1. [Windows x64 설치 프로그램, 서명 없음](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)을 내려받아 실행하거나 아래 소스로 빌드합니다. Python과 Chromium이 포함됩니다.
 2. 설정이나 모델 선택기에서 **Connections**를 열고 DeepSeek, `https://api.deepseek.com`, `deepseek-flash`를 선택합니다. 키를 로컬 암호화 저장소에 저장합니다.
 3. 로컬 `%APPDATA%\nanoMuse Assistant\assistant.toml`의 `[assistant_usage]`에 일일 및 작업별 한도를 지정합니다. 초기값은 0입니다. 검토된 가격 정책과 예약액을 충족하는 한도는 [가이드](../../docs/assistant.md#local-runtime-usage-limits)를 참고하세요. 키는 넣지 않습니다.
 4. **Runtime → Use configured model**을 선택하거나 트레이에서 종료 후 `nanoMuse-Assistant.exe --live`로 재시작합니다. 키 저장만으로 모드나 예산 권한이 바뀌지 않습니다.
@@ -65,8 +65,8 @@
 Windows x64, Git, Node.js 22, Python 3.13, uv가 필요합니다. 루트에서 실행합니다. 스크립트가 JavaScript 의존성, Chromium, Python을 준비합니다.
 
 ```powershell
-git clone --branch research-assistant https://github.com/chengli200214-beep/continuous-research-assistant.git
-cd continuous-research-assistant
+git clone --branch research-assistant https://github.com/chengli200214-beep/NanoMate.git
+cd NanoMate
 uv venv .local/assistant-desktop-build --python 3.13
 uv pip sync requirements-assistant-windows.txt --python .local/assistant-desktop-build/Scripts/python.exe --require-hashes --default-index https://pypi.org/simple --no-config
 uv pip install --python .local/assistant-desktop-build/Scripts/python.exe --no-deps -e . --default-index https://pypi.org/simple --no-config

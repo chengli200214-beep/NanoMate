@@ -1,11 +1,11 @@
-# nanoMuse 个人助手 1.0.5 · Windows 桌面版
+# NanoMate 1.0.5 · Windows 桌面版
 
 独立 Windows 个人助手现已提供安装包。程序内置 Python 和 Chromium，下载安装后无需另装 Python，
 也不必手动启动网页服务。现有调研功能保留在同一个工作空间中。
 
-[下载 Windows x64 安装包](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)
-· [校验文件](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/SHA256SUMS.txt)
-· [安装说明](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/INSTALL-Windows.md)
+[下载 Windows x64 安装包](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)
+· [校验文件](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/SHA256SUMS.txt)
+· [安装说明](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/INSTALL-Windows.md)
 
 ## 亮点
 
@@ -17,9 +17,10 @@
 ## 升级说明
 
 - 支持 **Windows 10/11 x64**，安装包目前**未签名**。
+- 项目仓库已更名为 NanoMate，当前安装包仍使用 `nanoMuse Assistant` 的程序名称和数据目录。
 - 全新配置默认使用明确标记的离线脚本响应，凭据库为空，付费额度为零。使用者需要自行配置 DeepSeek
   连接和本地额度，再切换到已配置的模型，或退出后用 `--live` 重新启动。详见
-  [桌面端使用说明](https://github.com/chengli200214-beep/continuous-research-assistant/blob/research-assistant/docs/zh/assistant-desktop.md)。
+  [桌面端使用说明](https://github.com/chengli200214-beep/NanoMate/blob/research-assistant/docs/zh/assistant-desktop.md)。
 - 安装包不包含已保存的模型密钥、账号会话、个人配置、任务库或私人调研记录。用户数据位于应用目录外。
   安装过程创建的快捷方式不携带开发者的数据目录参数。
 - 已有个人助手用户应保留自己的数据目录和本地偏好。新安装不会自动导入原调研专用目录。
@@ -37,5 +38,5 @@
 
 基于 nanoMuse，遵循 GPL-3.0-or-later，完整对应源码可从本次发布的源码标签获取。
 仓库和应用包保留原有版权与第三方声明，使用问题可提交到本仓库的
-[问题反馈](https://github.com/chengli200214-beep/continuous-research-assistant/issues)。
+[问题反馈](https://github.com/chengli200214-beep/NanoMate/issues)。
 这个独立 Windows 程序与上游 Harness 桌面端保持为不同入口。

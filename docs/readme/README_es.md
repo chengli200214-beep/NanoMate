@@ -1,4 +1,4 @@
-# nanoMuse Assistant
+# NanoMate
 
 Un asistente personal para Windows con un registro de tareas y un módulo de investigación con evidencias.
 
@@ -10,12 +10,12 @@ Un asistente personal para Windows con un registro de tareas y un módulo de inv
   <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
-  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
+  <a href="https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
   <a href="../../docs/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
   <a href="../../docs/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
 
-**nanoMuse Assistant** reúne conversaciones, planes, recordatorios, documentos e investigación en una aplicación de escritorio. Describe el objetivo, revisa los pasos y sigue los resultados en un registro persistente. Esta adaptación de [nanoMuse](https://github.com/nano-muse/nanoMuse) añade un espacio independiente para Windows y conserva el módulo de investigación.
+**NanoMate** reúne conversaciones, planes, recordatorios, documentos e investigación en una aplicación de escritorio. Describe el objetivo, revisa los pasos y sigue los resultados en un registro persistente. Esta adaptación de [nanoMuse](https://github.com/nano-muse/nanoMuse) añade un espacio independiente para Windows y conserva el módulo de investigación.
 
 ## Vistas del producto
 
@@ -45,7 +45,7 @@ Capturas de la vista previa de escritorio actual, con un perfil sin conexión ai
 
 ## Primeros pasos
 
-1. Descarga y ejecuta el [instalador Windows x64 sin firma](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe), o compila desde el código como se indica abajo. El paquete incluye Python y Chromium.
+1. Descarga y ejecuta el [instalador Windows x64 sin firma](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe), o compila desde el código como se indica abajo. El paquete incluye Python y Chromium.
 2. Abre **Connections** desde la configuración o el selector de modelo. Elige DeepSeek, `https://api.deepseek.com` y `deepseek-flash`; guarda tu clave en el almacén local cifrado.
 3. Configura los límites diario y por tarea en `[assistant_usage]` del archivo local `%APPDATA%\nanoMuse Assistant\assistant.toml`. Empiezan en cero; selecciona la política revisada y una cantidad que cubra las reservas. Consulta la [guía de uso](../../docs/assistant.md#local-runtime-usage-limits). No guardes claves allí.
 4. Elige **Runtime → Use configured model**, o sal desde la bandeja e inicia `nanoMuse-Assistant.exe --live`. Guardar una clave no cambia el modo ni concede presupuesto.
@@ -65,8 +65,8 @@ Capturas de la vista previa de escritorio actual, con un perfil sin conexión ai
 Requiere Windows x64, Git, Node.js 22, Python 3.13 y uv. Ejecuta desde la raíz. El script prepara las dependencias JavaScript, Chromium y el entorno Python.
 
 ```powershell
-git clone --branch research-assistant https://github.com/chengli200214-beep/continuous-research-assistant.git
-cd continuous-research-assistant
+git clone --branch research-assistant https://github.com/chengli200214-beep/NanoMate.git
+cd NanoMate
 uv venv .local/assistant-desktop-build --python 3.13
 uv pip sync requirements-assistant-windows.txt --python .local/assistant-desktop-build/Scripts/python.exe --require-hashes --default-index https://pypi.org/simple --no-config
 uv pip install --python .local/assistant-desktop-build/Scripts/python.exe --no-deps -e . --default-index https://pypi.org/simple --no-config

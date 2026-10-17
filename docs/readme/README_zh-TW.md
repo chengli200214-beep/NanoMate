@@ -1,4 +1,4 @@
-# nanoMuse Assistant
+# NanoMate
 
 Windows 個人助理，讓日常任務與有依據的研究共用一個工作空間。
 
@@ -10,12 +10,12 @@ Windows 個人助理，讓日常任務與有依據的研究共用一個工作空
   <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
-  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
+  <a href="https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
   <a href="../../docs/zh/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
   <a href="../../docs/zh/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
 
-**nanoMuse Assistant** 將對話、計畫、提醒、資料產物與研究整合為獨立桌面應用程式。說明目標、審閱步驟，再透過持久保存的任務帳本追蹤結果。本專案以 [nanoMuse](https://github.com/nano-muse/nanoMuse) 為基礎，新增 Windows 工作空間，保留原有研究模組。
+**NanoMate** 將對話、計畫、提醒、資料產物與研究整合為獨立桌面應用程式。說明目標、審閱步驟，再透過持久保存的任務帳本追蹤結果。本專案以 [nanoMuse](https://github.com/nano-muse/nanoMuse) 為基礎，新增 Windows 工作空間，保留原有研究模組。
 
 ## 產品畫面
 
@@ -45,7 +45,7 @@ Windows 個人助理，讓日常任務與有依據的研究共用一個工作空
 
 ## 開始使用
 
-1. 下載並執行 [Windows x64 安裝程式，未簽署](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)，或依下方步驟從原始碼建置。程式包含 Python 與 Chromium。
+1. 下載並執行 [Windows x64 安裝程式，未簽署](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)，或依下方步驟從原始碼建置。程式包含 Python 與 Chromium。
 2. 從工作空間設定或模型選擇器開啟「連線」，選擇 DeepSeek、`https://api.deepseek.com` 與 `deepseek-flash`，將自己的金鑰儲存在本機加密憑證庫。
 3. 在本機 `%APPDATA%\nanoMuse Assistant\assistant.toml` 的 `[assistant_usage]` 設定每日及單任務額度。新設定預設為零；啟用已審定價格政策並涵蓋請求預留，詳見[用量說明](../../docs/zh/assistant.md#local-runtime-usage-limits)。金鑰不放在此檔案。
 4. 選擇「執行模式 → 使用已設定的模型」，或從系統匣退出後以 `nanoMuse-Assistant.exe --live` 重啟。儲存金鑰不會自動切換模式或授予費用額度。
@@ -65,8 +65,8 @@ Windows 個人助理，讓日常任務與有依據的研究共用一個工作空
 需要 Windows x64、Git、Node.js 22、Python 3.13 與 uv。在儲存庫根目錄執行，腳本會準備 JavaScript 依賴、Chromium 與 Python 執行環境。
 
 ```powershell
-git clone --branch research-assistant https://github.com/chengli200214-beep/continuous-research-assistant.git
-cd continuous-research-assistant
+git clone --branch research-assistant https://github.com/chengli200214-beep/NanoMate.git
+cd NanoMate
 uv venv .local/assistant-desktop-build --python 3.13
 uv pip sync requirements-assistant-windows.txt --python .local/assistant-desktop-build/Scripts/python.exe --require-hashes --default-index https://pypi.org/simple --no-config
 uv pip install --python .local/assistant-desktop-build/Scripts/python.exe --no-deps -e . --default-index https://pypi.org/simple --no-config

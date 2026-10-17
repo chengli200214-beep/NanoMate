@@ -1,13 +1,16 @@
-# Personal assistant desktop
+# NanoMate personal assistant desktop
 
 The standalone Windows app opens the personal assistant and its existing research module.
 It shares the runtime's chat, task ledger, reminders, file outputs, memory, approvals and
 manual takeover controls. The existing DeepSeek Harness desktop remains a separate entry.
 
+The project repository is named NanoMate. The current 1.0.5 installer retains the
+`nanoMuse Assistant` application name and data directory.
+
 ## Download for Windows
 
-[Download the Windows x64 installer](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)
-from the [Windows release](https://github.com/chengli200214-beep/continuous-research-assistant/releases/tag/desktop-assistant-v1.0.5).
+[Download the Windows x64 installer](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)
+from the [Windows release](https://github.com/chengli200214-beep/NanoMate/releases/tag/desktop-assistant-v1.0.5).
 The release includes checksums and installation instructions. The installer is unsigned and
 ships no saved key, personal profile, task database or research data. New profiles start in
 offline mode with zero paid allowance. Configure your own connection and limits before use.
