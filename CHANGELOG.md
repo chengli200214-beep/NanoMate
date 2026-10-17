@@ -4,6 +4,10 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ## [Unreleased]
 
+### Documentation
+
+- Updated the ten READMEs for the standalone Windows personal assistant, with DeepSeek setup, task and research usage, source-build instructions and three product screenshots using isolated synthetic records.
+
 ### Desktop
 
 - Added a standalone Windows personal-assistant workspace with a warm light and dark layout, editable home suggestions, conversation search, task summaries and the existing research module. Bundled its Python and browser runtimes, retained per-action approvals and added tray operation, local profile attachment and owned-process shutdown.

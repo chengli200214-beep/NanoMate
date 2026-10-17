@@ -76,5 +76,12 @@ application. The build is local and does not publish a release or alter version 
 The local Windows installer has no publisher certificate.
 
 For source development, run `npm ci` and `npm start` in `desktop/assistant/` after preparing
-the assistant Python environment and building the web app. In a paired browser,
-`?ui=desktop` previews the layout without granting desktop bridge privileges.
+the assistant Python environment and building the web app.
+
+## Product screenshots
+
+The [project README](../README.md) introduces this fork's Windows assistant, its features,
+DeepSeek setup and source build. [Screenshot provenance](images/assistant/README.md) describes
+the isolated offline profile used for its home, task ledger and research images. All task
+and research content in those images is synthetic. The screenshots do not contain a saved
+key or a production record and do not claim live-model quality results.

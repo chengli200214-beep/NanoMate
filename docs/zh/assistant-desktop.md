@@ -38,4 +38,10 @@ powershell -File scripts/build-assistant-desktop.ps1 -Target installer
 
 脚本会检查并构建网页、核对桌面依赖使用公开注册表、准备 Chromium、冻结助手运行时并生成 Windows 应用。产物位于 `desktop/assistant/dist/`，`-Target dir` 只生成解压目录。构建仅在本地进行，不会发布版本或修改版本号。当前本地安装包没有发布者签名。
 
-源码开发时，在准备好助手 Python 环境并构建网页后，进入 `desktop/assistant/` 执行 `npm ci` 和 `npm start`。已配对浏览器中可用 `?ui=desktop` 预览布局，该参数不会授予桌面桥接能力。
+源码开发时，在准备好助手 Python 环境并构建网页后，进入 `desktop/assistant/` 执行 `npm ci` 和 `npm start`。
+
+## 产品界面图 {#product-screenshots}
+
+[项目 README](../../README.md) 与[中文介绍](../readme/README_zh.md) 说明本分支 Windows 个人助手的功能、DeepSeek 配置和源码构建方式。
+[图片来源说明](../images/assistant/README.md) 记录首页、任务账本与调研图片使用的独立离线配置。
+图片中的任务和调研内容均为合成示例，不包含已保存的密钥或实际工作记录，也不作为真实模型效果的评测结果。

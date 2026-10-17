@@ -1,136 +1,113 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/nano-muse/nanoMuse/main/assets/brand/nanomuse-cover.png" alt="nanoMuse：开源的个人智能体，面向你的每一台设备">
-</p>
+# nanoMuse Assistant
 
-<p align="center">
-  <a href="https://github.com/nano-muse/nanoMuse/blob/main/README.md">English</a> |
-  <a href="https://github.com/nano-muse/nanoMuse/blob/main/docs/readme/README_zh.md">简体中文</a> |
-  <a href="https://github.com/nano-muse/nanoMuse/blob/main/docs/readme/README_zh-TW.md">繁體中文</a> |
-  <a href="https://github.com/nano-muse/nanoMuse/blob/main/docs/readme/README_es.md">Español</a> |
-  <a href="https://github.com/nano-muse/nanoMuse/blob/main/docs/readme/README_fr.md">Français</a> |
-  <a href="https://github.com/nano-muse/nanoMuse/blob/main/docs/readme/README_id.md">Bahasa Indonesia</a> |
-  <a href="https://github.com/nano-muse/nanoMuse/blob/main/docs/readme/README_ja.md">日本語</a> |
-  <a href="https://github.com/nano-muse/nanoMuse/blob/main/docs/readme/README_ko.md">한국어</a> |
-  <a href="https://github.com/nano-muse/nanoMuse/blob/main/docs/readme/README_ru.md">Русский</a> |
-  <a href="https://github.com/nano-muse/nanoMuse/blob/main/docs/readme/README_vi.md">Tiếng Việt</a>
-</p>
-<p align="center">
-  <a href="https://trendshift.io/repositories/286894?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-286894" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/286894/daily?language=Swift" alt="nano-muse%2FnanoMuse | Trendshift" width="250" height="55"/></a>
-</p>
-<p align="center">
-  <a href="https://github.com/nano-muse/nanoMuse/stargazers"><img src="https://img.shields.io/github/stars/nano-muse/nanoMuse?style=flat&label=stars" alt="GitHub stars"></a>
-  <a href="https://github.com/nano-muse/nanoMuse/releases"><img src="https://img.shields.io/github/downloads/nano-muse/nanoMuse/total?label=downloads" alt="下载量"></a>
-  <img src="https://hits.sh/github.com/nano-muse/nanoMuse.svg?label=visitors&color=0a66e4&extraCount=16719" alt="Visitors">
-  <a href="https://github.com/nano-muse/nanoMuse/actions/workflows/ci.yml"><img src="https://github.com/nano-muse/nanoMuse/actions/workflows/ci.yml/badge.svg?branch=main" alt="Test Suite"></a>
-  <a href="https://github.com/nano-muse/nanoMuse/blob/main/LICENSE"><img src="https://img.shields.io/github/license/nano-muse/nanoMuse?label=license" alt="GPL-3.0-or-later"></a>
-  <a href="https://arxiv.org/abs/2610.08699"><img src="https://img.shields.io/badge/arXiv-2610.08699-b31b1b" alt="arXiv 上的论文"></a>
+Windows 个人助手，把日常任务和有依据的调研放进同一个工作空间。
+
+[English](../../README.md) | [简体中文](../../docs/readme/README_zh.md) | [繁體中文](../../docs/readme/README_zh-TW.md) | [Español](../../docs/readme/README_es.md) | [Français](../../docs/readme/README_fr.md) | [Bahasa Indonesia](../../docs/readme/README_id.md) | [日本語](../../docs/readme/README_ja.md) | [한국어](../../docs/readme/README_ko.md) | [Русский](../../docs/readme/README_ru.md) | [Tiếng Việt](../../docs/readme/README_vi.md)
+
+<p>
+  <img src="https://img.shields.io/badge/Windows-x64-5d7161" alt="Windows x64">
+  <img src="https://img.shields.io/badge/DeepSeek-text-c47759" alt="DeepSeek text">
+  <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
-  <a href="https://demo.nanomuse.dev/"><img src="https://img.shields.io/badge/%E5%9C%A8%E7%BA%BF%E4%BD%93%E9%AA%8C-demo.nanomuse.dev-0a66e4" alt="在线体验"></a>
-  <a href="https://nanomuse.cn/"><img src="https://img.shields.io/badge/%E5%AE%98%E7%BD%91-nanomuse.cn-0a66e4" alt="官网"></a>
-  <a href="https://discord.gg/bkTySmm28X"><img src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="../../docs/zh/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
+  <a href="../../docs/zh/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
 
-**nanoMuse 是一个开源的个人智能体，面向你的每一台设备。** 一个有名字、有自己形象的智能体，和 Meta 的 [Muse](https://about.fb.com/news/2026/09/introducing-muse-personal-ai-agent/) 是同一类东西：不只回答问题，而是动手做事；App 关了也继续干；记得你；遇到无法撤销的操作会先停下来问你。
+**nanoMuse Assistant** 将对话、计划、提醒、资料产物和调研整合为独立桌面端。说出目标，审阅执行步骤，再通过持久化任务账本跟进结果。本项目基于 [nanoMuse](https://github.com/nano-muse/nanoMuse) 二次开发，新增独立的 Windows 工作空间，原有调研流程保留为单独模块。
 
-*nano* 的意思是完整的一套，小到你自己就能跑、能部署：手机 App、桌面 App、网页控制台，还有把它们连在一起的中继，都在这个仓库里，GPL-3.0-or-later。**[免费、开源、非营利。一起把它做好。](../../CONTRIBUTING.md)** 登录就有一份免费的模型额度，走社区中继，钱是开发者出的；用完可以[换自己的 key](../own-key.md)。同一套中继也能跑在你自己的服务器上，数据不用出门。最新版本：**1.0.5 Lookout**，[发布说明](https://github.com/nano-muse/nanoMuse/releases/tag/v1.0.5) · [在线体验](https://demo.nanomuse.dev/)。
+## 产品界面
 
-> [!NOTE]
-> **nanoMuse 在持续进化**
->
-> 个人智能体不该只长在别人的云里，nanoMuse 想做一个开源、低成本的平替：装在自己的设备上，模型自己选，中继也能自己架。我们希望和全球的开发者、使用者一起，让每个人真正拥有自己的个人智能体。提个 [issue](https://github.com/nano-muse/nanoMuse/issues/new/choose) 或者发个 [PR](../../CONTRIBUTING.md) 都是在帮 nanoMuse 变得更好。
+图片取自当前桌面界面的独立离线预览。任务名称、候选仓库和报告均为合成示例，不代表真实模型的效果评测。点击图片可查看原图。
 
-https://github.com/user-attachments/assets/bf0ec2ae-59aa-4358-9dd0-c9d045ee7bee
-
-<p align="center"><a href="https://nanomuse.cn/media/film/nanomuse-film-en-web.mp4">English</a> · <a href="https://nanomuse.cn/media/film/nanomuse-film-zh-web.mp4">中文</a> · <a href="https://nanomuse.cn/#film">nanomuse.cn</a></p>
-
-## 🗞️ 动态
-
-- `2026-10-13` ⭐ GitHub 上 1000 个 star，距首发十八天，期间连续四天进入 GitHub Trending 的 Swift 榜（[Trendshift](https://trendshift.io/repositories/286894) 的记录：10 月 7 日第七，10 月 10 日第四）。谢谢每一次试用、每一个问题报告和每一个 pull request。我们会继续做下去：每隔几天一个版本，下一步做什么写在[路线图](../roadmap.md)里。
-- `2026-10-09` 🚀 版本 [1.0.0 Keel](https://github.com/nano-muse/nanoMuse/releases/tag/v1.0.0) 发布，手机、电脑和浏览器都有；装在上一版之上，数据保留，每一处改动都写在发布说明里。
-- `2026-10-08` 🤗 我们的论文登上 [Hugging Face Daily Papers](https://huggingface.co/papers/2610.08699)，在 10 月 8 日的榜单上排第三；欢迎到论文页提问和留言。
-- `2026-10-07` 📄 我们的论文已发布在 [arXiv](https://arxiv.org/abs/2610.08699)：《nanoMuse: An Open-Source Personal Agent for Every Device You Own》，作者 Guangyi Liu、Yong Liu、Jiangning Zhang（浙江大学）；引用格式见本页末尾。
-- `2026-09-25` 🎉 nanoMuse 以 GPL-3.0-or-later 发布在 GitHub：一个基于 OpenMinis 1.13 的 Android 应用；中继、电脑端和 iPhone 版在随后几天陆续到来。
-
-全部版本：[releases](https://github.com/nano-muse/nanoMuse/releases)。
-
-## 安装
-
-| | |
-|---|---|
-| **浏览器** | [demo.nanomuse.dev](https://demo.nanomuse.dev/)：一台模拟手机上的 nanoMuse，登录后体验。这是演示；下面的客户端才是正式的 |
-| **Android** 8.0 以上，arm64 | [nanoMuse-1.0.5-arm64.apk](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-1.0.5-arm64.apk)：每个版本同一把签名，覆盖安装即可升级 |
-| **iPhone / iPad** | [TestFlight](https://testflight.apple.com/join/ZHexbDqc)：测试版，已通过 Apple 的 beta 审核；从这个链接安装 · [iOS](../ios.md) |
-| **macOS** 12 以上 | [Apple 芯片](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-mac-arm64.dmg) · [Intel](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-mac-x64.dmg)。没有公证：第一次右键 → 打开 |
-| **Windows** 10 以上 | [nanoMuse-Desktop-1.0.5-win-x64.exe](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-win-x64.exe)：点一次「仍要运行」 |
-| **Linux** x64 | [AppImage](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.AppImage) · [.deb](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.deb) · [tar.gz](https://github.com/nano-muse/nanoMuse/releases/download/v1.0.5/nanoMuse-Desktop-1.0.5-linux-x64.tar.gz) |
-| **Docker** | `bash scripts/self-host.sh --local` 搭自己的中继；`docker compose up -d app` 在自己的服务器上跑网页版；见[自己部署](../self-hosting.md) |
-
-下载都来自 [GitHub 最新版本](https://github.com/nano-muse/nanoMuse/releases/latest)；GitHub 下不动时，同样的文件在 [nanomuse.cn/dl](https://nanomuse.cn/dl/)。打开 App，用邮箱或中国大陆手机号登录，它就有模型可用。手机、桌面和网页共用一个账号，看到的是同样的对话。
-
-## 能做什么
+<a href="../../docs/images/assistant/desktop-home.png"><img src="../../docs/images/assistant/desktop-home.png" alt="首页与对话入口" width="1200"></a>
 
 <table>
   <tr>
-    <td width="50%" valign="top"><b>动手做事。</b><br>Linux shell、浏览器、MCP 服务、技能；打开「手」之后，手机上的 App 和电脑上的窗口也能通过屏幕操作，给那些从来没有 API 的东西。</td>
-    <td width="50%" valign="top"><b>关键处先问。</b><br>删除、发送、付款前先停下来问你，可以记住：只此一次、本次对话，或者一直允许；密码和验证码永远由你自己输。碰到登录或人机验证就交给你，点「完成」接着做。</td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top"><b>够得着别的设备。</b><br>手机上说一句，电脑上执行；消息以 <code>@Mac …</code> 开头，任务就去那台机器。审批回到你手里这台。</td>
-    <td width="50%" valign="top"><b>一直在干。</b><br>目标按时检查，例程在 App 关着时照样跑，每天早上有写给你的动态。</td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top"><b>记得你。</b><br>它是谁、了解你什么、什么时候醒来，都是你能看、能改的 Markdown 文件。</td>
-    <td width="50%" valign="top"><b>住在你的聊天软件里。</b><br>飞书、钉钉、企业微信、Telegram 里都能回复你。</td>
-  </tr>
-  <tr>
-    <td width="50%" valign="top"><b>有自己的形象。</b><br>描述一句，你的图像模型来画，视频模型让它动起来。默认是一只小龙。</td>
-    <td width="50%" valign="top"><b>任何模型。</b><br>中继的额度；自己在二十家服务商（百炼、OpenRouter、OpenAI、Gemini、DeepSeek 等）任意一家的 key；或者你已经在付费的套餐：ChatGPT、Claude、Kimi。服务商没有图片或视频模型，这两项就不开，App 会直说。</td>
+    <td width="50%" valign="top"><a href="../../docs/images/assistant/desktop-tasks.png"><img src="../../docs/images/assistant/desktop-tasks.png" alt="任务账本与人工检查点"></a><br><b>任务账本与人工检查点</b></td>
+    <td width="50%" valign="top"><a href="../../docs/images/assistant/desktop-research.png"><img src="../../docs/images/assistant/desktop-research.png" alt="调研条件与版本化报告"></a><br><b>调研条件与版本化报告</b></td>
   </tr>
 </table>
 
-## 怎么工作
+## 主要功能
 
-每台设备上都跑着自己的智能体：手机上在 APK 里（proot 下的 Alpine Linux、shell、浏览器、MCP），电脑上在 nanoMuse Desktop 里（DeepSeek Harness 加上负责「手」的 Python 运行时）。登录后它们在中继上相遇，可以互相拜托；对话的文字经中继传递，文件和截图留在产生它们的设备上。
+| 功能 | 说明 |
+| --- | --- |
+| 对话入口 | 接入 DeepSeek 文字模型，支持多对话、按标题搜索，以及浅色和深色外观。 |
+| 统一任务账本 | 集中保存目标、步骤、计划版本、执行记录和结果，重启后仍可查看。 |
+| 计划与提醒 | 创建或修改提醒、安排周期任务，相关变更同步记录到账本。 |
+| 资料与产物 | 读取工作空间中的 Markdown 材料，生成关联来源的产物，并核验文件内容。 |
+| 个人偏好 | 经明确确认后保存个人偏好，支持到期和删除。 |
+| 受控电脑操作 | 预览工作空间文件操作、观察浏览器状态，并执行有界的 Windows 操作，支持暂停和人工接管。 |
+| 独立调研模块 | 比较候选，保留来源快照、证据和报告版本；条件或来源变化后重新核对结论。 |
+| 审批与用量 | 执行步骤保留审批，结果不明时交由审阅；主聊天和调研共享持久化模型费用限制。 |
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/nano-muse/nanoMuse/main/assets/brand/devices-loop.png" alt="Android、桌面端（Mac、Windows、Linux）、iPhone 和 iPad、网页版围绕同一个账号：中继负责登录，并在设备之间同步对话" width="92%">
-</p>
+## 开始使用
 
-[docs/every-device.md](../every-device.md) 讲设备之间怎么配合，[docs/hub.md](../hub.md) 讲帧格式，[docs/cloud.md](../cloud.md) 讲中继，[docs/privacy.md](../privacy.md) 讲它保存什么。
+1. 按下方说明构建 Windows 程序，打开 `nanoMuse-Assistant.exe`，或运行生成的安装包。打包版本内置 Python 与 Chromium。
+2. 从工作空间设置或输入框下方的模型选择器打开「连接」。选择 DeepSeek，填写 `https://api.deepseek.com` 与 `deepseek-flash`，在本地加密凭据库中保存自己的密钥。
+3. 在本地 `%APPDATA%\nanoMuse Assistant\assistant.toml` 的 `[assistant_usage]` 中设置每日及单任务额度。新配置初始为零；启用已审定的价格政策，并选择能覆盖请求预留的额度，详见[用量说明](../../docs/zh/assistant.md#local-runtime-usage-limits)。不要把密钥填入此文件。
+4. 通过「运行模式 → 使用已配置的模型」切换。也可从托盘退出后，以 `nanoMuse-Assistant.exe --live` 重新启动。仅保存密钥不会切换离线模式，也不会自动授予费用额度。
+5. 在对话中描述目标，审阅任务计划及逐项操作预览；通过「任务账本」查看进度，需要时暂停或人工接管。
 
-## 和 Muse、OpenMinis 的对比
+> 新配置默认使用有明确标记的离线脚本响应，切换为真实模型后才会调用 API。离线脚本响应不具备通用语言模型能力。
 
-| | Meta Muse | OpenMinis | nanoMuse |
-|---|---|---|---|
-| 智能体跑在哪 | 每人一台云端 VM | 装了它的那台手机 | 你的手机、你的电脑，或者你自己的服务器，一个账号串起来 |
-| 没有 API 的 App | 碰不到；VM 不碰你的设备 | Android 上的一个无障碍 CLI | 手机和电脑上都把屏幕当手：看截图，先试 API，登录由你接管。iOS 上没有，系统不允许 |
-| 其他设备 | 同一台 VM 的多个客户端 | 只有装了它的那一台 | 设备之间通过 hub 互相拜托，审批在你手里的那台 |
-| 模型 | Meta 的 | 自己带 | 中继的免费额度，或者自己的 |
-| 许可 | 闭源 | GPL-3.0 | GPL-3.0-or-later，基于 OpenMinis |
+## 你可以这样提问
 
-## 文档
+- 帮我安排本周三个学习目标，并整理一份复盘清单。
+- 读取工作空间里的 Markdown 笔记，整理带来源的摘要。
+- 先预览这批工作空间文件的整理方案，等我确认后再执行。
+- 按我的条件比较两个仓库，保留证据和报告版本。
 
-[nanomuse.cn/docs](https://nanomuse.cn/docs/)：各平台的安装、多端、「手」、连接器、记忆、自己部署、协议。源文件在 [docs/](../)；每个版本改了什么在 [CHANGELOG](../../CHANGELOG.md) 和 [docs/releases/](../releases/)。
+## 从源码构建
 
-## 自己部署
+需要 Windows x64、Git、Node.js 22、Python 3.13 和 uv。在仓库根目录执行。构建脚本会准备 JavaScript 依赖、Chromium 和 Python 运行时。
 
-一台 VPS，一个小时：[docs/self-hosting.md](../self-hosting.md)。三条路：不要服务器、只用自己的 key；用 `scripts/self-host.sh` 搭自己的中继；在自己的机器上跑网页版的运行时。
+```powershell
+git clone --branch research-assistant https://github.com/chengli200214-beep/continuous-research-assistant.git
+cd continuous-research-assistant
+uv venv .local/assistant-desktop-build --python 3.13
+uv pip sync requirements-assistant-windows.txt --python .local/assistant-desktop-build/Scripts/python.exe --require-hashes --default-index https://pypi.org/simple --no-config
+uv pip install --python .local/assistant-desktop-build/Scripts/python.exe --no-deps -e . --default-index https://pypi.org/simple --no-config
+uv pip install --python .local/assistant-desktop-build/Scripts/python.exe pyinstaller==6.22.3 --default-index https://pypi.org/simple --no-config
+powershell -File scripts/build-assistant-desktop.ps1 -Target installer
+```
 
-## 参与
+解压目录位于 `desktop/assistant/dist/win-unpacked/`，安装包位于 `desktop/assistant/dist/`。使用 `-Target dir` 可只生成解压版。本地构建的安装包尚未签名，完整步骤见[桌面端说明](../../docs/zh/assistant-desktop.md)。
 
-拿它做一件真事，报告哪里坏了，然后挑一件小而具体的事做：[CONTRIBUTING.md](../../CONTRIBUTING.md) 有环境和约定，[AGENTS.md](../../AGENTS.md) 是编程智能体在这棵树里要守的规矩，[路线图](../roadmap.md)说从哪儿入手。[Issues](https://github.com/nano-muse/nanoMuse/issues) · [Discussions](https://github.com/nano-muse/nanoMuse/discussions) · [Discord](https://discord.gg/bkTySmm28X)。
+## 数据与执行方式
 
-## 维护者
+- Electron 外壳连接本机 Python 服务，对话、任务、提醒记录和调研版本保存在本地文件及 SQLite 数据库中。
+- 调用模型时，必要的对话和工具上下文会发送给所选提供商。本地保存数据不等于云端模型请求始终留在本机。
+- 关闭窗口后程序留在托盘运行，从托盘退出才会停止其启动的服务。已有个人助手数据可通过 `--profile="D:\AssistantData\profile"` 指定；不会自动导入原调研专用目录。
 
-<table>
-  <tr>
-    <td align="center"><a href="https://github.com/lgy0404"><img src="https://avatars.githubusercontent.com/u/63797388?v=4&s=80" width="80" height="80" alt="Guangyi Liu"><br><strong>Guangyi Liu</strong></a><br><a href="mailto:guangyiliu@zju.edu.cn"><img src="https://img.shields.io/badge/e--mail-guangyiliu%40zju.edu.cn-0a66e4" alt="guangyiliu@zju.edu.cn"></a></td>
-  </tr>
-</table>
+## 当前范围
 
-## 社区贡献者
+- 本分支主要交付独立 Windows x64 个人助手。仓库继续保留上游手机端、relay 与 Harness 代码。
+- 隔离配置目前启用已审定的 DeepSeek 文字接口和确定性 Windows 操作；未启用麦克风听写、视觉模型控制和嵌入式记忆检索。
+- 提醒需要程序持续运行且电脑处于唤醒状态。新个人助手架构的睡眠与锁屏恢复尚未宣布验证通过。
 
-每一位有改动合并进 `main` 的人，取自 GitHub 的贡献者列表。
+## 文档与目录
+
+- [桌面端使用、构建与已有数据](../../docs/zh/assistant-desktop.md)
+- [任务计划、审批与费用限制](../../docs/zh/assistant.md)
+- [运行时架构](../../docs/zh/architecture.md)
+- [上游及第三方声明](../../THIRD_PARTY_NOTICES.md)
+
+```text
+desktop/assistant/   Electron shell
+web/src/             React UI
+nanomuse/assistant/  Task ledger and action adapters
+nanomuse/research/   Evidence and research reports
+scripts/desktop-app/ Runtime packaging
+```
+
+## 许可证与上游致谢
+
+基于 nanoMuse，遵循 **GPL-3.0-or-later**。原有版权及组件声明保留在 [LICENSE](../../LICENSE)、[NOTICE](../../NOTICE) 和 [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md)。原 DeepSeek Harness 桌面端仍为独立入口，贡献约定见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
+
+<details>
+<summary>上游社区贡献者</summary>
 
 <!-- contributors:start -->
 <p>
@@ -146,40 +123,4 @@ https://github.com/user-attachments/assets/bf0ec2ae-59aa-4358-9dd0-c9d045ee7bee
 </p>
 <!-- contributors:end -->
 
-## ⭐️ 引用
-
-如果 nanoMuse 对你有帮助，欢迎引用我们的论文。
-
-```bibtex
-@misc{liu2026nanomuseopensourcepersonalagent,
-      title={nanoMuse: An Open-Source Personal Agent for Every Device You Own}, 
-      author={Guangyi Liu and Yong Liu and Jiangning Zhang},
-      year={2026},
-      eprint={2610.08699},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2610.08699}, 
-}
-```
-
-## 致谢
-
-nanoMuse 站在别人的工作之上；条款见 [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md)。
-
-- [OpenMinis](https://github.com/OpenMinis/OpenMinis)：手机 App 所基于的端侧智能体，沙箱来自 [proot](https://github.com/nano-muse/proot) 和 [Alpine Linux](https://alpinelinux.org/)。
-- [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)：桌面 App 作为插件运行在它上面。
-- [UI-TARS-desktop](https://github.com/bytedance/UI-TARS-desktop)（字节跳动）：桌面端「手」的操作器移植自它，舞台上的标记参考它的 ScreenMarker。
-- [MobileGym](https://github.com/Purewhiter/mobilegym)、[MemGUI-Bench](https://github.com/lgy0404/MemGUI-Bench)、[PhoneHarness](https://github.com/PhoneHarness/PhoneHarness)、[CopilotKit/OpenMuse](https://github.com/CopilotKit/OpenMuse)、[Open-AutoGLM](https://github.com/zai-org/Open-AutoGLM)、[ClawGUI](https://github.com/ZJU-REAL/ClawGUI)：手机操作器、轨迹和产品思路。
-
-## 声明
-
-nanoMuse 是独立的社区项目，与 Meta Platforms, Inc. 无关，也未获其背书；Muse 是他们的商标。小龙是本项目自己的。
-
-## 许可
-
-[GPL-3.0-or-later](../../LICENSE)。手机 App 基于 OpenMinis 1.13（GPL-3.0），自 2026-09-24 起修改，见 [NOTICE](../../NOTICE)。Python 线更早的版本是 MIT（tag `pre-openminis`）。
-
-<p align="center">
-  <em>感谢来访 ✨ nanoMuse。</em><br><br>
-  <img src="https://hits.sh/github.com/nano-muse/nanoMuse.svg?label=visitors&color=0a66e4&extraCount=16719" alt="Visitors">
-</p>
+</details>
