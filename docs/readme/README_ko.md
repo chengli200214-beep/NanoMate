@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
+  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
   <a href="../../docs/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
   <a href="../../docs/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
@@ -44,7 +45,7 @@
 
 ## 시작하기
 
-1. 아래 지침으로 빌드한 후 `nanoMuse-Assistant.exe` 또는 설치 프로그램을 엽니다. Python과 Chromium이 포함됩니다.
+1. [Windows x64 설치 프로그램, 서명 없음](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)을 내려받아 실행하거나 아래 소스로 빌드합니다. Python과 Chromium이 포함됩니다.
 2. 설정이나 모델 선택기에서 **Connections**를 열고 DeepSeek, `https://api.deepseek.com`, `deepseek-flash`를 선택합니다. 키를 로컬 암호화 저장소에 저장합니다.
 3. 로컬 `%APPDATA%\nanoMuse Assistant\assistant.toml`의 `[assistant_usage]`에 일일 및 작업별 한도를 지정합니다. 초기값은 0입니다. 검토된 가격 정책과 예약액을 충족하는 한도는 [가이드](../../docs/assistant.md#local-runtime-usage-limits)를 참고하세요. 키는 넣지 않습니다.
 4. **Runtime → Use configured model**을 선택하거나 트레이에서 종료 후 `nanoMuse-Assistant.exe --live`로 재시작합니다. 키 저장만으로 모드나 예산 권한이 바뀌지 않습니다.

@@ -2,6 +2,13 @@
 
 独立 Windows 桌面端以个人助手为入口，共用现有对话、任务账本、提醒、文件产物、记忆、审批与人工接管功能。调研保留为独立模块，原有 DeepSeek Harness 桌面入口也继续保留。
 
+## 下载 Windows 安装包 {#download-for-windows}
+
+[下载 Windows x64 安装包](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)，
+[Release 页面](https://github.com/chengli200214-beep/continuous-research-assistant/releases/tag/desktop-assistant-v1.0.5) 同时提供校验文件和安装说明。
+安装包目前未签名，不包含已保存的密钥、个人配置、任务库或调研数据。新配置默认采用离线模式且付费额度为零，
+使用者需要自行填写模型连接及费用限制。
+
 ## 使用
 
 运行解压目录中的 `nanoMuse-Assistant.exe`，或使用 Windows 安装包。应用已包含 Python 运行时和浏览器文件，无需另装 Python 或手动启动网页服务。首次启动使用明确标注的离线脚本响应，这不是通用离线大模型。

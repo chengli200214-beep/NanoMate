@@ -6,6 +6,8 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Documentation
 
+- Added Windows installer downloads, checksums and first-run instructions for the standalone assistant release.
+
 - Updated the ten READMEs for the standalone Windows personal assistant, with DeepSeek setup, task and research usage, source-build instructions and three product screenshots using isolated synthetic records.
 
 ### Desktop

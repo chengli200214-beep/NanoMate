@@ -10,6 +10,7 @@ Windows 個人助理，讓日常任務與有依據的研究共用一個工作空
   <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
+  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
   <a href="../../docs/zh/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
   <a href="../../docs/zh/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
@@ -44,7 +45,7 @@ Windows 個人助理，讓日常任務與有依據的研究共用一個工作空
 
 ## 開始使用
 
-1. 依下方步驟建置並開啟 `nanoMuse-Assistant.exe`，或使用產生的安裝程式。打包版本包含 Python 與 Chromium。
+1. 下載並執行 [Windows x64 安裝程式，未簽署](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)，或依下方步驟從原始碼建置。程式包含 Python 與 Chromium。
 2. 從工作空間設定或模型選擇器開啟「連線」，選擇 DeepSeek、`https://api.deepseek.com` 與 `deepseek-flash`，將自己的金鑰儲存在本機加密憑證庫。
 3. 在本機 `%APPDATA%\nanoMuse Assistant\assistant.toml` 的 `[assistant_usage]` 設定每日及單任務額度。新設定預設為零；啟用已審定價格政策並涵蓋請求預留，詳見[用量說明](../../docs/zh/assistant.md#local-runtime-usage-limits)。金鑰不放在此檔案。
 4. 選擇「執行模式 → 使用已設定的模型」，或從系統匣退出後以 `nanoMuse-Assistant.exe --live` 重啟。儲存金鑰不會自動切換模式或授予費用額度。

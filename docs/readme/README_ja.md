@@ -10,6 +10,7 @@
   <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
+  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
   <a href="../../docs/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
   <a href="../../docs/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
@@ -44,7 +45,7 @@
 
 ## 使い始める
 
-1. 下記の手順でビルドし、`nanoMuse-Assistant.exe` または生成されたインストーラーを開きます。Python と Chromium を同梱します。
+1. [Windows x64 インストーラー、署名なし](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)をダウンロードして実行するか、下記の手順でビルドします。Python と Chromium を同梱します。
 2. 設定またはモデル選択から **Connections** を開き、DeepSeek、`https://api.deepseek.com`、`deepseek-flash` を選び、自分のキーを暗号化されたローカル保管庫に保存します。
 3. ローカルの `%APPDATA%\nanoMuse Assistant\assistant.toml` の `[assistant_usage]` に日次とタスク単位の上限を設定します。初期値はゼロです。審定済みの価格ポリシーと予約額を満たす上限は[利用ガイド](../../docs/assistant.md#local-runtime-usage-limits)を参照してください。ここにキーは書きません。
 4. **Runtime → Use configured model** を選ぶか、トレイから終了して `nanoMuse-Assistant.exe --live` で再起動します。キーの保存だけではモードや費用許可は変わりません。

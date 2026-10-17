@@ -10,6 +10,7 @@ A Windows personal assistant with a task ledger and an evidence-based research m
   <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
+  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
   <a href="docs/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
   <a href="docs/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
@@ -44,7 +45,7 @@ Captured from the current desktop UI preview using an isolated offline profile. 
 
 ## Quick start
 
-1. Build the Windows app below, then open `nanoMuse-Assistant.exe` or the generated setup installer. Packaged builds include Python and Chromium.
+1. Download and run the [Windows x64 installer, unsigned](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe), or build from source below. The package includes Python and Chromium.
 2. Open **Connections** from the workspace settings or model selector. Choose DeepSeek, use `https://api.deepseek.com` and `deepseek-flash`, and save your own key in the local encrypted credential store.
 3. Choose daily and per-task allowances in the local `%APPDATA%\nanoMuse Assistant\assistant.toml` under `[assistant_usage]`. New profiles start at zero. Configure the reviewed pricing policy and an allowance that covers request reservations; see the [usage guide](docs/assistant.md#local-runtime-usage-limits). Keep keys out of this file.
 4. Switch **Runtime → Use configured model**. Alternatively, exit from the tray and start `nanoMuse-Assistant.exe --live`. Saving a key alone does not switch the offline runtime or grant spending permission.

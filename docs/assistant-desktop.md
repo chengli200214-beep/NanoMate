@@ -4,6 +4,14 @@ The standalone Windows app opens the personal assistant and its existing researc
 It shares the runtime's chat, task ledger, reminders, file outputs, memory, approvals and
 manual takeover controls. The existing DeepSeek Harness desktop remains a separate entry.
 
+## Download for Windows
+
+[Download the Windows x64 installer](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)
+from the [Windows release](https://github.com/chengli200214-beep/continuous-research-assistant/releases/tag/desktop-assistant-v1.0.5).
+The release includes checksums and installation instructions. The installer is unsigned and
+ships no saved key, personal profile, task database or research data. New profiles start in
+offline mode with zero paid allowance. Configure your own connection and limits before use.
+
 ## Using the app
 
 Run `nanoMuse-Assistant.exe` from the unpacked directory, or install the Windows setup build.

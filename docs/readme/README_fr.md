@@ -10,6 +10,7 @@ Un assistant personnel Windows avec un registre de tâches et un module de reche
   <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
+  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
   <a href="../../docs/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
   <a href="../../docs/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
@@ -44,7 +45,7 @@ Captures de la prévisualisation actuelle du bureau, avec un profil hors ligne i
 
 ## Prise en main
 
-1. Compilez l’application ci-dessous, puis ouvrez `nanoMuse-Assistant.exe` ou le programme d’installation produit. Le paquet contient Python et Chromium.
+1. Téléchargez et lancez le [programme Windows x64 non signé](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe), ou compilez les sources ci-dessous. Python et Chromium sont inclus.
 2. Ouvrez **Connections** depuis les réglages ou le sélecteur de modèle. Choisissez DeepSeek, `https://api.deepseek.com` et `deepseek-flash`, puis enregistrez votre clé dans le coffre local chiffré.
 3. Réglez les plafonds quotidien et par tâche dans `[assistant_usage]` du fichier local `%APPDATA%\nanoMuse Assistant\assistant.toml`. Ils commencent à zéro. Choisissez la politique révisée et un montant couvrant les réservations, voir le [guide](../../docs/assistant.md#local-runtime-usage-limits). N’y mettez aucune clé.
 4. Choisissez **Runtime → Use configured model**, ou quittez depuis la zone de notification puis lancez `nanoMuse-Assistant.exe --live`. Enregistrer une clé ne change ni le mode ni le budget.
