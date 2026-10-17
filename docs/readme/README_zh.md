@@ -1,21 +1,21 @@
-# nanoMuse Assistant
+# nanoMuse 个人助手
 
 Windows 个人助手，把日常任务和有依据的调研放进同一个工作空间。
 
-[English](../../README.md) | [简体中文](../../docs/readme/README_zh.md) | [繁體中文](../../docs/readme/README_zh-TW.md) | [Español](../../docs/readme/README_es.md) | [Français](../../docs/readme/README_fr.md) | [Bahasa Indonesia](../../docs/readme/README_id.md) | [日本語](../../docs/readme/README_ja.md) | [한국어](../../docs/readme/README_ko.md) | [Русский](../../docs/readme/README_ru.md) | [Tiếng Việt](../../docs/readme/README_vi.md)
+[项目首页](../../README.md) | [简体中文](../../docs/readme/README_zh.md) | [繁体中文](../../docs/readme/README_zh-TW.md) | [西班牙语](../../docs/readme/README_es.md) | [法语](../../docs/readme/README_fr.md) | [印度尼西亚语](../../docs/readme/README_id.md) | [日语](../../docs/readme/README_ja.md) | [韩语](../../docs/readme/README_ko.md) | [俄语](../../docs/readme/README_ru.md) | [越南语](../../docs/readme/README_vi.md)
 
 <p>
   <img src="https://img.shields.io/badge/Windows-x64-5d7161" alt="Windows x64">
-  <img src="https://img.shields.io/badge/DeepSeek-text-c47759" alt="DeepSeek text">
-  <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
-  <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
+  <img src="https://img.shields.io/badge/DeepSeek-%E6%96%87%E5%AD%97%E6%A8%A1%E5%9E%8B-c47759" alt="DeepSeek 文字模型">
+  <img src="https://img.shields.io/badge/%E7%95%8C%E9%9D%A2-React%20%2B%20TypeScript-6e7f91" alt="React 与 TypeScript 界面">
+  <a href="../../LICENSE"><img src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
-  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
-  <a href="../../docs/zh/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
-  <a href="../../docs/zh/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
+  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Windows_x64-c47759" alt="下载 Windows x64 安装包"></a>
+  <a href="../../docs/zh/assistant-desktop.md"><img src="https://img.shields.io/badge/%E6%96%87%E6%A1%A3-%E6%A1%8C%E9%9D%A2%E7%AB%AF-746b62" alt="桌面端使用说明"></a>
+  <a href="../../docs/zh/assistant.md"><img src="https://img.shields.io/badge/%E6%96%87%E6%A1%A3-%E4%BB%BB%E5%8A%A1%E8%B4%A6%E6%9C%AC-746b62" alt="任务账本说明"></a>
 </p>
 
-**nanoMuse Assistant** 将对话、计划、提醒、资料产物和调研整合为独立桌面端。说出目标，审阅执行步骤，再通过持久化任务账本跟进结果。本项目基于 [nanoMuse](https://github.com/nano-muse/nanoMuse) 二次开发，新增独立的 Windows 工作空间，原有调研流程保留为单独模块。
+**nanoMuse 个人助手** 将对话、计划、提醒、资料产物和调研整合为独立桌面端。说出目标，审阅执行步骤，再通过持久化任务账本跟进结果。本项目基于 [nanoMuse](https://github.com/nano-muse/nanoMuse) 二次开发，新增独立的 Windows 工作空间，原有调研流程保留为单独模块。
 
 ## 产品界面
 
@@ -84,7 +84,7 @@ powershell -File scripts/build-assistant-desktop.ps1 -Target installer
 
 ## 当前范围
 
-- 本分支主要交付独立 Windows x64 个人助手。仓库继续保留上游手机端、relay 与 Harness 代码。
+- 本分支主要交付独立 Windows x64 个人助手。仓库继续保留上游手机端、中继服务与 Harness 代码。
 - 隔离配置目前启用已审定的 DeepSeek 文字接口和确定性 Windows 操作；未启用麦克风听写、视觉模型控制和嵌入式记忆检索。
 - 提醒需要程序持续运行且电脑处于唤醒状态。新个人助手架构的睡眠与锁屏恢复尚未宣布验证通过。
 
@@ -96,11 +96,11 @@ powershell -File scripts/build-assistant-desktop.ps1 -Target installer
 - [上游及第三方声明](../../THIRD_PARTY_NOTICES.md)
 
 ```text
-desktop/assistant/   Electron shell
-web/src/             React UI
-nanomuse/assistant/  Task ledger and action adapters
-nanomuse/research/   Evidence and research reports
-scripts/desktop-app/ Runtime packaging
+desktop/assistant/   Electron 桌面外壳
+web/src/             React 界面
+nanomuse/assistant/  任务账本与操作适配器
+nanomuse/research/   调研证据与报告
+scripts/desktop-app/ 运行环境打包
 ```
 
 ## 许可证与上游致谢

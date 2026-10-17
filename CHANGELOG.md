@@ -6,6 +6,8 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Documentation
 
+- 将个人助手项目首页和 Windows 桌面版发布介绍改为中文，并同步了各语言首页的导航。
+
 - Added Windows installer downloads, checksums and first-run instructions for the standalone assistant release.
 
 - Updated the ten READMEs for the standalone Windows personal assistant, with DeepSeek setup, task and research usage, source-build instructions and three product screenshots using isolated synthetic records.

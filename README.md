@@ -1,68 +1,68 @@
-# nanoMuse Assistant
+# nanoMuse 个人助手
 
-A Windows personal assistant with a task ledger and an evidence-based research module.
+Windows 个人助手，把日常任务和有依据的调研放进同一个工作空间。
 
-[English](README.md) | [简体中文](docs/readme/README_zh.md) | [繁體中文](docs/readme/README_zh-TW.md) | [Español](docs/readme/README_es.md) | [Français](docs/readme/README_fr.md) | [Bahasa Indonesia](docs/readme/README_id.md) | [日本語](docs/readme/README_ja.md) | [한국어](docs/readme/README_ko.md) | [Русский](docs/readme/README_ru.md) | [Tiếng Việt](docs/readme/README_vi.md)
+[项目首页](README.md) | [简体中文](docs/readme/README_zh.md) | [繁体中文](docs/readme/README_zh-TW.md) | [西班牙语](docs/readme/README_es.md) | [法语](docs/readme/README_fr.md) | [印度尼西亚语](docs/readme/README_id.md) | [日语](docs/readme/README_ja.md) | [韩语](docs/readme/README_ko.md) | [俄语](docs/readme/README_ru.md) | [越南语](docs/readme/README_vi.md)
 
 <p>
   <img src="https://img.shields.io/badge/Windows-x64-5d7161" alt="Windows x64">
-  <img src="https://img.shields.io/badge/DeepSeek-text-c47759" alt="DeepSeek text">
-  <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
+  <img src="https://img.shields.io/badge/DeepSeek-%E6%96%87%E5%AD%97%E6%A8%A1%E5%9E%8B-c47759" alt="DeepSeek 文字模型">
+  <img src="https://img.shields.io/badge/%E7%95%8C%E9%9D%A2-React%20%2B%20TypeScript-6e7f91" alt="React 与 TypeScript 界面">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
-  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
-  <a href="docs/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
-  <a href="docs/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
+  <a href="https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Windows_x64-c47759" alt="下载 Windows x64 安装包"></a>
+  <a href="docs/zh/assistant-desktop.md"><img src="https://img.shields.io/badge/%E6%96%87%E6%A1%A3-%E6%A1%8C%E9%9D%A2%E7%AB%AF-746b62" alt="桌面端使用说明"></a>
+  <a href="docs/zh/assistant.md"><img src="https://img.shields.io/badge/%E6%96%87%E6%A1%A3-%E4%BB%BB%E5%8A%A1%E8%B4%A6%E6%9C%AC-746b62" alt="任务账本说明"></a>
 </p>
 
-**nanoMuse Assistant** brings conversations, plans, reminders, workspace outputs and research into one desktop app. Describe a goal, review the steps, and follow the results in a persistent task ledger. This fork builds on [nanoMuse](https://github.com/nano-muse/nanoMuse), adds a standalone Windows workspace, and retains the original research workflow as a separate module.
+**nanoMuse 个人助手** 将对话、计划、提醒、资料产物和调研整合为独立桌面端。说出目标，审阅执行步骤，再通过持久化任务账本跟进结果。本项目基于 [nanoMuse](https://github.com/nano-muse/nanoMuse) 二次开发，新增独立的 Windows 工作空间，原有调研流程保留为单独模块。
 
-## Product views
+## 产品界面
 
-Captured from the current desktop UI preview using an isolated offline profile. Task names, repositories and report text are synthetic examples, not model-quality results. Open an image to see it at full size.
+图片取自当前桌面界面的独立离线预览。任务名称、候选仓库和报告均为合成示例，不代表真实模型的效果评测。点击图片可查看原图。
 
-<a href="docs/images/assistant/desktop-home.png"><img src="docs/images/assistant/desktop-home.png" alt="Home and conversation entry" width="1200"></a>
+<a href="docs/images/assistant/desktop-home.png"><img src="docs/images/assistant/desktop-home.png" alt="首页与对话入口" width="1200"></a>
 
 <table>
   <tr>
-    <td width="50%" valign="top"><a href="docs/images/assistant/desktop-tasks.png"><img src="docs/images/assistant/desktop-tasks.png" alt="Task ledger and human checkpoints"></a><br><b>Task ledger and human checkpoints</b></td>
-    <td width="50%" valign="top"><a href="docs/images/assistant/desktop-research.png"><img src="docs/images/assistant/desktop-research.png" alt="Research conditions and a versioned report"></a><br><b>Research conditions and a versioned report</b></td>
+    <td width="50%" valign="top"><a href="docs/images/assistant/desktop-tasks.png"><img src="docs/images/assistant/desktop-tasks.png" alt="任务账本与人工检查点"></a><br><b>任务账本与人工检查点</b></td>
+    <td width="50%" valign="top"><a href="docs/images/assistant/desktop-research.png"><img src="docs/images/assistant/desktop-research.png" alt="调研条件与版本化报告"></a><br><b>调研条件与版本化报告</b></td>
   </tr>
 </table>
 
-## Features
+## 主要功能
 
-| Area | What it does |
+| 功能 | 说明 |
 | --- | --- |
-| Conversations | Use DeepSeek text models, create conversations and search their titles. Light and dark appearance are available. |
-| Task ledger | Keep goals, steps, plan revisions, execution records and results together across restarts. |
-| Plans and reminders | Create or modify reminders and recurring tasks, with their changes recorded in the ledger. |
-| Workspace outputs | Read local Markdown material and produce source-linked outputs with file-content checks. |
-| Personal preferences | Save explicitly confirmed preferences, with expiry and removal controls. |
-| Controlled actions | Preview workspace file operations, observe browser state and request bounded Windows actions. Pause or take over when needed. |
-| Research | Compare candidates using source snapshots, evidence and report versions. Revisit decisions when conditions or sources change. |
-| Approvals and usage | Require approval for actionable steps, keep uncertain effects for review, and share persistent model-spending limits. |
+| 对话入口 | 接入 DeepSeek 文字模型，支持多对话、按标题搜索，以及浅色和深色外观。 |
+| 统一任务账本 | 集中保存目标、步骤、计划版本、执行记录和结果，重启后仍可查看。 |
+| 计划与提醒 | 创建或修改提醒、安排周期任务，相关变更同步记录到账本。 |
+| 资料与产物 | 读取工作空间中的 Markdown 材料，生成关联来源的产物，并核验文件内容。 |
+| 个人偏好 | 经明确确认后保存个人偏好，支持到期和删除。 |
+| 受控电脑操作 | 预览工作空间文件操作、观察浏览器状态，并执行有界的 Windows 操作，支持暂停和人工接管。 |
+| 独立调研模块 | 比较候选，保留来源快照、证据和报告版本；条件或来源变化后重新核对结论。 |
+| 审批与用量 | 执行步骤保留审批，结果不明时交由审阅；主聊天和调研共享持久化模型费用限制。 |
 
-## Quick start
+## 开始使用
 
-1. Download and run the [Windows x64 installer, unsigned](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe), or build from source below. The package includes Python and Chromium.
-2. Open **Connections** from the workspace settings or model selector. Choose DeepSeek, use `https://api.deepseek.com` and `deepseek-flash`, and save your own key in the local encrypted credential store.
-3. Choose daily and per-task allowances in the local `%APPDATA%\nanoMuse Assistant\assistant.toml` under `[assistant_usage]`. New profiles start at zero. Configure the reviewed pricing policy and an allowance that covers request reservations; see the [usage guide](docs/assistant.md#local-runtime-usage-limits). Keep keys out of this file.
-4. Switch **Runtime → Use configured model**. Alternatively, exit from the tray and start `nanoMuse-Assistant.exe --live`. Saving a key alone does not switch the offline runtime or grant spending permission.
-5. Describe your goal in chat. Review the task plan and individual action previews, then follow progress in **Task ledger**. Use pause or manual takeover to intervene.
+1. 下载并运行 [Windows x64 安装包，未签名](https://github.com/chengli200214-beep/continuous-research-assistant/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)，也可按下方说明从源码构建。程序内置 Python 与 Chromium。
+2. 从工作空间设置或输入框下方的模型选择器打开「连接」。选择 DeepSeek，填写 `https://api.deepseek.com` 与 `deepseek-flash`，在本地加密凭据库中保存自己的密钥。
+3. 在本地 `%APPDATA%\nanoMuse Assistant\assistant.toml` 的 `[assistant_usage]` 中设置每日及单任务额度。新配置初始为零；启用已审定的价格政策，并选择能覆盖请求预留的额度，详见[用量说明](docs/zh/assistant.md#local-runtime-usage-limits)。不要把密钥填入此文件。
+4. 通过「运行模式 → 使用已配置的模型」切换。也可从托盘退出后，以 `nanoMuse-Assistant.exe --live` 重新启动。仅保存密钥不会切换离线模式，也不会自动授予费用额度。
+5. 在对话中描述目标，审阅任务计划及逐项操作预览；通过「任务账本」查看进度，需要时暂停或人工接管。
 
-> A new profile uses labelled offline scripted responses until you select live mode. These responses are not an offline language model.
+> 新配置默认使用有明确标记的离线脚本响应，切换为真实模型后才会调用 API。离线脚本响应不具备通用语言模型能力。
 
-## Example requests
+## 你可以这样提问
 
-- Help me plan three learning goals for this week and prepare a review checklist.
-- Read the Markdown notes in my workspace and prepare a summary with source references.
-- Preview a plan to organize these workspace files, then wait for my confirmation.
-- Compare two repository candidates against my requirements and retain the evidence and report versions.
+- 帮我安排本周三个学习目标，并整理一份复盘清单。
+- 读取工作空间里的 Markdown 笔记，整理带来源的摘要。
+- 先预览这批工作空间文件的整理方案，等我确认后再执行。
+- 按我的条件比较两个仓库，保留证据和报告版本。
 
-## Build on Windows
+## 从源码构建
 
-Requirements: Windows x64, Git, Node.js 22, Python 3.13 and uv. Run from the repository root. The build script prepares JavaScript dependencies, Chromium and the Python runtime.
+需要 Windows x64、Git、Node.js 22、Python 3.13 和 uv。在仓库根目录执行。构建脚本会准备 JavaScript 依赖、Chromium 和 Python 运行时。
 
 ```powershell
 git clone --branch research-assistant https://github.com/chengli200214-beep/continuous-research-assistant.git
@@ -74,41 +74,41 @@ uv pip install --python .local/assistant-desktop-build/Scripts/python.exe pyinst
 powershell -File scripts/build-assistant-desktop.ps1 -Target installer
 ```
 
-The unpacked app is written to `desktop/assistant/dist/win-unpacked/`; the setup installer is in `desktop/assistant/dist/`. Use `-Target dir` for an unpacked build. Locally built installers are unsigned. Full instructions: [desktop guide](docs/assistant-desktop.md).
+解压目录位于 `desktop/assistant/dist/win-unpacked/`，安装包位于 `desktop/assistant/dist/`。使用 `-Target dir` 可只生成解压版。本地构建的安装包尚未签名，完整步骤见[桌面端说明](docs/zh/assistant-desktop.md)。
 
-## Data and execution
+## 数据与执行方式
 
-- The Electron shell opens a local Python service. Conversations, tasks, reminder records and research revisions are stored in local files and SQLite databases.
-- Model requests send the necessary conversation and tool context to your selected provider. Local storage does not mean cloud-model requests stay on this computer.
-- The tray keeps the app running when its window is closed. Exiting stops its owned service. Select an existing personal-assistant profile with `--profile="D:\AssistantData\profile"`; original research-only directories are not imported automatically.
+- Electron 外壳连接本机 Python 服务，对话、任务、提醒记录和调研版本保存在本地文件及 SQLite 数据库中。
+- 调用模型时，必要的对话和工具上下文会发送给所选提供商。本地保存数据不等于云端模型请求始终留在本机。
+- 关闭窗口后程序留在托盘运行，从托盘退出才会停止其启动的服务。已有个人助手数据可通过 `--profile="D:\AssistantData\profile"` 指定；不会自动导入原调研专用目录。
 
-## Current scope
+## 当前范围
 
-- This branch focuses on the standalone Windows x64 assistant. The upstream mobile, relay and Harness trees remain in the repository.
-- The isolated profile supports reviewed DeepSeek text adapters and deterministic Windows actions. Microphone dictation, visual-model control and embedding-based memory are not enabled in this profile.
-- Reminders require the process to remain running and the computer to be awake. Sleep and lock-screen recovery of the new assistant architecture are not claimed as verified.
+- 本分支主要交付独立 Windows x64 个人助手。仓库继续保留上游手机端、中继服务与 Harness 代码。
+- 隔离配置目前启用已审定的 DeepSeek 文字接口和确定性 Windows 操作；未启用麦克风听写、视觉模型控制和嵌入式记忆检索。
+- 提醒需要程序持续运行且电脑处于唤醒状态。新个人助手架构的睡眠与锁屏恢复尚未宣布验证通过。
 
-## Documentation
+## 文档与目录
 
-- [Desktop usage, packaging and existing data](docs/assistant-desktop.md)
-- [Task plans, approvals and usage limits](docs/assistant.md)
-- [Runtime architecture](docs/architecture.md)
-- [Upstream and third-party notices](THIRD_PARTY_NOTICES.md)
+- [桌面端使用、构建与已有数据](docs/zh/assistant-desktop.md)
+- [任务计划、审批与费用限制](docs/zh/assistant.md)
+- [运行时架构](docs/zh/architecture.md)
+- [上游及第三方声明](THIRD_PARTY_NOTICES.md)
 
 ```text
-desktop/assistant/   Electron shell
-web/src/             React UI
-nanomuse/assistant/  Task ledger and action adapters
-nanomuse/research/   Evidence and research reports
-scripts/desktop-app/ Runtime packaging
+desktop/assistant/   Electron 桌面外壳
+web/src/             React 界面
+nanomuse/assistant/  任务账本与操作适配器
+nanomuse/research/   调研证据与报告
+scripts/desktop-app/ 运行环境打包
 ```
 
-## License and attribution
+## 许可证与上游致谢
 
-Built on nanoMuse, licensed under **GPL-3.0-or-later**. Copyright and component notices remain in [LICENSE](LICENSE), [NOTICE](NOTICE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The original DeepSeek Harness desktop remains a separate entry. See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution rules.
+基于 nanoMuse，遵循 **GPL-3.0-or-later**。原有版权及组件声明保留在 [LICENSE](LICENSE)、[NOTICE](NOTICE) 和 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。原 DeepSeek Harness 桌面端仍为独立入口，贡献约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 <details>
-<summary>Upstream community contributors</summary>
+<summary>上游社区贡献者</summary>
 
 <!-- contributors:start -->
 <p>
