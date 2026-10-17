@@ -64,7 +64,7 @@ export default function App() {
   // The document title follows the agent's name.
   useEffect(() => {
     const name = state.profile?.name?.trim();
-    document.title = name && name.toLowerCase() !== "nanomuse" ? `${name} · nanoMuse` : "nanoMuse";
+    document.title = isAssistantDesktop() ? "NanoMate" : name && name.toLowerCase() !== "nanomuse" ? `${name} · nanoMuse` : "nanoMuse";
   }, [state.profile?.name]);
 
   // the desktop's quick-chat shortcut: to the chat, with the composer focused
@@ -126,7 +126,7 @@ export default function App() {
   const feedUnseen = state.pendingApprovals.filter((a) => a.ts > state.feedSeenAt).length;
 
   if (isAssistantDesktop()) return <AssistantWorkspace>
-    {state.gone && <div role="status" className="assistant-connection-banner">{t("This nanoMuse has stopped. Reload the page once it is running again.")}</div>}
+    {state.gone && <div role="status" className="assistant-connection-banner">{t("NanoMate has stopped. Reload the page once it is running again.")}</div>}
     <Suspense fallback={<Loading />}>
       {state.tab === "chat" && <ChatScreen />}
       {state.tab === "feed" && <FeedScreen />}
@@ -252,7 +252,7 @@ function Connecting({ error }: { error: string | null }) {
       <BrandMark size={72} />
       {error ? (
         <>
-          <p className="mt-6 text-[15px] font-medium">{t("Could not reach your nanoMuse.")}</p>
+          <p className="mt-6 text-[15px] font-medium">{t(isAssistantDesktop() ? "Could not reach NanoMate." : "Could not reach your nanoMuse.")}</p>
           <p className="mt-1.5 text-[13px] text-muted">{t(error)}</p>
           <button type="button" onClick={() => window.location.reload()} className="mt-5 rounded-full bg-fg px-5 py-2 text-[14px] font-medium text-bg">
             {t("Try again")}
@@ -260,7 +260,7 @@ function Connecting({ error }: { error: string | null }) {
         </>
       ) : (
         <p className="mt-6 flex items-center gap-2 text-[14px] text-muted">
-          <Loader2 className="animate-spin" size={16} /> {t("Connecting to your nanoMuse…")}
+          <Loader2 className="animate-spin" size={16} /> {t(isAssistantDesktop() ? "Connecting to NanoMate…" : "Connecting to your nanoMuse…")}
         </p>
       )}
     </div>
@@ -273,7 +273,7 @@ function TokenGate() {
   return (
     <div className="mx-auto flex h-[100dvh] max-w-md flex-col items-center justify-center px-6 text-center">
       <BrandMark size={88} />
-      <h1 className="mt-4 text-[22px] font-bold">{t("Connect to your nanoMuse")}</h1>
+      <h1 className="mt-4 text-[22px] font-bold">{t(isAssistantDesktop() ? "Connect to NanoMate" : "Connect to your nanoMuse")}</h1>
       <p className="mt-2 text-[14px] text-muted">
         {t("This app talks to the nanoMuse server you run yourself. Scan the QR code printed by")}{" "}
         <code className="rounded bg-surface-2 px-1">nanomuse serve</code>{t(", or paste the access token below.")}

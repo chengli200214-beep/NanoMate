@@ -32,7 +32,7 @@ import { useCallback, useEffect, useId, useState, type ReactNode } from "react";
 import { androidApp, keepRunningStatus, type KeepRunningStatus } from "../android";
 import { api, setToken } from "../api";
 import { DRAGON } from "../avatars";
-import { desktopBridge, isDesktopApp } from "../desktop";
+import { desktopBridge, isAssistantDesktop, isDesktopApp } from "../desktop";
 import { setDeveloperTools, useDeveloperTools } from "../devtools";
 import { setShowSteps, useShowSteps } from "../steps";
 import { openOwnKeySetup } from "../components/AllowanceWays";
@@ -532,7 +532,7 @@ function VersionRows({ installed, release, checking, onCheck }: { installed: str
   else latest = <>{t("Could not check")} · {checkNow}</>;
   return (
     <div className="rounded-2xl bg-surface-2/60 px-3.5 py-2.5 text-[13px]">
-      <div className="font-medium">{t("nanoMuse {version}", { version: installed })}</div>
+      <div className="font-medium">{t(isAssistantDesktop() ? "NanoMate {version}" : "nanoMuse {version}", { version: installed })}</div>
       <div className="mt-0.5 text-muted">{latest}</div>
       {!phone && release?.latest && release.newer && <div className="mt-1 text-[12px] text-muted">{t("To update: pip install -U nanomuse, pull the new image, or use the desktop app's Update.")}</div>}
       {!phone && release?.checked_at && <div className="mt-1 text-[12px] text-muted">{t("Checked {when}", { when: relativeTime(release.checked_at) })}</div>}
@@ -652,13 +652,13 @@ function SettingsHome({ release, onOpen }: { release: UpdateView | null; onOpen:
 
         {/* about */}
         <MuseCard className="mb-3">
-          <MuseRow icon={<Info size={22} />} label={t("About nanoMuse")} value={release?.newer && release.latest ? t("{version} is out", { version: release.latest }) : undefined} onClick={() => onOpen("about")} />
+          <MuseRow icon={<Info size={22} />} label={t(isAssistantDesktop() ? "About NanoMate" : "About nanoMuse")} value={release?.newer && release.latest ? t("{version} is out", { version: release.latest }) : undefined} onClick={() => onOpen("about")} />
           <MuseDivider />
           <MuseRow icon={<Hand size={22} />} label={t("Privacy policy")} onClick={() => window.open(PRIVACY_URL, "_blank", "noopener")} external />
           <MuseDivider />
-          <MuseRow icon={<MessageSquareWarning size={22} />} label={t("Feedback")} onClick={() => window.open("https://github.com/nano-muse/nanoMuse/issues/new/choose", "_blank", "noopener")} external />
+          <MuseRow icon={<MessageSquareWarning size={22} />} label={t("Feedback")} onClick={() => window.open(isAssistantDesktop() ? "https://github.com/chengli200214-beep/NanoMate/issues" : "https://github.com/nano-muse/nanoMuse/issues/new/choose", "_blank", "noopener")} external />
         </MuseCard>
-        <MuseCaption>nanoMuse {state.version}</MuseCaption>
+        <MuseCaption>{isAssistantDesktop() ? "NanoMate" : "nanoMuse"} {state.version}</MuseCaption>
       </div>
     </div>
   );

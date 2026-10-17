@@ -10,7 +10,7 @@ Un asistente personal para Windows con un registro de tareas y un módulo de inv
   <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
-  <a href="https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
+  <a href="https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-nanomate-v1.0.5/NanoMate-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
   <a href="../../docs/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
   <a href="../../docs/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
@@ -45,10 +45,10 @@ Capturas de la vista previa de escritorio actual, con un perfil sin conexión ai
 
 ## Primeros pasos
 
-1. Descarga y ejecuta el [instalador Windows x64 sin firma](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe), o compila desde el código como se indica abajo. El paquete incluye Python y Chromium.
+1. Descarga y ejecuta el [instalador Windows x64 sin firma](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-nanomate-v1.0.5/NanoMate-1.0.5-win-x64.exe), o compila desde el código como se indica abajo. El paquete incluye Python y Chromium.
 2. Abre **Connections** desde la configuración o el selector de modelo. Elige DeepSeek, `https://api.deepseek.com` y `deepseek-flash`; guarda tu clave en el almacén local cifrado.
 3. Configura los límites diario y por tarea en `[assistant_usage]` del archivo local `%APPDATA%\nanoMuse Assistant\assistant.toml`. Empiezan en cero; selecciona la política revisada y una cantidad que cubra las reservas. Consulta la [guía de uso](../../docs/assistant.md#local-runtime-usage-limits). No guardes claves allí.
-4. Elige **Runtime → Use configured model**, o sal desde la bandeja e inicia `nanoMuse-Assistant.exe --live`. Guardar una clave no cambia el modo ni concede presupuesto.
+4. Elige **Runtime → Use configured model**, o sal desde la bandeja e inicia `NanoMate.exe --live`. Guardar una clave no cambia el modo ni concede presupuesto.
 5. Describe el objetivo, revisa el plan y cada acción, y sigue su progreso en **Task ledger**. Puedes pausar o tomar el control.
 
 > Los perfiles nuevos usan respuestas de guion sin conexión, claramente identificadas. No son un modelo de lenguaje local.

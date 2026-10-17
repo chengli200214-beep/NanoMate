@@ -1,8 +1,8 @@
 appId: io.github.nanomuse.assistant
-productName: nanoMuse Assistant
-executableName: nanoMuse-Assistant
+productName: NanoMate
+executableName: NanoMate
 copyright: GPL-3.0-or-later, nanoMuse contributors
-artifactName: nanoMuse-Assistant-${version}-${os}-${arch}.${ext}
+artifactName: NanoMate-${version}-${os}-${arch}.${ext}
 directories:
   output: dist
   buildResources: ../../harness/desktop/resources
@@ -38,5 +38,5 @@ nsis:
   perMachine: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
-  shortcutName: nanoMuse Assistant
+  shortcutName: NanoMate
   deleteAppDataOnUninstall: false

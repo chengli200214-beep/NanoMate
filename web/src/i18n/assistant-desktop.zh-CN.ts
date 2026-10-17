@@ -1,4 +1,10 @@
 const assistantDesktopZhCN: Record<string, string> = {
+  "NanoMate has stopped. Reload the page once it is running again.": "NanoMate 已停止，重新运行后请刷新页面。",
+  "Could not reach NanoMate.": "暂时无法连接 NanoMate。",
+  "Connecting to NanoMate…": "正在连接 NanoMate…",
+  "Connect to NanoMate": "连接到 NanoMate",
+  "About NanoMate": "关于 NanoMate",
+  "NanoMate {version}": "NanoMate {version}",
   "Personal assistant": "个人助手",
   "Research module": "调研模块",
   "Your plans, progress and actions that need a decision.": "查看计划进展，审阅需要你决定的操作。",

@@ -1,9 +1,9 @@
 {
   "name": "nanomuse-assistant-desktop",
-  "productName": "nanoMuse Assistant",
+  "productName": "NanoMate",
   "private": true,
   "version": "1.0.5",
-  "description": "A desktop workspace for the local nanoMuse personal assistant and research module.",
+  "description": "NanoMate personal assistant desktop with a local task ledger and research module.",
   "license": "GPL-3.0-or-later",
   "author": "nanoMuse contributors",
   "main": "src/main.cjs",

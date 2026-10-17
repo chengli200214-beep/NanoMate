@@ -16,6 +16,8 @@ All notable changes to nanoMuse. The format follows [Keep a Changelog](https://k
 
 ### Desktop
 
+- 将独立桌面端的窗口、首页、托盘、快捷方式和 Windows 安装包统一命名为 NanoMate，显式保留了原数据目录、已保存的模型配置、任务和调研记录。
+
 - Added a standalone Windows personal-assistant workspace with a warm light and dark layout, editable home suggestions, conversation search, task summaries and the existing research module. Bundled its Python and browser runtimes, retained per-action approvals and added tray operation, local profile attachment and owned-process shutdown.
 
 ### Cloud

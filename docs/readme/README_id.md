@@ -10,7 +10,7 @@ Asisten pribadi Windows dengan buku tugas dan modul riset berbasis bukti.
   <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
-  <a href="https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
+  <a href="https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-nanomate-v1.0.5/NanoMate-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
   <a href="../../docs/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
   <a href="../../docs/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
@@ -45,10 +45,10 @@ Tampilan desktop saat ini memakai profil luring terpisah. Tugas, repositori, dan
 
 ## Mulai menggunakan
 
-1. Unduh dan jalankan [pemasang Windows x64 yang belum ditandatangani](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe), atau build dari sumber di bawah. Paket mencakup Python dan Chromium.
+1. Unduh dan jalankan [pemasang Windows x64 yang belum ditandatangani](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-nanomate-v1.0.5/NanoMate-1.0.5-win-x64.exe), atau build dari sumber di bawah. Paket mencakup Python dan Chromium.
 2. Buka **Connections** dari pengaturan atau pemilih model. Pilih DeepSeek, `https://api.deepseek.com`, dan `deepseek-flash`, lalu simpan kunci sendiri di penyimpanan terenkripsi lokal.
 3. Tetapkan batas harian dan per tugas pada `[assistant_usage]` di `%APPDATA%\nanoMuse Assistant\assistant.toml` lokal. Nilai awal nol. Pilih kebijakan harga yang ditinjau dan dana yang mencakup reservasi; lihat [panduan](../../docs/assistant.md#local-runtime-usage-limits). Jangan simpan kunci di sana.
-4. Pilih **Runtime → Use configured model**, atau keluar dari tray lalu mulai `nanoMuse-Assistant.exe --live`. Menyimpan kunci tidak mengubah mode atau memberikan anggaran.
+4. Pilih **Runtime → Use configured model**, atau keluar dari tray lalu mulai `NanoMate.exe --live`. Menyimpan kunci tidak mengubah mode atau memberikan anggaran.
 5. Jelaskan tujuan, tinjau rencana dan setiap tindakan, lalu pantau **Task ledger**. Jeda atau ambil alih bila diperlukan.
 
 > Profil baru memakai respons skrip luring yang diberi label. Ini bukan model bahasa luring.

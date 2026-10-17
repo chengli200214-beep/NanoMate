@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/UI-React%20%2B%20TypeScript-6e7f91" alt="React and TypeScript">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
-  <a href="https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
+  <a href="https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-nanomate-v1.0.5/NanoMate-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/Download-Windows_x64-c47759" alt="Download Windows x64"></a>
   <a href="../../docs/assistant-desktop.md"><img src="https://img.shields.io/badge/Docs-desktop-746b62" alt="Desktop documentation"></a>
   <a href="../../docs/assistant.md"><img src="https://img.shields.io/badge/Docs-task%20ledger-746b62" alt="Task ledger documentation"></a>
 </p>
@@ -45,10 +45,10 @@
 
 ## Начало работы
 
-1. Скачайте и запустите [установщик Windows x64 без подписи](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe) или соберите приложение ниже. Пакет содержит Python и Chromium.
+1. Скачайте и запустите [установщик Windows x64 без подписи](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-nanomate-v1.0.5/NanoMate-1.0.5-win-x64.exe) или соберите приложение ниже. Пакет содержит Python и Chromium.
 2. Откройте **Connections** в настройках или выборе модели. Выберите DeepSeek, `https://api.deepseek.com`, `deepseek-flash` и сохраните ключ в локальном зашифрованном хранилище.
 3. Настройте дневной лимит и лимит задачи в `[assistant_usage]` файла `%APPDATA%\nanoMuse Assistant\assistant.toml`. Начальные значения нулевые. Выберите проверенную ценовую политику и сумму резервирования: [руководство](../../docs/assistant.md#local-runtime-usage-limits). Не храните там ключи.
-4. Выберите **Runtime → Use configured model** либо выйдите через трей и запустите `nanoMuse-Assistant.exe --live`. Сохранение ключа не меняет режим и не разрешает расходы.
+4. Выберите **Runtime → Use configured model** либо выйдите через трей и запустите `NanoMate.exe --live`. Сохранение ключа не меняет режим и не разрешает расходы.
 5. Опишите цель, проверьте план и действия, затем следите за **Task ledger**. При необходимости включите паузу или ручное управление.
 
 > Новые профили используют отмеченные автономные ответы по сценарию. Это не локальная языковая модель.

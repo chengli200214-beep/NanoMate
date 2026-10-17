@@ -5,10 +5,11 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { startRuntime, localUrlAllowed, externalUrlAllowed, trustedWindowSender, readJson } = require("./runtime.cjs");
 
-app.setName("nanoMuse Assistant");
+app.setName("NanoMate");
 app.setAppUserModelId("io.github.nanomuse.assistant");
 const value = (name) => process.argv.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3);
-if (value("user-data")) app.setPath("userData", path.resolve(value("user-data")));
+// Retain the original profile, Vault, model limits and Electron preferences after rebranding.
+app.setPath("userData", value("user-data") ? path.resolve(value("user-data")) : path.join(app.getPath("appData"), "nanoMuse Assistant"));
 const root = path.resolve(__dirname, "../../..");
 const userData = app.getPath("userData");
 const prefsFile = path.join(userData, "desktop-preferences.json");
@@ -87,7 +88,7 @@ function buildMenu() {
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
   tray?.setContextMenu(Menu.buildFromTemplate([
-    { label: "nanoMuse Assistant", enabled: false },
+    { label: "NanoMate", enabled: false },
     { label: text("Open assistant", "打开个人助手"), click: () => show() },
     { label: text("Task ledger", "任务账本"), click: () => show("tasks") },
     { label: text("Connections", "连接与模型"), click: () => show("connections") },
@@ -98,7 +99,7 @@ function buildMenu() {
 async function launch() {
   win = new BrowserWindow({
     width: 1320, height: 900, minWidth: 720, minHeight: 620, show: false, frame: false, autoHideMenuBar: true,
-    title: "nanoMuse Assistant", backgroundColor: "#faf9f6", icon: iconPath,
+    title: "NanoMate", backgroundColor: "#faf9f6", icon: iconPath,
     webPreferences: { preload: path.join(__dirname, "preload.cjs"), contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true, allowRunningInsecureContent: false, spellcheck: false },
   });
   win.once("ready-to-show", () => win.show());
@@ -107,7 +108,7 @@ async function launch() {
     event.preventDefault();
     if (!tray) { void exit(); return; }
     win.hide();
-    if (!closeNoticeShown) { closeNoticeShown = true; tray.displayBalloon({ title: "nanoMuse Assistant", content: text("The assistant is in the system tray. Right-click its icon to exit.", "个人助手已收起到系统托盘。右键托盘图标可以退出。") }); }
+    if (!closeNoticeShown) { closeNoticeShown = true; tray.displayBalloon({ title: "NanoMate", content: text("The assistant is in the system tray. Right-click its icon to exit.", "个人助手已收起到系统托盘。右键托盘图标可以退出。") }); }
   });
   session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
   session.defaultSession.setPermissionCheckHandler(() => false);
@@ -131,7 +132,7 @@ async function launch() {
   });
   const image = nativeImage.createFromPath(iconPath).resize({ width: 20, height: 20 });
   tray = new Tray(image);
-  tray.setToolTip("nanoMuse Assistant");
+  tray.setToolTip("NanoMate");
   tray.on("double-click", () => show());
   buildMenu();
   await win.loadFile(bootPath);
@@ -168,7 +169,7 @@ async function boot() {
   } catch (error) {
     if (smokePath) { fs.mkdirSync(smokePath, { recursive: true }); fs.writeFileSync(path.join(smokePath, "failure.txt"), startupMessage(error)); await exit(true); process.exitCode = 1; }
     else {
-      const answer = await dialog.showMessageBox(win, { type: "error", title: "nanoMuse Assistant", message: text("Could not start your workspace.", "工作空间未能启动。"), detail: startupMessage(error), buttons: [text("Retry", "重试"), text("Open logs", "打开日志"), text("Exit", "退出")], defaultId: 0 });
+      const answer = await dialog.showMessageBox(win, { type: "error", title: "NanoMate", message: text("Could not start your workspace.", "工作空间未能启动。"), detail: startupMessage(error), buttons: [text("Retry", "重试"), text("Open logs", "打开日志"), text("Exit", "退出")], defaultId: 0 });
       booting = false;
       if (answer.response === 0) return boot();
       if (answer.response === 1) await shell.openPath(path.join(userData, "desktop-logs"));
@@ -195,7 +196,7 @@ async function changeMode(mode) {
 async function exit(force = false) {
   if (quitting) return;
   if (!force && runtime?.owned) {
-    const answer = await dialog.showMessageBox(win, { type: "question", message: text("Exit nanoMuse Assistant?", "退出 nanoMuse Assistant？"), detail: text("The local service started by this desktop will stop. Saved data remains on this computer. Closing the window keeps it running in the tray.", "桌面端启动的本地服务会停止，已保存的数据仍保留在本机。仅关闭窗口会继续在托盘运行。"), buttons: [text("Keep running", "继续运行"), text("Exit", "退出")], defaultId: 0, cancelId: 0 });
+    const answer = await dialog.showMessageBox(win, { type: "question", message: text("Exit NanoMate?", "退出 NanoMate？"), detail: text("The local service started by this desktop will stop. Saved data remains on this computer. Closing the window keeps it running in the tray.", "桌面端启动的本地服务会停止，已保存的数据仍保留在本机。仅关闭窗口会继续在托盘运行。"), buttons: [text("Keep running", "继续运行"), text("Exit", "退出")], defaultId: 0, cancelId: 0 });
     if (answer.response !== 1) return;
   }
   quitting = true; ready = false;

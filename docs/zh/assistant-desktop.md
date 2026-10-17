@@ -2,18 +2,18 @@
 
 独立 Windows 桌面端以个人助手为入口，共用现有对话、任务账本、提醒、文件产物、记忆、审批与人工接管功能。调研保留为独立模块，原有 DeepSeek Harness 桌面入口也继续保留。
 
-项目仓库名称为 NanoMate。当前 1.0.5 安装包仍使用 `nanoMuse Assistant` 的程序名称和数据目录。
+应用、安装包和快捷方式统一命名为 NanoMate。升级后继续使用 `%APPDATA%\nanoMuse Assistant` 原目录及已保存的个人助手目录选择，保留模型连接、费用额度、任务和调研数据，无需手动搬迁。
 
 ## 下载 Windows 安装包 {#download-for-windows}
 
-[下载 Windows x64 安装包](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)，
-[版本发布页面](https://github.com/chengli200214-beep/NanoMate/releases/tag/desktop-assistant-v1.0.5) 同时提供校验文件和安装说明。
+[下载 Windows x64 安装包](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-nanomate-v1.0.5/NanoMate-1.0.5-win-x64.exe)，
+[版本发布页面](https://github.com/chengli200214-beep/NanoMate/releases/tag/desktop-nanomate-v1.0.5) 同时提供校验文件和安装说明。
 安装包目前未签名，不包含已保存的密钥、个人配置、任务库或调研数据。新配置默认采用离线模式且付费额度为零，
 使用者需要自行填写模型连接及费用限制。
 
 ## 使用
 
-运行解压目录中的 `nanoMuse-Assistant.exe`，或使用 Windows 安装包。应用已包含 Python 运行时和浏览器文件，无需另装 Python 或手动启动网页服务。首次启动使用明确标注的离线脚本响应，这不是通用离线大模型。
+运行解压目录中的 `NanoMate.exe`，或使用 Windows 安装包。应用已包含 Python 运行时和浏览器文件，无需另装 Python 或手动启动网页服务。首次启动使用明确标注的离线脚本响应，这不是通用离线大模型。
 
 左侧可进入对话、任务账本、计划与提醒、资料与产物、调研模块及个人记忆。首页卡片只会把建议填入输入框，编辑后再发送。`Ctrl+K` 搜索对话标题，`Ctrl+Shift+O` 新建对话。侧栏底部可切换浅色和深色外观。调研继续使用现有项目、报告及审批。
 

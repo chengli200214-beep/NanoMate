@@ -4,20 +4,21 @@ The standalone Windows app opens the personal assistant and its existing researc
 It shares the runtime's chat, task ledger, reminders, file outputs, memory, approvals and
 manual takeover controls. The existing DeepSeek Harness desktop remains a separate entry.
 
-The project repository is named NanoMate. The current 1.0.5 installer retains the
-`nanoMuse Assistant` application name and data directory.
+The app, installer and shortcuts are named NanoMate. Existing installations retain
+the original `%APPDATA%\nanoMuse Assistant` directory and saved profile selection,
+including their model connection, allowances, tasks and research.
 
 ## Download for Windows
 
-[Download the Windows x64 installer](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)
-from the [Windows release](https://github.com/chengli200214-beep/NanoMate/releases/tag/desktop-assistant-v1.0.5).
+[Download the Windows x64 installer](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-nanomate-v1.0.5/NanoMate-1.0.5-win-x64.exe)
+from the [Windows release](https://github.com/chengli200214-beep/NanoMate/releases/tag/desktop-nanomate-v1.0.5).
 The release includes checksums and installation instructions. The installer is unsigned and
 ships no saved key, personal profile, task database or research data. New profiles start in
 offline mode with zero paid allowance. Configure your own connection and limits before use.
 
 ## Using the app
 
-Run `nanoMuse-Assistant.exe` from the unpacked directory, or install the Windows setup build.
+Run `NanoMate.exe` from the unpacked directory, or install the Windows setup build.
 The Python runtime and the browser binaries are included. A system Python installation and
 a separately started web server are not required. The first launch uses labelled offline
 scripted responses. It is not a general offline language model.

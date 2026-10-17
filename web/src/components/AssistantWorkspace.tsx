@@ -29,7 +29,7 @@ export function AssistantWindowBar() {
   const t = useT();
   const bridge = desktopBridge();
   return <header className="assistant-windowbar">
-    <span className="assistant-window-label"><AssistantMark size={19} /> nanoMuse <span>{t("Personal assistant")}</span></span>
+    <span className="assistant-window-label"><AssistantMark size={19} /> NanoMate <span>{t("Personal assistant")}</span></span>
     {bridge?.windowAction && <div className="assistant-window-controls">
       <button onClick={() => bridge.windowAction?.("minimize")} aria-label={t("Minimize window")}><Minus size={15} /></button>
       <button onClick={() => bridge.windowAction?.("maximize")} aria-label={t("Maximize or restore window")}><Maximize2 size={12} /></button>
@@ -92,13 +92,13 @@ export function AssistantWorkspace({ children }: { children: ReactNode }) {
   const threads = state.threads.filter((thread) => !thread.device && !thread.remote_from);
   const matching = threads.filter((thread) => (thread.id === "main" ? t("Main conversation") : thread.title).toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
   const activeThread = state.threads.find((thread) => thread.id === state.activeThread);
-  const pageLabel = state.tab === "chat" ? activeThread?.id === "main" ? t("Your assistant") : activeThread?.title || t("Conversations") : t(PAGE_LABELS[state.tab] || ({ you: "Settings", connections: "Connections", feed: "Activity", skills: "Skills", devices: "Devices", account: "Account" } as Partial<Record<Tab, string>>)[state.tab] || "nanoMuse");
+  const pageLabel = state.tab === "chat" ? activeThread?.id === "main" ? t("Your assistant") : activeThread?.title || t("Conversations") : t(PAGE_LABELS[state.tab] || ({ you: "Settings", connections: "Connections", feed: "Activity", skills: "Skills", devices: "Devices", account: "Account" } as Partial<Record<Tab, string>>)[state.tab] || "NanoMate");
   const status = !state.connected ? t("Reconnecting…") : state.pendingApprovals.length ? t("Waiting for your review") : state.status.state === "working" ? t("Working…") : t("Ready");
   return <div className="assistant-desktop">
     <AssistantWindowBar />
     <div className={cx("assistant-body", collapsed && "sidebar-collapsed")}>
       <aside className="assistant-sidebar" aria-label={t("Main navigation")}>
-        <div className="assistant-brand"><span className="assistant-brandmark"><AssistantMark size={31} /></span><span className="assistant-wordmark">nanoMuse<span>{t("A little help, every day.")}</span></span><button className="assistant-icon" onClick={() => setCollapsed(true)} aria-label={t("Collapse sidebar")} title={t("Collapse sidebar")}><PanelLeftClose size={17} /></button></div>
+        <div className="assistant-brand"><span className="assistant-brandmark"><AssistantMark size={31} /></span><span className="assistant-wordmark">NanoMate<span>{t("A little help, every day.")}</span></span><button className="assistant-icon" onClick={() => setCollapsed(true)} aria-label={t("Collapse sidebar")} title={t("Collapse sidebar")}><PanelLeftClose size={17} /></button></div>
         <button className="assistant-new-chat" onClick={() => void create()} disabled={creating}><Plus size={17} /> {t("New conversation")}<kbd>Ctrl ⇧ O</kbd></button>
         <button ref={searchButton} className="assistant-search-trigger" onClick={() => setSearchOpen(true)}><Search size={16} /><span>{t("Search conversations")}</span><kbd>Ctrl K</kbd></button>
         <nav className="assistant-nav">{NAV.map(({ id, label, icon: Icon }) => <button key={id} className={cx("assistant-nav-item", state.tab === id && "is-active")} onClick={() => go(id)} aria-current={state.tab === id ? "page" : undefined}><Icon size={18} strokeWidth={1.65} /><span>{t(label)}</span>{id === "tasks" && state.pendingApprovals.length > 0 && <span className="assistant-count">{state.pendingApprovals.length}</span>}</button>)}</nav>

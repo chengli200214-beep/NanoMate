@@ -10,7 +10,7 @@ Windows 个人助手，把日常任务和有依据的调研放进同一个工作
   <img src="https://img.shields.io/badge/%E7%95%8C%E9%9D%A2-React%20%2B%20TypeScript-6e7f91" alt="React 与 TypeScript 界面">
   <a href="../../LICENSE"><img src="https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF%E8%AF%81-GPL--3.0--or--later-746b62" alt="GPL-3.0-or-later"></a>
   <br>
-  <a href="https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Windows_x64-c47759" alt="下载 Windows x64 安装包"></a>
+  <a href="https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-nanomate-v1.0.5/NanoMate-1.0.5-win-x64.exe"><img src="https://img.shields.io/badge/%E4%B8%8B%E8%BD%BD-Windows_x64-c47759" alt="下载 Windows x64 安装包"></a>
   <a href="../../docs/zh/assistant-desktop.md"><img src="https://img.shields.io/badge/%E6%96%87%E6%A1%A3-%E6%A1%8C%E9%9D%A2%E7%AB%AF-746b62" alt="桌面端使用说明"></a>
   <a href="../../docs/zh/assistant.md"><img src="https://img.shields.io/badge/%E6%96%87%E6%A1%A3-%E4%BB%BB%E5%8A%A1%E8%B4%A6%E6%9C%AC-746b62" alt="任务账本说明"></a>
 </p>
@@ -45,10 +45,10 @@ Windows 个人助手，把日常任务和有依据的调研放进同一个工作
 
 ## 开始使用
 
-1. 下载并运行 [Windows x64 安装包，未签名](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-assistant-v1.0.5/nanoMuse-Assistant-1.0.5-win-x64.exe)，也可按下方说明从源码构建。程序内置 Python 与 Chromium。
+1. 下载并运行 [Windows x64 安装包，未签名](https://github.com/chengli200214-beep/NanoMate/releases/download/desktop-nanomate-v1.0.5/NanoMate-1.0.5-win-x64.exe)，也可按下方说明从源码构建。程序内置 Python 与 Chromium。
 2. 从工作空间设置或输入框下方的模型选择器打开「连接」。选择 DeepSeek，填写 `https://api.deepseek.com` 与 `deepseek-flash`，在本地加密凭据库中保存自己的密钥。
 3. 在本地 `%APPDATA%\nanoMuse Assistant\assistant.toml` 的 `[assistant_usage]` 中设置每日及单任务额度。新配置初始为零；启用已审定的价格政策，并选择能覆盖请求预留的额度，详见[用量说明](../../docs/zh/assistant.md#local-runtime-usage-limits)。不要把密钥填入此文件。
-4. 通过「运行模式 → 使用已配置的模型」切换。也可从托盘退出后，以 `nanoMuse-Assistant.exe --live` 重新启动。仅保存密钥不会切换离线模式，也不会自动授予费用额度。
+4. 通过「运行模式 → 使用已配置的模型」切换。也可从托盘退出后，以 `NanoMate.exe --live` 重新启动。仅保存密钥不会切换离线模式，也不会自动授予费用额度。
 5. 在对话中描述目标，审阅任务计划及逐项操作预览；通过「任务账本」查看进度，需要时暂停或人工接管。
 
 > 新配置默认使用有明确标记的离线脚本响应，切换为真实模型后才会调用 API。离线脚本响应不具备通用语言模型能力。
